@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fyzio Totaal — Groepsbeheer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f0ee; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+
+const SUPABASE_URL = "https://szunargvsmtzbbnmnghc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
+
+async function dbGet(key) {
+  try {
+    var r = await fetch(SUPABASE_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(key)+"&select=value", {
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer "+SUPABASE_KEY }
+    });
+    var d = await r.json();
+    return d && d.length > 0 ? d[0].value : null;
+  } catch(e) { return null; }
+}
+
+async function dbSet(key, value) {
+  try {
+    await fetch(SUPABASE_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(key), {
+      method: "DELETE",
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer "+SUPABASE_KEY }
+    });
+    await fetch(SUPABASE_URL+"/rest/v1/storage", {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer "+SUPABASE_KEY, "Content-Type": "application/json", "Prefer": "return=minimal" },
+      body: JSON.stringify({ key: key, value: value })
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+const BRAND = {
+  green:"#1a4a3a", greenLight:"#e8f5f0", greenMid:"#2d6b55",
+  orange:"#e8611a", orangeLight:"#fdf0e8",
+  gray:"#e8e8e4", grayLight:"#f5f5f3", grayBorder:"#c8c8c4", grayText:"#666",
+  successGreen:"#1e7e4e", successLight:"#e8f5ed",
+  tempBorder:"#f5c842", tempBg:"#fffbe6", tempText:"#b08000",
+  blue:"#1a3a5a", blueLight:"#e8f0f8",
+  purple:"#6b3fa0", purpleLight:"#f3eeff",
+  red:"#c0392b", border:"#ddd", text:"#1a1a1a", textMuted:"#666",
+};
+
+const DAY_ORDER = ["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag"];
+const COLLEAGUES = ["Rob","Lars","Mayke","Jan Willem","Nikita","Laura","Lonneke","Julia","Jesper","Thomas","Ellen","Lynn"];
+
+function mkM(naam, betaling, stopped, stopReason, stopUntil, stopUnknown, reserved, reservedFrom) {
+  return { id: Date.now()+Math.random(), naam:String(naam), betaling:betaling||"incasso", stopped:!!stopped, stopReason:stopReason||"", stopUntil:stopUntil||"", stopUnknown:!!stopUnknown, reserved:!!reserved, reservedFrom:reservedFrom||"" };
+}
+
+const FT_GROUPS = [
+  {id:1,  day:"Maandag",   time:"09:15", colleague:"Lonneke",              members:[mkM("Carolien"),mkM("Corina"),mkM("Monique"),mkM("Lidy"),mkM("Els"),mkM("Nienke"),mkM("Marjolein")]},
+  {id:2,  day:"Maandag",   time:"20:00", colleague:"Jesper",               members:[mkM("Theo"),mkM("Renée"),mkM("Marco v.H."),mkM("Marco L."),mkM("Martijn"),mkM("Joost","incasso",true,"Liesklachten","",true),mkM("Patricia"),mkM("Aschwin")]},
+  {id:3,  day:"Dinsdag",   time:"08:25", colleague:"Ellen",                members:[mkM("Henk B."),mkM("Herma P."),mkM("Herma D.W."),mkM("Jeanette","incasso",true,"Vakantie","2025-07-01"),mkM("Henk H.","incasso",true,"TKP OK","",true)]},
+  {id:4,  day:"Dinsdag",   time:"09:15", colleague:"Jesper",               members:[mkM("Margreet"),mkM("Ina"),mkM("Gerry"),mkM("Lidy","geen"),mkM("Rikie"),mkM("Anjo"),mkM("Dieneke"),mkM("Betsy")]},
+  {id:5,  day:"Dinsdag",   time:"19:15", colleague:"Laura (verv. Nikita)", members:[mkM("Armin"),mkM("Maria"),mkM("Jolanda"),mkM("Bastiaan"),mkM("Jos"),mkM("Jolanda","incasso",true,"MCL + VKB letsel, jaar uit de running","",true),mkM("Maureen"),mkM("Judith")]},
+  {id:6,  day:"Woensdag",  time:"07:30", colleague:"Thomas",               members:[mkM("Frank"),mkM("Hans"),mkM("Peter"),mkM("John"),mkM("André")]},
+  {id:7,  day:"Woensdag",  time:"08:50", colleague:"Mayke",                members:[mkM("Mariëlle"),mkM("Maaike","geen"),mkM("Bertine"),mkM("Dorothee"),mkM("Jacqueline"),mkM("Mirjam"),mkM("Eva"),mkM("Angela")]},
+  {id:8,  day:"Woensdag",  time:"19:00", colleague:"Jan Willem",           members:[mkM("Jan Willem"),mkM("Roelien"),mkM("André"),mkM("Rianne"),mkM("Theo"),mkM("Harry"),mkM("Boaz"),mkM("Dianne")]},
+  {id:9,  day:"Woensdag",  time:"20:00", colleague:"Lonneke",              members:[mkM("Mirjam"),mkM("Bas","geen"),mkM("Heidy"),mkM("Wim"),mkM("Karin"),mkM("Marcel"),mkM("Ronald"),mkM("Manon")]},
+  {id:10, day:"Donderdag", time:"07:30", colleague:"Jesper",               members:[mkM("Leidus"),mkM("Carlo"),mkM("Patrick"),mkM("Henk"),mkM("Wilrick"),mkM("Judith"),mkM("Tjeerd"),mkM("Bert")]},
+  {id:11, day:"Donderdag", time:"10:20", colleague:"Julia",                members:[mkM("Anneke"),mkM("Ank"),mkM("Marita"),mkM("Nel"),mkM("Lemien")]},
+  {id:12, day:"Donderdag", time:"19:15", colleague:"Lars",                 members:[mkM("Wim"),mkM("Laila"),mkM("Sabine"),mkM("Ronnie"),mkM("Bert"),mkM("Marion"),mkM("Peter"),mkM("Jan")]},
+  {id:13, day:"Vrijdag",   time:"07:30", colleague:"Jan Willem",           members:[mkM("Henk"),mkM("André","incasso",true,"Voetblessure","2025-06-30"),mkM("Robert"),mkM("Ruth"),mkM("Patrick"),mkM("Michel"),mkM("Ank"),mkM("Marcel")]},
+  {id:14, day:"Vrijdag",   time:"09:15", colleague:"Jesper",               members:[mkM("Annet","geen"),mkM("Mariëtte"),mkM("Ria"),mkM("Elly"),mkM("Erna"),mkM("Trudy"),mkM("Hannie","contant")]},
+];
+
+const BA_GROUPS = [
+  {id:1, day:"Maandag", time:"19:00", colleague:"Lynn",                 members:[mkM("Maaike"),mkM("Carla"),mkM("Angela"),mkM("Loïs"),mkM("Monique"),mkM("Eline")]},
+  {id:2, day:"Maandag", time:"20:00", colleague:"Lynn",                 members:[mkM("Anneke"),mkM("Maaike"),mkM("Karin"),mkM("Dorothee"),mkM("Bertine"),mkM("Saskia")]},
+  {id:3, day:"Dinsdag", time:"20:15", colleague:"Laura (verv. Nikita)", members:[mkM("Ank"),mkM("Monika"),mkM("Liselore"),mkM("Karin"),mkM("Gaby"),mkM("Sandy")]},
+  {id:4, day:"Vrijdag", time:"09:15", colleague:"Lynn",                 members:[mkM("Rianne"),mkM("Renate"),mkM("Jolanda"),mkM("Judith"),mkM("Julia")]},
+];
+
+const FT_MAX=8, BA_MAX=6;
+const KEYS = {
+  ft_groups:"fyziototaal_training_groups_v4",
+  ft_wl:    "fyziototaal_training_waitlist_v4",
+  ba_groups:"fyziototaal_balance_groups_v2",
+  ba_wl:    "fyziototaal_balance_waitlist_v2",
+};
+
+function stamp(){return Date.now()+Math.random();}
+function dateStr(ts){return new Date(ts).toLocaleDateString("nl-NL",{day:"2-digit",month:"2-digit",year:"numeric"});}
+function fmtDate(str){if(!str)return null;var p=str.split("-");return p[2]+"-"+p[1]+"-"+p[0];}
+
+function sortG(arr){
+  return arr.slice().sort(function(a,b){
+    var d=DAY_ORDER.indexOf(a.day)-DAY_ORDER.indexOf(b.day);
+    return d!==0?d:a.time.localeCompare(b.time);
+  });
+}
+
+function mergeG(saved,initial){
+  var seen={};
+  var deduped=saved.filter(function(g){var k=g.day+"|"+g.time;if(seen[k])return false;seen[k]=true;return true;});
+  var ids=deduped.map(function(g){return g.id;});
+  var missing=initial.filter(function(g){return ids.indexOf(g.id)===-1;});
+  return sortG(deduped.concat(missing));
+}
+
+const BETALING_LABELS={incasso:"✓ Incasso",contant:"💵 Contant",geen:"Geen betaling"};
+function bStyle(b){
+  if(b==="incasso")return{fontSize:11,padding:"2px 7px",borderRadius:10,cursor:"pointer",background:"#e8f5f0",color:"#1e7e4e",border:"1px solid #1e7e4e",fontWeight:600};
+  if(b==="contant")return{fontSize:11,padding:"2px 7px",borderRadius:10,cursor:"pointer",background:"#fff8e1",color:"#b07800",border:"1px solid #f0c040",fontWeight:600};
+  return{fontSize:11,padding:"2px 7px",borderRadius:10,cursor:"pointer",background:"#f5f5f3",color:"#666",border:"1px solid #ddd",fontWeight:600};
+}
+
+function plekLabel(ac,sc,rc,MAX){
+  var total=MAX-ac-rc, temp=sc>total?total:sc, perm=total-temp;
+  if(perm>0&&temp>0)return perm+" plek"+(perm!==1?"ken":"")+" vrij + "+temp+" tijdelijk";
+  if(temp>0)return temp+" tijdelijk vrij";
+  if(perm>0)return perm+" plek"+(perm!==1?"ken":"")+" vrij";
+  return "Vol";
+}
+
+function gStatus(ac,sc,rc,MAX){
+  var total=MAX-ac-rc, temp=sc>total?total:sc, perm=total-temp;
+  if(ac+rc>=MAX)return "full";
+  if(perm>0)return "free";
+  return "temp";
+}
+
+function calcNotifs(groups,waitlist,MAX){
+  var notifs=[];
+  for(var gi=0;gi<groups.length;gi++){
+    var g=groups[gi],ac=0,sc=0,rc=0;
+    for(var mi=0;mi<g.members.length;mi++){var m=g.members[mi];if(m.reserved)rc++;else if(m.stopped)sc++;else ac++;}
+    if(ac+rc<MAX){
+      var matches=[];
+      for(var wi=0;wi<waitlist.length;wi++){var wl=waitlist[wi];if(wl.availability&&wl.availability[g.day]&&wl.availability[g.day][g.time])matches.push(wl.naam||"");}
+      if(matches.length>0){
+        var tf=MAX-ac-rc,tmp=sc>tf?tf:sc,perm=tf-tmp;
+        var pi=perm>0&&tmp>0?perm+" plek"+(perm!==1?"ken":"")+" vrij + "+tmp+" tijdelijk":perm>0?perm+" plek"+(perm!==1?"ken":"")+" vrij":tmp+" tijdelijk vrij";
+        notifs.push({group:g.day+" "+g.time,matches:matches,plekInfo:pi,onlyTemp:perm===0});
+      }
+    }
+  }
+  return notifs;
+}
+
+const { useState, useEffect, useRef } = React;
+
+function useModule(storageKeyG,storageKeyWL,initialGroups){
+  const [groups,setGroups]=useState(null);
+  const [waitlist,setWaitlist]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [saveStatus,setSaveStatus]=useState("");
+  const groupsRef=useRef(null);
+  const waitlistRef=useRef(null);
+  useEffect(function(){groupsRef.current=groups;},[groups]);
+  useEffect(function(){waitlistRef.current=waitlist;},[waitlist]);
+
+  useEffect(function(){
+    async function load(){
+      try{
+        var gVal=await dbGet(storageKeyG);
+        var wVal=await dbGet(storageKeyWL);
+        setGroups(gVal?mergeG(JSON.parse(gVal),initialGroups):initialGroups.slice());
+        setWaitlist(wVal?JSON.parse(wVal):[]);
+      }catch(e){setGroups(initialGroups.slice());setWaitlist([]);}
+      setLoading(false);
+    }
+    load();
+  },[]);
+
+  async function save(g,w){
+    setSaveStatus("Opslaan…");
+    var ok1=await dbSet(storageKeyG,JSON.stringify(g));
+    var ok2=await dbSet(storageKeyWL,JSON.stringify(w));
+    setSaveStatus(ok1&&ok2?"✓ Opgeslagen":"⚠ Opslaan mislukt");
+    setTimeout(function(){setSaveStatus("");},2500);
+  }
+
+  function manualSave(){save(groupsRef.current,waitlistRef.current);}
+  function updateGroups(fn){setGroups(function(prev){var next=fn(prev);save(next,waitlistRef.current);return next;});}
+  function updateWaitlist(fn){setWaitlist(function(prev){var next=fn(prev);save(groupsRef.current,next);return next;});}
+  return {groups,waitlist,loading,saveStatus,manualSave,updateGroups,updateWaitlist};
+}
+
+function ModuleView({mod,MAX,accentColor,accentLight}){
+  const {groups,waitlist,loading,saveStatus,manualSave,updateGroups,updateWaitlist}=mod;
+  const [tab,setTab]=useState("groups");
+  const [filterFree,setFilterFree]=useState(false);
+  const [expandedGroup,setExpandedGroup]=useState(null);
+  const [expandedEdit,setExpandedEdit]=useState(null);
+  const [newMember,setNewMember]=useState({naam:"",betaling:"incasso"});
+  const [editColleague,setEditColleague]=useState("");
+  const [wlForm,setWlForm]=useState({naam:"",availability:{},referrer:"",referrerOther:"",note:""});
+  const [wlEditId,setWlEditId]=useState(null);
+  const [showAddGroup,setShowAddGroup]=useState(false);
+  const [newGroup,setNewGroup]=useState({day:"Maandag",time:"",colleague:""});
+  const [reserveForm,setReserveForm]=useState({});
+
+  if(loading)return React.createElement("div",{style:{padding:40,textAlign:"center",color:accentColor,fontWeight:600}},"⏳ Gegevens laden…");
+
+  function mapMember(gId,mId,fn){updateGroups(function(prev){return prev.map(function(g){if(g.id!==gId)return g;return Object.assign({},g,{members:g.members.map(function(m){if(m.id!==mId)return m;return fn(m);})});});});}
+  function addMember(gId){
+    if(!newMember.naam.trim())return;
+    updateGroups(function(prev){return prev.map(function(g){if(g.id!==gId)return g;var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;if(ac+rc>=MAX)return g;return Object.assign({},g,{members:g.members.concat([{id:stamp(),naam:newMember.naam.trim(),betaling:newMember.betaling,stopped:false,stopReason:"",stopUntil:"",stopUnknown:false,reserved:false,reservedFrom:""}]);});});});
+    setNewMember({naam:"",betaling:"incasso"});
+  }
+  function addReservation(gId){
+    var rf=reserveForm[gId]||{naam:"",from:""};
+    if(!rf.naam.trim())return;
+    updateGroups(function(prev){return prev.map(function(g){if(g.id!==gId)return g;var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;if(ac+rc>=MAX)return g;return Object.assign({},g,{members:g.members.concat([{id:stamp(),naam:rf.naam.trim(),betaling:"incasso",stopped:false,stopReason:"",stopUntil:"",stopUnknown:false,reserved:true,reservedFrom:rf.from}]);});});});
+    setReserveForm(function(prev){var n=Object.assign({},prev);n[gId]={naam:"",from:""};return n;});
+  }
+  function removeMember(gId,mId){updateGroups(function(prev){return prev.map(function(g){if(g.id!==gId)return g;return Object.assign({},g,{members:g.members.filter(function(m){return m.id!==mId;})});});});}
+  function cycleBetaling(gId,mId){var c={incasso:"contant",contant:"geen",geen:"incasso"};mapMember(gId,mId,function(m){return Object.assign({},m,{betaling:c[m.betaling||"incasso"]});});}
+  function toggleStop(gId,mId){mapMember(gId,mId,function(m){return Object.assign({},m,{stopped:!m.stopped,stopReason:m.stopped?"":m.stopReason||"",stopUntil:m.stopped?"":m.stopUntil||"",stopUnknown:m.stopped?false:m.stopUnknown});});}
+  function updateStopDetail(gId,mId,field,val){mapMember(gId,mId,function(m){var u={};u[field]=val;return Object.assign({},m,u);});}
+  function saveColleague(gId){updateGroups(function(prev){return prev.map(function(g){if(g.id!==gId)return g;return Object.assign({},g,{colleague:editColleague});});});setExpandedEdit(null);}
+  function deleteGroup(gId){updateGroups(function(prev){return sortG(prev.filter(function(g){return g.id!==gId;}));});setExpandedGroup(null);}
+  function addGroup(){if(!newGroup.time.trim()||!newGroup.colleague.trim())return;updateGroups(function(prev){return sortG(prev.concat([{id:stamp(),day:newGroup.day,time:newGroup.time.trim(),colleague:newGroup.colleague.trim(),members:[]}]));});setNewGroup({day:"Maandag",time:"",colleague:""});setShowAddGroup(false);}
+  function addWaitlist(){
+    if(!wlForm.naam.trim())return;
+    var entry={naam:wlForm.naam.trim(),availability:wlForm.availability,referrer:wlForm.referrer,referrerOther:wlForm.referrerOther,note:wlForm.note};
+    if(wlEditId!==null){updateWaitlist(function(prev){return prev.map(function(w){if(w.id!==wlEditId)return w;return Object.assign({},w,entry);});});setWlEditId(null);}
+    else{updateWaitlist(function(prev){return prev.concat([Object.assign({id:stamp(),date:stamp()},entry)]);});}
+    setWlForm({naam:"",availability:{},referrer:"",referrerOther:"",note:""});
+  }
+  function removeWaitlist(id){updateWaitlist(function(prev){return prev.filter(function(w){return w.id!==id;});});if(wlEditId===id){setWlEditId(null);setWlForm({naam:"",availability:{},referrer:"",referrerOther:"",note:""}); }}
+  function startEditWl(w){setWlEditId(w.id);setWlForm({naam:w.naam||"",availability:w.availability||{},referrer:w.referrer||"",referrerOther:w.referrerOther||"",note:w.note||""});}
+  function toggleAvail(day,time){setWlForm(function(prev){var a=JSON.parse(JSON.stringify(prev.availability||{}));if(!a[day])a[day]={};a[day][time]=!a[day][time];return Object.assign({},prev,{availability:a});});}
+  function applyDaypart(dp){setWlForm(function(prev){var avail=JSON.parse(JSON.stringify(prev.availability||{}));var tp=[];for(var i=0;i<groups.length;i++){var g=groups[i];var p=g.time.split(":");var tm=parseInt(p[0],10)*60+parseInt(p[1],10);var match=false;if(dp==="vroeg"&&tm<=7*60+35)match=true;if(dp==="ochtend"&&tm>7*60+35&&tm<12*60)match=true;if(dp==="avond"&&tm>=18*60)match=true;if(match)tp.push({day:g.day,time:g.time});}var allOn=tp.every(function(t){return avail[t.day]&&avail[t.day][t.time];});for(var j=0;j<tp.length;j++){var t=tp[j];if(!avail[t.day])avail[t.day]={};avail[t.day][t.time]=!allOn;}return Object.assign({},prev,{availability:avail});});}
+  function availSummary(av){if(!av)return"";var parts=[];for(var di=0;di<DAY_ORDER.length;di++){var day=DAY_ORDER[di];if(!av[day])continue;var times=Object.keys(av[day]).filter(function(t){return av[day][t];});if(times.length>0)parts.push(day.substring(0,2)+": "+times.join(", "));}return parts.join(" | ");}
+
+  var activeDays=DAY_ORDER.filter(function(day){return groups.some(function(g){return g.day===day;});});
+  var displayed=filterFree?groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<MAX;}):groups;
+  var totalActive=groups.reduce(function(a,g){return a+g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;},0);
+  var totalStopped=groups.reduce(function(a,g){return a+g.members.filter(function(m){return m.stopped;}).length;},0);
+  var totalReserved=groups.reduce(function(a,g){return a+g.members.filter(function(m){return m.reserved;}).length;},0);
+  var notifs=calcNotifs(groups,waitlist,MAX);
+  var permNotifs=notifs.filter(function(n){return !n.onlyTemp;});
+  var tempNotifs=notifs.filter(function(n){return n.onlyTemp;});
+
+  var inp={flex:1,minWidth:80,padding:"6px 9px",border:"1px solid #ddd",borderRadius:6,fontSize:13};
+  var formInp={width:"100%",padding:"7px 10px",border:"1px solid #ddd",borderRadius:6,fontSize:14,boxSizing:"border-box"};
+  var lbl={fontSize:12,fontWeight:600,color:"#666",marginBottom:3,display:"block"};
+  var addBtn={padding:"6px 13px",background:BRAND.orange,color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:13,fontWeight:600};
+  var wlEditBtn={padding:"5px 11px",background:accentLight,color:accentColor,border:"1px solid "+accentColor,borderRadius:6,cursor:"pointer",fontSize:12};
+  var wlRemoveBtn={padding:"5px 11px",background:"#fdecea",color:BRAND.red,border:"1px solid "+BRAND.red,borderRadius:6,cursor:"pointer",fontSize:12};
+
+  return (
+    <div>
+      <div style={{padding:"10px 16px",background:accentLight,borderBottom:"1px solid #ddd",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+        <span style={{fontSize:13,color:accentColor,fontWeight:600}}>{totalActive+" actief"+(totalStopped>0?" · "+totalStopped+" gestopt":"")+(totalReserved>0?" · "+totalReserved+" gereserveerd":"")+" · "+waitlist.length+" op wachtlijst"}</span>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {saveStatus?<span style={{fontSize:12,color:accentColor,fontStyle:"italic"}}>{saveStatus}</span>:null}
+          <button onClick={manualSave} style={{padding:"5px 12px",background:accentColor,color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:13}}>💾 Opslaan</button>
+        </div>
+      </div>
+
+      {(permNotifs.length>0||tempNotifs.length>0)&&(
+        <div style={{padding:"10px 16px 0"}}>
+          {permNotifs.length>0&&<div style={{background:BRAND.successLight,border:"1px solid "+BRAND.successGreen,borderRadius:8,padding:"9px 14px",marginBottom:7}}><div style={{fontWeight:600,color:BRAND.successGreen,marginBottom:3,fontSize:13}}>✅ Vaste plekken vrij — wachtlijst-matches</div>{permNotifs.map(function(n,i){return <div key={i} style={{fontSize:12,color:BRAND.green,marginBottom:2}}><strong>{n.group}</strong>{" ("+n.plekInfo+") — "+n.matches.join(", ")}</div>;})}</div>}
+          {tempNotifs.length>0&&<div style={{background:BRAND.tempBg,border:"1px solid "+BRAND.tempBorder,borderRadius:8,padding:"9px 14px",marginBottom:7}}><div style={{fontWeight:600,color:BRAND.tempText,marginBottom:3,fontSize:13}}>🕐 Tijdelijke plekken vrij — wachtlijst-matches</div>{tempNotifs.map(function(n,i){return <div key={i} style={{fontSize:12,color:BRAND.tempText,marginBottom:2}}><strong>{n.group}</strong>{" ("+n.plekInfo+") — "+n.matches.join(", ")}</div>;})}</div>}
+        </div>
+      )}
+
+      <div style={{display:"flex",gap:8,padding:"10px 16px 0"}}>
+        {["groups","waitlist"].map(function(t){return <button key={t} onClick={function(){setTab(t);}} style={{padding:"7px 18px",borderRadius:20,border:"none",cursor:"pointer",fontSize:13,fontWeight:500,background:tab===t?accentColor:"#f5f5f3",color:tab===t?"#fff":"#1a1a1a"}}>{t==="groups"?"Groepen":"Wachtlijst ("+waitlist.length+")"}</button>;})}
+      </div>
+
+      {tab==="groups"&&(
+        <div style={{padding:"12px 16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,flexWrap:"wrap"}}>
+            {[false,true].map(function(val){var active=filterFree===val;return <button key={String(val)} onClick={function(){setFilterFree(val);}} style={{padding:"5px 12px",borderRadius:16,border:"1px solid "+(active?accentColor:"#ddd"),background:active?accentLight:"#fff",color:active?accentColor:"#666",cursor:"pointer",fontSize:12,fontWeight:active?600:400}}>{val?"Alleen met vrije plek":"Alle groepen"}</button>;})}
+            <span style={{marginLeft:"auto",fontSize:12,color:"#666"}}>{groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<MAX;}).length+" / "+groups.length+" groepen hebben plek"}</span>
+            <button onClick={function(){setShowAddGroup(!showAddGroup);}} style={{padding:"5px 12px",background:BRAND.orange,color:"#fff",border:"none",borderRadius:16,cursor:"pointer",fontSize:12,fontWeight:600}}>+ Groep</button>
+          </div>
+
+          {showAddGroup&&(
+            <div style={{background:"#f5f5f3",border:"1px solid #ddd",borderRadius:10,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:13,fontWeight:600,color:accentColor,marginBottom:8}}>Nieuwe groep</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"flex-end"}}>
+                <div><div style={lbl}>Dag</div><select style={{padding:"6px 8px",border:"1px solid #ddd",borderRadius:6,fontSize:13}} value={newGroup.day} onChange={function(e){setNewGroup(function(p){return Object.assign({},p,{day:e.target.value});});}}>{DAY_ORDER.map(function(d){return <option key={d} value={d}>{d}</option>;})}</select></div>
+                <div><div style={lbl}>Tijd</div><input style={{width:75,padding:"6px 8px",border:"1px solid #ddd",borderRadius:6,fontSize:13}} placeholder="19:00" value={newGroup.time} onChange={function(e){setNewGroup(function(p){return Object.assign({},p,{time:e.target.value});});}} /></div>
+                <div style={{flex:1,minWidth:120}}><div style={lbl}>Fysiotherapeut</div><input style={formInp} placeholder="Naam" value={newGroup.colleague} onChange={function(e){setNewGroup(function(p){return Object.assign({},p,{colleague:e.target.value});});}} /></div>
+                <button style={addBtn} onClick={addGroup}>Toevoegen</button>
+                <button style={{padding:"6px 10px",background:"#fff",color:"#666",border:"1px solid #ddd",borderRadius:6,cursor:"pointer",fontSize:13}} onClick={function(){setShowAddGroup(false);}}>Annuleren</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat("+activeDays.length+", 1fr)",gap:10}}>
+            {activeDays.map(function(day){
+              var dayGroups=displayed.filter(function(g){return g.day===day;});
+              return (
+                <div key={day}>
+                  <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1,color:accentColor,marginBottom:6,paddingBottom:3,borderBottom:"2px solid "+accentColor}}>{day}</div>
+                  {dayGroups.length===0&&<div style={{fontSize:11,color:"#666",fontStyle:"italic"}}>Geen groepen</div>}
+                  {dayGroups.map(function(g){
+                    var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;
+                    var sc=g.members.filter(function(m){return m.stopped;}).length;
+                    var rc=g.members.filter(function(m){return m.reserved;}).length;
+                    var st=gStatus(ac,sc,rc,MAX);
+                    var bc=st==="full"?BRAND.grayBorder:st==="temp"?BRAND.tempBorder:BRAND.successGreen;
+                    var hbg=st==="full"?BRAND.gray:st==="temp"?BRAND.tempBg:BRAND.successLight;
+                    var hb=st==="full"?BRAND.grayBorder:st==="temp"?BRAND.tempBorder:"#b7e4c7";
+                    var tc=st==="full"?BRAND.grayText:st==="temp"?BRAND.tempText:BRAND.green;
+                    var pb=st==="full"?BRAND.grayBorder:st==="temp"?BRAND.tempBorder:BRAND.successGreen;
+                    var pc=st==="full"?BRAND.grayText:st==="temp"?BRAND.tempText:"#fff";
+                    var lc=st==="full"?BRAND.grayText:st==="temp"?BRAND.tempText:BRAND.successGreen;
+                    var open=expandedGroup===g.id;
+                    var rf=reserveForm[g.id]||{naam:"",from:""};
+                    return (
+                      <div key={g.id} style={{background:"#fff",border:"1.5px solid "+bc,borderRadius:10,overflow:"hidden",marginBottom:8}}>
+                        <div style={{background:hbg,padding:"9px 11px 7px",borderBottom:"1px solid "+hb,cursor:"pointer"}} onClick={function(){setExpandedGroup(open?null:g.id);setExpandedEdit(null);}}>
+                          <div style={{fontSize:15,fontWeight:700,color:tc,marginBottom:1}}>{g.time}</div>
+                          <div style={{fontSize:11,color:"#666"}}>{g.colleague}</div>
+                        </div>
+                        <div style={{padding:"7px 11px",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}} onClick={function(){setExpandedGroup(open?null:g.id);setExpandedEdit(null);}}>
+                          <span style={{fontSize:11,fontWeight:600,padding:"2px 7px",borderRadius:10,background:pb,color:pc}}>{ac+"/"+MAX+(rc>0?" (+"+rc+"📌)":"")}</span>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
+                            <span style={{fontSize:10,color:lc,fontWeight:600,textAlign:"right"}}>{st==="full"?"Vol":plekLabel(ac,sc,rc,MAX)}</span>
+                            {sc>0&&<span style={{fontSize:9,color:BRAND.orange}}>{"⏸ "+sc}</span>}
+                          </div>
+                          <span style={{fontSize:13,color:"#666"}}>{open?"▲":"▼"}</span>
+                        </div>
+
+                        {open&&(
+                          <div style={{background:"#f5f5f3",borderTop:"1px solid #ddd",padding:11}}>
+                            {expandedEdit===g.id?(
+                              <div style={{marginBottom:10}}>
+                                <div style={lbl}>Fysiotherapeut</div>
+                                <div style={{display:"flex",gap:6}}>
+                                  <input style={{...inp,flex:1}} value={editColleague} onChange={function(e){setEditColleague(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")saveColleague(g.id);}} />
+                                  <button style={{padding:"5px 9px",background:accentColor,color:"#fff",border:"none",borderRadius:6,cursor:"pointer",fontSize:13}} onClick={function(){saveColleague(g.id);}}>✓</button>
+                                  <button style={{background:"none",border:"none",cursor:"pointer",color:BRAND.red,fontSize:15}} onClick={function(){setExpandedEdit(null);}}>✕</button>
+                                </div>
+                              </div>
+                            ):(
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                                <span style={{fontSize:10,color:"#666",fontWeight:600}}>DEELNEMERS</span>
+                                <div style={{display:"flex",gap:4}}>
+                                  <button style={{...wlEditBtn,fontSize:10,padding:"2px 6px"}} onClick={function(){setExpandedEdit(g.id);setEditColleague(g.colleague);}}>✏</button>
+                                  <button style={{fontSize:10,padding:"2px 6px",background:"#fdecea",color:BRAND.red,border:"1px solid "+BRAND.red,borderRadius:6,cursor:"pointer"}} onClick={function(){if(window.confirm("Groep verwijderen?"))deleteGroup(g.id);}}>🗑</button>
+                                </div>
+                              </div>
+                            )}
+
+                            {g.members.length===0&&<div style={{fontSize:11,color:"#666",marginBottom:6}}>Nog geen deelnemers.</div>}
+                            {g.members.map(function(m){
+                              if(m.reserved){
+                                return (
+                                  <div key={m.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 0",borderBottom:"1px solid #ddd",background:"#f8f4ff"}}>
+                                    <span style={{fontSize:11}}>📌</span>
+                                    <span style={{flex:1,fontSize:12,fontWeight:500,color:BRAND.purple,fontStyle:"italic"}}>{m.naam}{m.reservedFrom?" (v.a. "+fmtDate(m.reservedFrom)+")":""}</span>
+                                    <span style={{fontSize:10,padding:"1px 6px",borderRadius:8,background:BRAND.purpleLight,color:BRAND.purple,border:"1px solid "+BRAND.purple,fontWeight:600}}>Gereserveerd</span>
+                                    <button style={{background:"none",border:"none",cursor:"pointer",color:BRAND.red,fontSize:13,padding:"0 2px"}} onClick={function(){removeMember(g.id,m.id);}}>✕</button>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div key={m.id}>
+                                  <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 0",borderBottom:"1px solid #ddd",opacity:m.stopped?0.65:1}}>
+                                    <span style={{flex:1,fontSize:12,fontWeight:500,textDecoration:m.stopped?"line-through":"none"}}>{m.naam}</span>
+                                    <button style={bStyle(m.betaling||"incasso")} onClick={function(){cycleBetaling(g.id,m.id);}}>{BETALING_LABELS[m.betaling||"incasso"]}</button>
+                                    <button style={{fontSize:10,padding:"2px 5px",borderRadius:8,cursor:"pointer",background:m.stopped?BRAND.orangeLight:"#f5f5f3",color:m.stopped?BRAND.orange:"#666",border:"1px solid "+(m.stopped?BRAND.orange:"#ddd"),fontWeight:600}} onClick={function(){toggleStop(g.id,m.id);}}>⏸</button>
+                                    <button style={{background:"none",border:"none",cursor:"pointer",color:BRAND.red,fontSize:13,padding:"0 2px"}} onClick={function(){removeMember(g.id,m.id);}}>✕</button>
+                                  </div>
+                                  {m.stopped&&(
+                                    <div style={{background:BRAND.orangeLight,border:"1px solid #f0c090",borderRadius:6,padding:"6px 8px",margin:"2px 0 4px"}}>
+                                      <div style={{marginBottom:4}}>
+                                        <div style={{fontSize:10,color:BRAND.orange,fontWeight:600,marginBottom:2}}>REDEN *</div>
+                                        <input style={{width:"100%",padding:"3px 6px",border:"1px solid "+(m.stopReason&&m.stopReason.trim()?"#f0c090":BRAND.red),borderRadius:5,fontSize:11,background:"#fff",boxSizing:"border-box"}} placeholder="verplicht" value={m.stopReason||""} onChange={function(e){updateStopDetail(g.id,m.id,"stopReason",e.target.value);}} />
+                                        {(!m.stopReason||!m.stopReason.trim())&&<div style={{fontSize:10,color:BRAND.red,marginTop:1}}>Verplicht</div>}
+                                      </div>
+                                      <div>
+                                        <div style={{fontSize:10,color:BRAND.orange,fontWeight:600,marginBottom:2}}>TOT WANNEER *</div>
+                                        {!m.stopUnknown&&<input type="date" style={{width:"100%",padding:"3px 6px",border:"1px solid "+(!m.stopUnknown&&!m.stopUntil?BRAND.red:"#f0c090"),borderRadius:5,fontSize:11,background:"#fff",boxSizing:"border-box",marginBottom:3}} value={m.stopUntil||""} onChange={function(e){updateStopDetail(g.id,m.id,"stopUntil",e.target.value);}} />}
+                                        <label style={{display:"flex",alignItems:"center",gap:5,fontSize:11,cursor:"pointer"}}>
+                                          <input type="checkbox" checked={!!m.stopUnknown} onChange={function(e){updateStopDetail(g.id,m.id,"stopUnknown",e.target.checked);if(e.target.checked)updateStopDetail(g.id,m.id,"stopUntil","");}} />
+                                          Onbekend tot wanneer
+                                        </label>
+                                        {!m.stopUnknown&&!m.stopUntil&&<div style={{fontSize:10,color:BRAND.red,marginTop:1}}>Verplicht (of vink 'onbekend' aan)</div>}
+                                      </div>
+                                      {m.stopUntil&&!m.stopUnknown&&<div style={{fontSize:10,color:BRAND.orange,marginTop:3}}>{"t/m "+fmtDate(m.stopUntil)}</div>}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {ac+rc<MAX&&(
+                              <div style={{marginTop:8,borderTop:"1px solid #ddd",paddingTop:8}}>
+                                <div style={{display:"flex",gap:5,marginBottom:6,alignItems:"center",flexWrap:"wrap"}}>
+                                  <input style={inp} placeholder="Naam deelnemer" value={newMember.naam} onChange={function(e){setNewMember(function(p){return Object.assign({},p,{naam:e.target.value});});}} onKeyDown={function(e){if(e.key==="Enter")addMember(g.id);}} />
+                                  <select style={{padding:"4px 6px",border:"1px solid #ddd",borderRadius:6,fontSize:11}} value={newMember.betaling} onChange={function(e){setNewMember(function(p){return Object.assign({},p,{betaling:e.target.value});});}}>
+                                    <option value="incasso">Incasso</option><option value="contant">Contant</option><option value="geen">Geen</option>
+                                  </select>
+                                  <button style={{...addBtn,fontSize:11,padding:"4px 8px"}} onClick={function(){addMember(g.id);}}>+ Toevoegen</button>
+                                </div>
+                                <div style={{display:"flex",gap:5,alignItems:"center",flexWrap:"wrap"}}>
+                                  <input style={inp} placeholder="📌 Naam" value={rf.naam} onChange={function(e){var v=e.target.value;setReserveForm(function(p){var n=Object.assign({},p);n[g.id]=Object.assign({},{naam:"",from:""},rf,{naam:v});return n;});}} />
+                                  <label style={{fontSize:11,color:"#666",whiteSpace:"nowrap"}}>Instroomdatum:</label>
+                                  <input type="date" style={{padding:"4px 6px",border:"1px solid #ddd",borderRadius:6,fontSize:11}} value={rf.from} onChange={function(e){var v=e.target.value;setReserveForm(function(p){var n=Object.assign({},p);n[g.id]=Object.assign({},{naam:"",from:""},rf,{from:v});return n;});}} />
+                                  <button style={{...addBtn,fontSize:11,padding:"4px 8px",background:BRAND.purple}} onClick={function(){addReservation(g.id);}}>📌 Reserveer</button>
+                                </div>
+                              </div>
+                            )}
+                            {ac+rc>=MAX&&<div style={{fontSize:10,color:"#666",marginTop:5,fontWeight:600}}>Groep is vol.</div>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {tab==="waitlist"&&(
+        <div style={{padding:"12px 16px"}}>
+          <div style={{background:"#f5f5f3",border:"1px solid #ddd",borderRadius:10,padding:"14px 16px",marginBottom:14}}>
+            <p style={{fontSize:15,fontWeight:700,color:accentColor,margin:"0 0 10px"}}>{wlEditId!==null?"Bewerken":"Nieuwe aanmelding"}</p>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+              <div style={{flex:1,minWidth:130}}><label style={lbl}>Naam *</label><input style={formInp} placeholder="Voornaam" value={wlForm.naam} onChange={function(e){setWlForm(function(p){return Object.assign({},p,{naam:e.target.value});});}} /></div>
+              <div style={{flex:1,minWidth:180}}>
+                <label style={lbl}>Via wie aangemeld</label>
+                <select style={formInp} value={wlForm.referrer} onChange={function(e){setWlForm(function(p){return Object.assign({},p,{referrer:e.target.value,referrerOther:e.target.value==="anders"?p.referrerOther:""});});}}>
+                  <option value="">— Kies collega —</option>
+                  {COLLEAGUES.map(function(c){return <option key={c} value={c}>{c}</option>;})}
+                  <option value="anders">Anders...</option>
+                </select>
+                {wlForm.referrer==="anders"&&<input style={{...formInp,marginTop:5}} placeholder="Naam" value={wlForm.referrerOther} onChange={function(e){setWlForm(function(p){return Object.assign({},p,{referrerOther:e.target.value});});}} />}
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <label style={lbl}>Beschikbaarheid</label>
+              <div style={{display:"flex",gap:7,marginBottom:7,flexWrap:"wrap"}}>
+                {[["vroeg","🌅 Ochtend vroeg"],["ochtend","☀️ Ochtend"],["avond","🌙 Avond"]].map(function(opt){return <button key={opt[0]} onClick={function(){applyDaypart(opt[0]);}} style={{padding:"5px 11px",borderRadius:16,border:"1px solid "+accentColor,background:accentLight,color:accentColor,cursor:"pointer",fontSize:12}}>{opt[1]}</button>;})}
+                <button onClick={function(){setWlForm(function(p){return Object.assign({},p,{availability:{}});});}} style={{padding:"5px 11px",borderRadius:16,border:"1px solid #ddd",background:"#fff",color:"#666",cursor:"pointer",fontSize:12}}>Wis alles</button>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(130px, 1fr))",gap:7}}>
+                {activeDays.map(function(day){
+                  var dg=groups.filter(function(g){return g.day===day;}).sort(function(a,b){return a.time.localeCompare(b.time);});
+                  if(dg.length===0)return null;
+                  return (
+                    <div key={day} style={{background:"#fff",border:"1px solid #ddd",borderRadius:8,padding:"7px 9px"}}>
+                      <div style={{fontSize:11,fontWeight:600,color:accentColor,marginBottom:4}}>{day}</div>
+                      {dg.map(function(g){var checked=wlForm.availability[day]&&wlForm.availability[day][g.time];return <label key={g.time} style={{display:"flex",alignItems:"center",gap:5,fontSize:12,marginBottom:3,cursor:"pointer"}}><input type="checkbox" checked={!!checked} onChange={function(){toggleAvail(day,g.time);}} />{g.time}</label>;})}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{marginBottom:10}}><label style={lbl}>Notitie</label><input style={formInp} placeholder="opmerkingen" value={wlForm.note} onChange={function(e){setWlForm(function(p){return Object.assign({},p,{note:e.target.value});});}} /></div>
+            <div style={{display:"flex",gap:8}}>
+              <button style={addBtn} onClick={addWaitlist}>{wlEditId!==null?"Opslaan":"+ Toevoegen"}</button>
+              {wlEditId!==null&&<button style={wlEditBtn} onClick={function(){setWlEditId(null);setWlForm({naam:"",availability:{},referrer:"",referrerOther:"",note:""});}}>Annuleren</button>}
+            </div>
+          </div>
+          <p style={{fontSize:14,fontWeight:700,color:accentColor,margin:"0 0 8px"}}>{"Wachtlijst ("+waitlist.length+")"}</p>
+          {waitlist.length===0&&<div style={{color:"#666",fontSize:13}}>Wachtlijst is leeg.</div>}
+          {waitlist.slice().sort(function(a,b){return a.date-b.date;}).map(function(w,i){
+            var ref=w.referrer==="anders"?(w.referrerOther||"anders"):w.referrer;
+            var avail=availSummary(w.availability);
+            return (
+              <div key={w.id} style={{background:"#fff",border:"1px solid #ddd",borderRadius:10,marginBottom:7,padding:"10px 13px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+                  <div><span style={{fontSize:11,color:"#666",marginRight:6}}>{"#"+(i+1)}</span><span style={{fontWeight:600,fontSize:14,color:accentColor}}>{w.naam}</span>{ref&&<span style={{fontSize:11,color:"#666",marginLeft:7}}>{"via "+ref}</span>}</div>
+                  <span style={{fontSize:11,color:"#666"}}>{dateStr(w.date)}</span>
+                </div>
+                {avail&&<div style={{fontSize:12,color:"#666",marginBottom:2}}>{"📅 "+avail}</div>}
+                {w.note&&<div style={{fontSize:12,color:"#666",fontStyle:"italic"}}>{"💬 "+w.note}</div>}
+                <div style={{display:"flex",gap:7,marginTop:6}}>
+                  <button style={wlEditBtn} onClick={function(){startEditWl(w);}}>✏ Bewerken</button>
+                  <button style={wlRemoveBtn} onClick={function(){removeWaitlist(w.id);}}>✕ Verwijderen</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App(){
+  const [mainTab,setMainTab]=useState("ft");
+  const ftMod=useModule(KEYS.ft_groups,KEYS.ft_wl,FT_GROUPS);
+  const baMod=useModule(KEYS.ba_groups,KEYS.ba_wl,BA_GROUPS);
+  return (
+    <div style={{fontFamily:"'Segoe UI',system-ui,sans-serif",color:"#1a1a1a",maxWidth:1000,margin:"0 auto",padding:"0 0 40px"}}>
+      <div style={{background:BRAND.green,color:"#fff",padding:"16px 24px 0",borderRadius:"0 0 12px 12px"}}>
+        <h1 style={{margin:"0 0 12px",fontSize:19,fontWeight:600}}>Fyzio Totaal — Groepsbeheer</h1>
+        <div style={{display:"flex",gap:4}}>
+          <button onClick={function(){setMainTab("ft");}} style={{padding:"8px 22px",borderRadius:"10px 10px 0 0",border:"none",cursor:"pointer",fontSize:14,fontWeight:600,background:mainTab==="ft"?"#fff":BRAND.greenMid,color:mainTab==="ft"?BRAND.green:"rgba(255,255,255,0.8)"}}>🏃 Fyziotraining</button>
+          <button onClick={function(){setMainTab("ba");}} style={{padding:"8px 22px",borderRadius:"10px 10px 0 0",border:"none",cursor:"pointer",fontSize:14,fontWeight:600,background:mainTab==="ba"?"#fff":BRAND.greenMid,color:mainTab==="ba"?BRAND.blue:"rgba(255,255,255,0.8)"}}>⚖️ Balance</button>
+        </div>
+      </div>
+      <div style={{border:"1px solid #ddd",borderTop:"none",borderRadius:"0 0 12px 12px",overflow:"hidden",background:"#fff"}}>
+        {mainTab==="ft"&&<ModuleView mod={ftMod} MAX={FT_MAX} accentColor={BRAND.green} accentLight={BRAND.greenLight} />}
+        {mainTab==="ba"&&<ModuleView mod={baMod} MAX={BA_MAX} accentColor={BRAND.blue} accentLight={BRAND.blueLight} />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
+</body>
+</html>
