@@ -71,21 +71,25 @@
       .days-scroll-wrap { overflow-x: visible; cursor: default; }
       .days-grid { grid-auto-columns: 1fr; width: 100%; }
     }
-    /* Scroll-hint schaduw rechts als er meer te zien is */
-    .days-scroll-hint {
+    /* Scroll-hint: outer wrapper is relatief, pseudo-element staat vast */
+    .days-scroll-outer {
       position: relative;
     }
-    .days-scroll-hint::after {
+    .days-scroll-outer::after {
       content: '';
       position: absolute;
       top: 0; right: 0; bottom: 6px;
-      width: 32px;
-      background: linear-gradient(to right, transparent, rgba(240,240,238,0.9));
+      width: 36px;
+      background: linear-gradient(to right, transparent, rgba(240,240,238,0.92));
       pointer-events: none;
       border-radius: 0 8px 8px 0;
       transition: opacity .3s;
+      z-index: 5;
     }
-    .days-scroll-hint.no-hint::after { opacity: 0; }
+    .days-scroll-outer.no-hint::after { opacity: 0; }
+    @media (min-width: 900px) {
+      .days-scroll-outer::after { display: none; }
+    }
 
     /* Snap per kolom */
     .days-grid > div {
@@ -439,19 +443,20 @@ function buildModule(mod,MAX,accent,accentLight){
     var displayed=S.filterFree?groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<MAX;}):groups;
 
     // Dagen grid met swipe-scroll wrapper
-    var scrollWrap=el("div",{className:"days-scroll-wrap days-scroll-hint"});
+    var outerWrap=el("div",{className:"days-scroll-outer"});
+    var scrollWrap=el("div",{className:"days-scroll-wrap"});
     var grid=el("div",{className:"days-grid"});
     scrollWrap.appendChild(grid);
+    outerWrap.appendChild(scrollWrap);
 
-    // Verberg scroll-hint schaduw als volledig gescrolled
+    // Schaduw op outerWrap (staat vast), listener op scrollWrap
     setTimeout(function(){
       scrollWrap.addEventListener("scroll",function(){
         var atEnd=scrollWrap.scrollLeft+scrollWrap.clientWidth>=scrollWrap.scrollWidth-4;
-        if(atEnd)scrollWrap.classList.add("no-hint");
-        else scrollWrap.classList.remove("no-hint");
+        if(atEnd)outerWrap.classList.add("no-hint");
+        else outerWrap.classList.remove("no-hint");
       });
-      // Direct checken: als alles al zichtbaar is, geen hint
-      if(scrollWrap.scrollWidth<=scrollWrap.clientWidth)scrollWrap.classList.add("no-hint");
+      if(scrollWrap.scrollWidth<=scrollWrap.clientWidth)outerWrap.classList.add("no-hint");
     },0);
 
     activeDays.forEach(function(day){
@@ -604,7 +609,7 @@ function buildModule(mod,MAX,accent,accentLight){
       });
       grid.appendChild(col);
     });
-    gWrap.appendChild(scrollWrap);
+    gWrap.appendChild(outerWrap);
     wrap.appendChild(gWrap);
   }
 
