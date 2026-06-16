@@ -31,7 +31,10 @@
 - Wees secuur in formulering en structuur
 - Antwoord altijd direct, geen inleiding of nawoord
 - Gebruik géén witregels tussen onderdelen van de KLACHT
-- Vermijd woorden als: thans, aanvankelijk, initieel, intermitterend, persisterend, effusie
+- Vermijd woorden als: thans, aanvankelijk, initieel, intermitterend, persisterend, effusie, restsensitiviteit
+- Schrijf zoals je tegen een collega zou praten: geen formeel of ouderwets Nederlands. Gebruik gewone spreektaal waar mogelijk, bijv. "pt ervaart nog lichte pijnklachten" in plaats van "er is sprake van restsensitiviteit"
+- Gebruik vakjargon en anatomische termen waar logisch (ventraal, lateraal, m. supraspinatus, etc.)
+- Gebruik alleen gangbare afkortingen die direct begrijpelijk zijn (HA, ADL, mn, pcm). Niet alles afkorten.
 
 Genereer ALLEEN de onderdelen K t/m C (NIET de H). Format:
 K: [aard van de klacht: type pijn, uitstraling, verloop, duur; relevante medische onderzoeken/bevindingen indien vermeld]
@@ -277,7 +280,7 @@ Richtlijnen:
             </div>
 
             <div style={{ display: "flex", alignItems: "center", marginBottom: "2rem" }}>
-              {["Anamnese", "H & T invullen", "Output"].map((s, i) => (
+              {steps.map((s, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 2 ? 1 : "none" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{
@@ -357,10 +360,8 @@ Richtlijnen:
 
                   <ModeCard selected={tMode === T_MODE_INTAKE} onClick={() => { setTMode(T_MODE_INTAKE); setTErrors({}); }}
                     label="Alleen intake, geen vervolg" desc="Patiënt komt niet terug voor behandeling" />
-
                   <ModeCard selected={tMode === T_MODE_DIAGNOSTIC} onClick={() => { setTMode(T_MODE_DIAGNOSTIC); setTErrors({}); }}
                     label="Diagnostisch vervolg" desc="bijv. performance analyse, meting, verwijzing voor aanvullend onderzoek" />
-
                   <ModeCard selected={tMode === T_MODE_MANUAL} onClick={() => { setTMode(T_MODE_MANUAL); setTErrors({}); }}
                     label="Zelf invullen" desc="Handmatig frequentie en evaluatie opgeven" />
 
