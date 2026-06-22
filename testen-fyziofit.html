@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitheidstest - Fyzio Totaal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  :root {
+    --groen:#1a4a3a; --groen-mid:#2d6b55; --groen-licht:#e8f2ee;
+    --oranje:#e8611a; --oranje-licht:#fdf0e8;
+    --tekst:#1a1a1a; --tekst-zacht:#555; --border:#dde8e4; --wit:#fff;
+    --rood:#c0392b; --rood-licht:#fdf0ee; --geel:#f39c12;
+    --radius:10px; --shadow:0 2px 8px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Inter,sans-serif;background:#f4f7f5;color:var(--tekst);min-height:100vh}
+  header{background:var(--groen);color:#fff;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  header h1{font-size:1.1rem;font-weight:600}
+  header span{font-size:.85rem;opacity:.7}
+  .header-badge{margin-left:auto;background:var(--oranje);color:#fff;padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;display:none}
+  #startscherm{max-width:500px;margin:60px auto;padding:0 20px}
+  .start-card{background:#fff;border-radius:var(--radius);padding:32px;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .start-card h2{font-size:1.3rem;color:var(--groen);margin-bottom:8px}
+  .start-card p{color:var(--tekst-zacht);font-size:.9rem;margin-bottom:24px;line-height:1.5}
+  .input-group{margin-bottom:16px}
+  .input-group label{display:block;font-size:.85rem;font-weight:600;color:var(--groen);margin-bottom:6px}
+  .input-group input,.input-group select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem;font-family:inherit;transition:border-color .2s}
+  .input-group input:focus,.input-group select:focus{outline:none;border-color:var(--groen-mid)}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+  .btn-primary{background:var(--groen);color:#fff;width:100%;justify-content:center;padding:12px;font-size:1rem}
+  .btn-primary:hover{background:var(--groen-mid)}
+  .btn-secondary{background:var(--groen-licht);color:var(--groen);border:1.5px solid var(--border)}
+  .btn-secondary:hover{background:var(--border)}
+  .btn-oranje{background:var(--oranje);color:#fff}
+  .btn-oranje:hover{background:#c94e10}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  #app{display:none}
+  .app-container{max-width:800px;margin:0 auto;padding:20px 16px 100px}
+  .deelnemer-balk{background:var(--groen);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;font-size:.85rem;margin-bottom:20px;border-radius:var(--radius)}
+  .deelnemer-balk strong{font-size:1rem}
+  .deelnemer-balk button{background:rgba(255,255,255,.15);border:none;color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:inherit}
+  .deelnemer-balk button:hover{background:rgba(255,255,255,.25)}
+  .progress-label{display:flex;justify-content:space-between;font-size:.75rem;color:var(--tekst-zacht);margin-bottom:6px}
+  .progress-bar{background:var(--border);border-radius:4px;height:6px;margin-bottom:20px;overflow:hidden}
+  .progress-fill{background:var(--oranje);height:100%;border-radius:4px;transition:width .4s}
+  .sectie-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px;overflow:hidden}
+  .sectie-header{background:var(--groen);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}
+  .sectie-header h3{font-size:1rem;font-weight:600}
+  .sectie-nr{background:rgba(255,255,255,.2);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
+  .sectie-body{padding:20px}
+  .test-item{border:1.5px solid var(--border);border-radius:8px;margin-bottom:14px;overflow:hidden}
+  .test-item:last-child{margin-bottom:0}
+  .test-naam{background:var(--groen-licht);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+  .test-naam strong{font-size:.9rem;color:var(--groen)}
+  .test-naam .chevron{font-size:.75rem;color:var(--groen-mid);transition:transform .2s}
+  .test-naam.open .chevron{transform:rotate(180deg)}
+  .test-instructie{background:#fffbf5;border-top:1px solid #f0e0cc;border-bottom:1px solid var(--border);padding:12px 14px;font-size:.82rem;color:#7a5a30;line-height:1.6;display:none}
+  .test-instructie.zichtbaar{display:block}
+  .test-instructie strong{color:#5a3a10}
+  .test-invoer{padding:14px}
+  .radio-groep{display:flex;gap:8px;flex-wrap:wrap}
+  .radio-knop input{display:none}
+  .radio-knop label{display:inline-block;padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:.85rem;cursor:pointer;transition:all .15s;color:var(--tekst-zacht)}
+  .radio-knop input:checked+label{background:var(--groen);color:#fff;border-color:var(--groen)}
+  .radio-knop.goed input:checked+label{background:#27ae60;border-color:#27ae60}
+  .radio-knop.matig input:checked+label{background:var(--geel);border-color:var(--geel);color:#fff}
+  .radio-knop.slecht input:checked+label{background:var(--rood);border-color:var(--rood)}
+  .score-rij{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .score-rij.enkel{grid-template-columns:1fr}
+  .score-veld label{display:block;font-size:.78rem;font-weight:600;color:var(--tekst-zacht);margin-bottom:4px}
+  .score-veld input,.score-veld select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.9rem;font-family:inherit}
+  .score-veld input:focus,.score-veld select:focus{outline:none;border-color:var(--groen-mid)}
+  .score-badge{display:none;margin-top:5px;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700}
+  .score-badge.goed{background:#e8f5e9;color:#27ae60;display:inline-block}
+  .score-badge.matig{background:#fef9e7;color:#e67e22;display:inline-block}
+  .score-badge.zwak{background:var(--rood-licht);color:var(--rood);display:inline-block}
+  .score-badge.top{background:#e8f5f0;color:#1a6a4a;display:inline-block}
+  .norm-tekst{font-size:.75rem;color:var(--tekst-zacht);margin-top:4px;font-style:italic}
+  .opmerkingen label{display:block;font-size:.78rem;font-weight:600;color:var(--tekst-zacht);margin-bottom:4px;margin-top:10px}
+  .opmerkingen textarea,.opmerkingen input{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.85rem;font-family:inherit;resize:vertical;min-height:55px}
+  .opmerkingen input{min-height:auto;resize:none}
+  .toggle-optie{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--oranje-licht);border-radius:6px;border:1px solid #f0d0bb;font-size:.82rem;color:#7a3510}
+  .toggle-optie select{border:1px solid #f0d0bb;background:#fff;border-radius:4px;padding:3px 8px;font-size:.82rem;font-family:inherit;color:var(--tekst)}
+  .verslag-upload{border:2px dashed var(--border);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
+  .verslag-upload:hover{border-color:var(--groen-mid);background:var(--groen-licht)}
+  .verslag-upload.geladen{border-color:var(--groen);background:var(--groen-licht)}
+  .verslag-upload p{font-size:.85rem;color:var(--tekst-zacht);margin-top:6px}
+  .verslag-upload .icon{font-size:1.8rem}
+  .melding{padding:12px 16px;border-radius:8px;font-size:.85rem;margin-bottom:16px;display:none}
+  .melding.zichtbaar{display:block}
+  .melding.succes{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+  .melding.fout{background:var(--rood-licht);color:var(--rood);border:1px solid #f0c0bb}
+  .melding.laden{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+  .actie-balk{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+  .opgeslagen-badge{display:none;align-items:center;gap:4px;font-size:.75rem;color:#27ae60;font-weight:600}
+  .opgeslagen-badge.zichtbaar{display:flex}
+  .loader{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #rapport-preview{background:#fff;border-radius:var(--radius);padding:0;box-shadow:var(--shadow);border:1px solid var(--border);margin-top:24px;display:none;overflow:hidden}
+  .rapport-kop{background:var(--groen);color:#fff;padding:20px 28px}
+  .rapport-kop h2{font-size:1.15rem;font-weight:600;margin-bottom:4px}
+  .rapport-kop .rapport-meta{font-size:.8rem;opacity:.75}
+  .rapport-inhoud{padding:24px 28px}
+  #rapport-weergave{font-size:.9rem;line-height:1.8;color:var(--tekst)}
+  #rapport-edit{width:100%;min-height:500px;padding:12px;border:1.5px solid var(--border);border-radius:6px;font-size:.88rem;line-height:1.75;font-family:inherit;resize:vertical;display:none}
+  .rapport-acties{display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap}
+  @media(max-width:500px){
+    .score-rij{grid-template-columns:1fr}
+    .actie-balk,.rapport-acties{flex-direction:column}
+    .actie-balk .btn,.rapport-acties .btn{width:100%;justify-content:center}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div><h1>Fitheidstest</h1><span>Fyzio Totaal</span></div>
+  <div class="header-badge" id="header-badge"></div>
+</header>
+
+<div id="startscherm">
+  <div class="start-card">
+    <h2>Testregistratie starten</h2>
+    <p>Voer het patiëntnummer in om te beginnen. Eerder opgeslagen gegevens worden automatisch geladen.</p>
+    <div class="input-group"><label>Patiëntnummer (cijfers)</label><input type="text" id="input-pnr" placeholder="bijv. 12345" maxlength="6" inputmode="numeric"></div>
+    <div class="input-group"><label>Voornaam</label><input type="text" id="input-naam" placeholder="Voornaam"></div>
+    <div class="input-group"><label>Testdatum</label><input type="date" id="input-datum"></div>
+    <div class="input-group"><label>Geslacht</label><select id="input-geslacht"><option value="">selecteer</option><option value="man">Man</option><option value="vrouw">Vrouw</option></select></div>
+    <div class="input-group"><label>Leeftijd</label><input type="number" id="input-leeftijd" placeholder="48" min="18" max="99"></div>
+    <div class="input-group"><label>Tester</label><input type="text" id="input-tester" placeholder="Naam tester"></div>
+    <div id="start-melding" class="melding"></div>
+    <button class="btn btn-primary" onclick="startSessie()">Starten</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="app-container">
+    <div class="deelnemer-balk">
+      <div><div style="font-size:.75rem;opacity:.7">Deelnemer</div><strong id="balk-naam">-</strong><span style="opacity:.6;margin-left:8px;font-size:.8rem" id="balk-pnr"></span></div>
+      <button onclick="nieuweDeelnemer()">Wissel</button>
+    </div>
+    <div class="progress-label"><span id="progress-tekst">Voortgang</span><span id="progress-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div id="melding-opslaan" class="melding"></div>
+
+    <!-- 1 LICHAAMSMATEN -->
+    <div class="sectie-card">
+      <div class="sectie-header"><div class="sectie-nr">1</div><h3>Lichaamsmaten</h3></div>
+      <div class="sectie-body">
+        <p style="font-size:.8rem;color:var(--tekst-zacht);margin-bottom:14px">Altijd als eerste meten, in volledige rust.</p>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Lengte en Gewicht</strong><span class="chevron">v</span></div>
+          <div class="test-instructie"><strong>Lengte:</strong> Meten zonder schoenen, hielen tegen de muur, hoofd recht.<br><strong>Gewicht:</strong> Meten zonder schoenen, bij voorkeur steeds dezelfde weegschaal.</div>
+          <div class="test-invoer">
+            <div class="score-rij">
+              <div class="score-veld"><label>Lengte (cm)</label><input type="number" id="lengte" placeholder="175" step="0.5"></div>
+              <div class="score-veld"><label>Gewicht (kg)</label><input type="number" id="gewicht" placeholder="82" step="0.1"></div>
+            </div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Buikomvang</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Meten op het smalste punt van de romp, halverwege de onderste rib en de bekkenkam. Meet aan het einde van een normale uitademing, niet inzuigen.<br><br><strong>Norm vrouwen:</strong> gezond &lt;80 cm / verhoogd 80-88 cm / te hoog &gt;88 cm<br><strong>Norm mannen:</strong> gezond &lt;94 cm / verhoogd 94-102 cm / te hoog &gt;102 cm</div>
+          <div class="test-invoer">
+            <div class="score-rij enkel">
+              <div class="score-veld"><label>Buikomvang (cm)</label><input type="number" id="buikomvang" placeholder="88" step="0.5" oninput="updateNormBuik()"><div class="norm-tekst" id="norm-buik"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 MOBILITEIT -->
+    <div class="sectie-card">
+      <div class="sectie-header"><div class="sectie-nr">2</div><h3>Mobiliteit <span style="font-size:.78rem;opacity:.8;font-weight:400">(tevens warming-up)</span></h3></div>
+      <div class="sectie-body">
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Wall Angels</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Deelnemer staat met rug, billen, achterhoofd en armen plat tegen de muur. Armen in W-positie (ellebogen op 90 graden). Schuif de armen omhoog langs de muur naar een Y-positie zonder dat rug, achterhoofd of polsen loskomen.<br><br><strong>Let op:</strong> loskomen van de onderrug, polsen of handen naarmate de armen stijgen.</div>
+          <div class="test-invoer">
+            <div class="radio-groep">
+              <div class="radio-knop goed"><input type="radio" name="wall_angels" id="wa_goed" value="Goed"><label for="wa_goed">Goed</label></div>
+              <div class="radio-knop matig"><input type="radio" name="wall_angels" id="wa_matig" value="Matig"><label for="wa_matig">Matig</label></div>
+              <div class="radio-knop slecht"><input type="radio" name="wall_angels" id="wa_slecht" value="Slecht"><label for="wa_slecht">Slecht</label></div>
+            </div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="wall_angels_opm" placeholder="Geobserveerde compensaties..."></textarea></div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Overhead Squat</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Voeten op schouderbreedte, PVC-buis boven het hoofd (armen gestrekt). Volledige squat maken terwijl de stok boven het hoofd blijft.<br><br><strong>Let op:</strong> knieen zakken naar binnen, hakken los van de grond, romp te ver naar voren vallen, armen naar voren zakken.</div>
+          <div class="test-invoer">
+            <div class="radio-groep">
+              <div class="radio-knop goed"><input type="radio" name="overhead_squat" id="ohs_goed" value="Goed"><label for="ohs_goed">Goed</label></div>
+              <div class="radio-knop matig"><input type="radio" name="overhead_squat" id="ohs_matig" value="Matig"><label for="ohs_matig">Matig</label></div>
+              <div class="radio-knop slecht"><input type="radio" name="overhead_squat" id="ohs_slecht" value="Slecht"><label for="ohs_slecht">Slecht</label></div>
+            </div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="overhead_squat_opm" placeholder="Geobserveerde compensaties..."></textarea></div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Sit en Reach</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Deelnemer zit op de grond met gestrekte benen, voeten plat tegen de meetbox. Beide handen op elkaar, langzaam zo ver mogelijk naar voren reiken zonder de knieen te buigen. Houd 2 seconden vast.<br><br><strong>Score:</strong> afstand ten opzichte van de voeten in cm (+ = voorbij de tenen, - = voor de tenen).<br><strong>Voorzichtig bij actuele lage rugklachten.</strong></div>
+          <div class="test-invoer">
+            <div class="score-rij enkel"><div class="score-veld"><label>Score (cm)</label><input type="number" id="sit_reach" placeholder="bijv. 8 of -3" step="0.5"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 KRACHT -->
+    <div class="sectie-card">
+      <div class="sectie-header"><div class="sectie-nr">3</div><h3>Kracht</h3></div>
+      <div class="sectie-body">
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Shoulder Press (8-12 RM)</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Zittend of staand uitstoten tot technisch spierfalen. Kies direct een uitdagend gewicht waarbij spierfalen verwacht wordt binnen 8-12 herhalingen. Als 5 herhalingen te makkelijk gaan, direct verzwaren. Test beide zijden afzonderlijk.<br><br><strong>Norm asymmetrie:</strong> verschil links/rechts mag niet groter zijn dan 15-17%.</div>
+          <div class="test-invoer">
+            <div class="score-rij">
+              <div class="score-veld"><label>Links - herhalingen</label><input type="number" id="sp_hh_li" placeholder="hh" min="0" oninput="updateNormSP()"></div>
+              <div class="score-veld"><label>Links - gewicht (kg)</label><input type="number" id="sp_kg_li" placeholder="kg" step="0.5" oninput="updateNormSP()"></div>
+            </div>
+            <div class="score-rij">
+              <div class="score-veld"><label>Rechts - herhalingen</label><input type="number" id="sp_hh_re" placeholder="hh" min="0" oninput="updateNormSP()"></div>
+              <div class="score-veld"><label>Rechts - gewicht (kg)</label><input type="number" id="sp_kg_re" placeholder="kg" step="0.5" oninput="updateNormSP()"></div>
+            </div>
+            <div class="norm-tekst" id="norm-sp"></div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>30-sec Single Leg Stand Up</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Deelnemer staat op een been voor een bank/stoel met knie exact op 90 graden. Armen gekruist voor de borst. Zo vaak mogelijk opstaan en gecontroleerd gaan zitten in 30 seconden.<br><br><strong>Norm:</strong> Goed &gt;10 hh / Matig 5-10 hh / Zwak &lt;5 hh</div>
+          <div class="test-invoer">
+            <div class="score-rij">
+              <div class="score-veld"><label>Links (herhalingen)</label><input type="number" id="slsu_li" placeholder="hh" min="0" oninput="badge('slsu_li','slsu_badge_li',[[11,999,'goed'],[5,10,'matig'],[0,4,'zwak']])"><span class="score-badge" id="slsu_badge_li"></span></div>
+              <div class="score-veld"><label>Rechts (herhalingen)</label><input type="number" id="slsu_re" placeholder="hh" min="0" oninput="badge('slsu_re','slsu_badge_re',[[11,999,'goed'],[5,10,'matig'],[0,4,'zwak']])"><span class="score-badge" id="slsu_badge_re"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 CORE -->
+    <div class="sectie-card">
+      <div class="sectie-header"><div class="sectie-nr">4</div><h3>Core - Spieruithoudingsvermogen en Rompcontrole</h3></div>
+      <div class="sectie-body">
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>1-Benige Brug (Box)</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Rugligging, hak van het testbeen op een box van 60 cm, knie licht gebogen (plus of min 20 graden). Andere been gestrekt omhoog. Heupen telkens volledig strekken tot horizontaal. Herhalingen tot uitputting.<br><br><strong>Stoppen bij:</strong> kramp, tempoverlies of niet meer volledig strekken van de heup.<br><strong>Norm:</strong> Top &gt;30 hh / Goed plus of min 25 hh / Zwak &lt;20 hh</div>
+          <div class="test-invoer">
+            <div class="score-rij">
+              <div class="score-veld"><label>Links (herhalingen)</label><input type="number" id="brug_li" placeholder="hh" min="0" oninput="badge('brug_li','brug_badge_li',[[31,999,'top'],[20,30,'goed'],[0,19,'zwak']])"><span class="score-badge" id="brug_badge_li"></span></div>
+              <div class="score-veld"><label>Rechts (herhalingen)</label><input type="number" id="brug_re" placeholder="hh" min="0" oninput="badge('brug_re','brug_badge_re',[[31,999,'top'],[20,30,'goed'],[0,19,'zwak']])"><span class="score-badge" id="brug_badge_re"></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Biering-Sorensen</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Deelnemer ligt horizontaal op het back extension apparaat, heup op de rand, benen vastgezet.<br><br><strong>Normaal (zonder gewicht):</strong> armen gekruist voor de borst. Romp horizontaal houden.<br><strong>Verzwaard:</strong> handen achter het hoofd met ellebogen wijd + gewichtsschijf (vrouwen 5 kg, mannen 10 kg).<br><br><strong>Stoppen zodra:</strong> de romp onder de horizontale lijn zakt, of bij pijn in de onderrug.</div>
+          <div class="test-invoer">
+            <div class="toggle-optie"><label>Uitvoering:</label><select id="biering-variant" onchange="updateBieringNorm()"><option value="verzwaard">Verzwaard (met gewicht)</option><option value="normaal">Normaal (zonder gewicht)</option></select></div>
+            <div class="score-rij enkel">
+              <div class="score-veld"><label>Tijd (seconden)</label><input type="number" id="biering" placeholder="sec" min="0" oninput="updateBieringNorm()"><div class="norm-tekst" id="norm-biering">Norm (verzwaard): Top &gt;90 sec / Goed &gt;60 sec / Zwak &lt;45 sec</div><span class="score-badge" id="biering_badge"></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Laterale Roman Chair Hold</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Deelnemer hangt zijwaarts horizontaal op het Roman Chair apparaat. Romp in rechte lijn houden zo lang mogelijk. Beide zijden testen.<br><br><strong>Verzwaard:</strong> gewichtsschijf strak tegen de borst (vrouwen 5 kg, mannen 10 kg).<br><br><strong>Stoppen zodra:</strong> de rechte lijn van het lichaam niet meer gehouden kan worden.</div>
+          <div class="test-invoer">
+            <div class="toggle-optie"><label>Uitvoering:</label><select id="roman-variant" onchange="updateRomanNorm()"><option value="verzwaard">Verzwaard (met gewicht)</option><option value="normaal">Normaal (zonder gewicht)</option></select></div>
+            <div class="score-rij">
+              <div class="score-veld"><label>Links (seconden)</label><input type="number" id="roman_li" placeholder="sec" min="0" oninput="updateRomanNorm()"><span class="score-badge" id="roman_badge_li"></span></div>
+              <div class="score-veld"><label>Rechts (seconden)</label><input type="number" id="roman_re" placeholder="sec" min="0" oninput="updateRomanNorm()"><span class="score-badge" id="roman_badge_re"></span></div>
+            </div>
+            <div class="norm-tekst" id="norm-roman">Norm (verzwaard): Top &gt;60 sec / Goed plus of min 45 sec / Zwak &lt;30 sec</div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Double Leg Lowering Test</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Rugligging, benen verticaal gestrekt (90 graden). Tester legt hand plat onder de onderrug. Deelnemer laat de benen langzaam zakken terwijl de rug plat blijft.<br><br><strong>Stoppen zodra:</strong> de onderrug hol trekt en loskomt van de hand van de tester.</div>
+          <div class="test-invoer">
+            <div class="radio-groep">
+              <div class="radio-knop goed"><input type="radio" name="dll" id="dll_goed" value="Goed"><label for="dll_goed">Goed (benen tot onder 45 graden)</label></div>
+              <div class="radio-knop matig"><input type="radio" name="dll" id="dll_matig" value="Matig"><label for="dll_matig">Matig (rug los voor 45 graden)</label></div>
+            </div>
+            <div class="opmerkingen"><label>Hoek waarop rug loslaat (graden)</label><input type="number" id="dll_hoek" placeholder="bijv. 30" min="0" max="90" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.9rem;margin-top:4px"></div>
+          </div>
+        </div>
+        <div class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Planktest</strong><span class="chevron">v</span></div>
+          <div class="test-instructie"><strong>RKC Plank:</strong> Plank op ellebogen en tenen. Ellebogen actief naar de tenen trekken, billen en benen maximaal aanspannen.<br><strong>RKC norm:</strong> Goed &gt;45 sec / Matig 30-45 sec / Zwak &lt;30 sec<br><br><strong>Gewone plank:</strong> Plank op ellebogen en tenen, lichaam in rechte lijn. Zo lang mogelijk volhouden.<br><strong>Norm mannen:</strong> 18-29j: 45-75s / 30-39j: 40-65s / 40-49j: 35-55s / 50-59j: 30-50s<br><strong>Norm vrouwen:</strong> 18-29j: 30-60s / 30-39j: 25-50s / 40-49j: 20-45s / 50-59j: 15-40s</div>
+          <div class="test-invoer">
+            <div class="toggle-optie"><label>Testvariant:</label><select id="plank-variant" onchange="updatePlankNorm()"><option value="rkc">RKC Plank</option><option value="gewoon">Gewone Plank</option></select></div>
+            <div class="score-rij enkel">
+              <div class="score-veld"><label>Tijd (seconden)</label><input type="number" id="plank" placeholder="sec" min="0" oninput="updatePlankNorm()"><div class="norm-tekst" id="norm-plank">Norm RKC: Goed &gt;45 sec / Matig 30-45 sec / Zwak &lt;30 sec</div><span class="score-badge" id="plank_badge"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 CONDITIE -->
+    <div class="sectie-card">
+      <div class="sectie-header"><div class="sectie-nr">5</div><h3>Conditie <span style="font-size:.78rem;opacity:.8;font-weight:400">(afsluiter)</span></h3></div>
+      <div class="sectie-body">
+        <div class="toggle-optie">
+          <span>Testvariant:</span>
+          <select id="conditie-variant" onchange="updateConditieVariant()">
+            <option value="roei">1000m Roeitest (belastbaar)</option>
+            <option value="astrand">Astrand Fietstest 6 min (minder belastbaar)</option>
+            <option value="step">3-Minuten Steptest (laag belastbaar)</option>
+          </select>
+        </div>
+        <div id="blok-roei" class="test-item">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>1000m Roeitest (Concept2)</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">1000 meter 'all-out' roeien op maximaal vermogen. Stel de weerstand in op level 4-6. Noteer eindtijd en gemiddelde split (pace per 500m).<br><br><strong>Norm mannen:</strong> Top &lt;3:30 / Gemiddeld 3:30-4:20 / Matig &gt;4:20<br><strong>Norm vrouwen:</strong> Top &lt;4:10 / Gemiddeld 4:10-5:05 / Matig &gt;5:05</div>
+          <div class="test-invoer">
+            <div class="score-rij">
+              <div class="score-veld">
+                <label>Eindtijd (min:sec)</label>
+                <input type="text" id="roei_tijd" placeholder="bijv. 3:55" oninput="updateNormRoei()">
+                <span class="score-badge" id="roei_badge"></span>
+                <div class="norm-tekst" id="norm-roei"></div>
+              </div>
+              <div class="score-veld"><label>Gemiddelde pace (/500m)</label><input type="text" id="roei_pace" placeholder="bijv. 1:57"></div>
+            </div>
+          </div>
+        </div>
+        <div id="blok-astrand" class="test-item" style="display:none">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>Astrand Fietstest (6 min)</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Submaximale fietstest van 6 minuten op een ergometer. Trapfrequentie 50 rpm. Weerstand zodanig dat hartslag stabiel uitkomt tussen 125-170 bpm.<br><br>Noteer de hartslag in minuut 5 en 6 en de weerstand (Watt). VO2max wordt geschat via de Astrand-nomogram of formule.<br><br><strong>Stopcriterium:</strong> bij klachten, duizeligheid of hartslag boven 85% van de maximale hartslag.</div>
+          <div class="test-invoer">
+            <div class="score-rij">
+              <div class="score-veld"><label>Hartslag min 5 (bpm)</label><input type="number" id="astrand_hf5" placeholder="bpm" min="40" max="200"></div>
+              <div class="score-veld"><label>Hartslag min 6 (bpm)</label><input type="number" id="astrand_hf6" placeholder="bpm" min="40" max="200"></div>
+            </div>
+            <div class="score-rij">
+              <div class="score-veld"><label>Weerstand (Watt)</label><input type="number" id="astrand_watt" placeholder="W" min="0"></div>
+              <div class="score-veld"><label>Geschatte VO2max (ml/kg/min)</label><input type="number" id="astrand_vo2" placeholder="optioneel" step="0.1"></div>
+            </div>
+          </div>
+        </div>
+        <div id="blok-step" class="test-item" style="display:none">
+          <div class="test-naam" onclick="toggleInstructie(this)"><strong>3-Minuten YMCA Steptest</strong><span class="chevron">v</span></div>
+          <div class="test-instructie">Deelnemer stapt 3 minuten op en neer op een bankje van 30 cm, cadans 96 bpm (24 stappen/min). Gebruik een metronoom-app op 96 bpm. Patroon: op-op-neer-neer.<br><br>Direct na de test gaan zitten, 60 seconden wachten, dan de hartslagfrequentie aflezen van de saturatiemeter. Dit is de score.<br><br><strong>Norm mannen:</strong> Excellent &lt;81 / Goed 81-96 / Gemiddeld 97-112 / Ondergemiddeld &gt;112<br><strong>Norm vrouwen:</strong> Excellent &lt;88 / Goed 88-104 / Gemiddeld 105-120 / Ondergemiddeld &gt;120</div>
+          <div class="test-invoer">
+            <div class="score-rij enkel">
+              <div class="score-veld"><label>Herstelhartslagfrequentie na 60 sec (bpm)</label><input type="number" id="step_hf" placeholder="bijv. 96" min="40" max="200" oninput="updateNormStep()"><div class="norm-tekst" id="norm-step"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 VORIG VERSLAG -->
+    <div class="sectie-card">
+      <div class="sectie-header"><div class="sectie-nr">6</div><h3>Vorig testverslag <span style="font-size:.78rem;opacity:.8;font-weight:400">(optioneel)</span></h3></div>
+      <div class="sectie-body">
+        <p style="font-size:.82rem;color:var(--tekst-zacht);margin-bottom:14px">Upload het testverslag van de vorige meting (.docx of .pdf). De AI vergelijkt dan de nieuwe scores met de vorige meting en benoemt vooruitgang expliciet.</p>
+        <div class="verslag-upload" id="upload-zone" onclick="document.getElementById('verslag-file').click()"><div class="icon">x</div><strong id="upload-label">Klik om vorig verslag te uploaden</strong><p>.docx of .pdf bestand</p></div>
+        <input type="file" id="verslag-file" accept=".docx,.pdf" style="display:none" onchange="verwerkVerslag(this)">
+        <div id="verslag-status" class="melding"></div>
+        <div id="verslag-preview" style="display:none;background:#f9f9f9;border:1px solid var(--border);border-radius:6px;padding:10px;font-size:.78rem;color:var(--tekst-zacht);max-height:120px;overflow-y:auto;margin-top:8px;white-space:pre-wrap"></div>
+      </div>
+    </div>
+
+    <!-- 7 BLESSUREGESCHIEDENIS -->
+    <div class="sectie-card">
+      <div class="sectie-header"><div class="sectie-nr">7</div><h3>Blessuregeschiedenis <span style="font-size:.78rem;opacity:.8;font-weight:400">(optioneel)</span></h3></div>
+      <div class="sectie-body">
+        <p style="font-size:.82rem;color:var(--tekst-zacht);margin-bottom:14px">Vermeld relevante blessures of operaties die invloed kunnen hebben op de testscores. De AI verwerkt dit in het verslag met een passende toelichting naar de sporter.</p>
+        <div style="display:grid;gap:12px">
+          <div>
+            <label style="display:block;font-size:.82rem;font-weight:600;color:var(--groen);margin-bottom:4px">Blessures / operaties</label>
+            <textarea id="blessure_info" placeholder="bijv. VKB-reconstructie linkerknie (2022, hamstringpees gebruikt), eerdere schouderblessure rechts..." style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.85rem;font-family:inherit;resize:vertical;min-height:80px"></textarea>
+          </div>
+          <div>
+            <label style="display:block;font-size:.82rem;font-weight:600;color:var(--groen);margin-bottom:4px">Invloed op welke testen?</label>
+            <textarea id="blessure_invloed" placeholder="bijv. 1-benige brug links scoort minder door hamstringpees, shoulder press rechts beperkt door schouder..." style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.85rem;font-family:inherit;resize:vertical;min-height:70px"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div class="opgeslagen-badge" id="opgeslagen-badge">Opgeslagen</div></div>
+    <div id="melding-globaal" class="melding"></div>
+    <div class="actie-balk">
+      <button class="btn btn-secondary" onclick="slaOp(false)">Opslaan</button>
+      <button class="btn btn-oranje" onclick="genereerRapport()" id="btn-rapport">Rapport genereren</button>
+    </div>
+
+    <div id="rapport-preview">
+      <div class="rapport-kop"><h2>Testverslag - <span id="rapport-naam"></span></h2><div class="rapport-meta" id="rapport-meta"></div></div>
+      <div class="rapport-inhoud">
+        <div id="rapport-weergave"></div>
+        <textarea id="rapport-edit"></textarea>
+        <div class="rapport-acties">
+          <button class="btn btn-secondary" onclick="toggleEdit()">Bewerken</button>
+          <button class="btn btn-primary" onclick="downloadPDF()">Download als PDF</button>
+        </div>
+        <p style="font-size:.75rem;color:var(--tekst-zacht);margin-top:10px">Het bestand wordt gedownload als HTML-bestand. Open het in je browser en druk op <strong>Ctrl+P</strong> (Windows) of <strong>Cmd+P</strong> (Mac) om het op te slaan als PDF of af te drukken.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://szunargvsmtzbbnmnghc.supabase.co';
+const SUPABASE_KEY='sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5';
+const TABEL='fyziofit_testen';
+let huidigPNR='',huidigNaam='',vorigVerslagTekst='',rapportTekst='',bewerkModus=false;
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('input-datum').value=new Date().toISOString().split('T')[0];
+  document.getElementById('input-pnr').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'').slice(0,6);});
+});
+
+async function startSessie(){
+  const pnr=document.getElementById('input-pnr').value.trim();
+  const naam=document.getElementById('input-naam').value.trim();
+  if(!pnr||!/^\d{1,6}$/.test(pnr)){toonMelding('start-melding','Voer een geldig patientnummer in (1-6 cijfers).','fout');return;}
+  if(!naam){toonMelding('start-melding','Voer de voornaam in.','fout');return;}
+  huidigPNR=pnr;huidigNaam=naam;
+  document.getElementById('balk-naam').textContent=naam;
+  document.getElementById('balk-pnr').textContent='#'+pnr;
+  document.getElementById('header-badge').textContent='#'+pnr;
+  document.getElementById('header-badge').style.display='block';
+  document.getElementById('rapport-naam').textContent=naam;
+  document.getElementById('rapport-meta').textContent='Patientnummer '+pnr+' - '+document.getElementById('input-datum').value;
+  await laadData(pnr);
+  document.getElementById('startscherm').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',updateProgress));
+  document.querySelectorAll('input[type=radio]').forEach(el=>el.addEventListener('change',updateProgress));
+  updateProgress();
+}
+
+function nieuweDeelnemer(){
+  huidigPNR='';huidigNaam='';vorigVerslagTekst='';rapportTekst='';
+  document.getElementById('startscherm').style.display='block';
+  document.getElementById('app').style.display='none';
+  document.getElementById('header-badge').style.display='none';
+  document.getElementById('rapport-preview').style.display='none';
+  document.querySelectorAll('input:not([type=radio]):not([type=date]):not([type=file])').forEach(i=>i.value='');
+  document.querySelectorAll('textarea').forEach(t=>t.value='');
+  document.querySelectorAll('input[type=radio]').forEach(r=>r.checked=false);
+  document.getElementById('input-datum').value=new Date().toISOString().split('T')[0];
+  document.getElementById('upload-label').textContent='Klik om vorig verslag te uploaden';
+  document.getElementById('upload-zone').classList.remove('geladen');
+  document.getElementById('verslag-status').classList.remove('zichtbaar');
+  document.getElementById('verslag-preview').style.display='none';
+  document.querySelectorAll('.score-badge').forEach(b=>{b.className='score-badge';b.textContent='';});
+}
+
+async function supaFetch(path,method,body){
+  const res=await fetch(SUPABASE_URL+'/rest/v1/'+path,{method,headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json',...(method==='POST'?{'Prefer':'resolution=merge-duplicates'}:{})},body:body?JSON.stringify(body):undefined});
+  if(!res.ok)throw new Error(await res.text());
+  return method==='GET'?res.json():true;
+}
+
+async function slaOp(stil=false){
+  if(!huidigPNR)return;
+  try{
+    await supaFetch(TABEL,'POST',{id:huidigPNR,data:verzamelData(),updated_at:new Date().toISOString()});
+    if(!stil){document.getElementById('opgeslagen-badge').classList.add('zichtbaar');setTimeout(()=>document.getElementById('opgeslagen-badge').classList.remove('zichtbaar'),2500);}
+  }catch(e){if(!stil)toonMelding('melding-opslaan','Opslaan mislukt: '+e.message,'fout');}
+}
+
+async function laadData(pnr){
+  try{
+    const rows=await supaFetch(TABEL+'?id=eq.'+encodeURIComponent(pnr)+'&select=data','GET');
+    if(rows&&rows.length>0){vulFormulierIn(rows[0].data);toonMelding('start-melding','Eerder opgeslagen gegevens geladen.','succes');}
+  }catch(e){}
+}
+
+function verzamelData(){
+  return {
+    naam:huidigNaam,pnr:huidigPNR,
+    datum:v('input-datum'),geslacht:v('input-geslacht'),leeftijd:v('input-leeftijd'),tester:v('input-tester'),
+    lengte:v('lengte'),gewicht:v('gewicht'),buikomvang:v('buikomvang'),
+    wall_angels:radio('wall_angels'),wall_angels_opm:v('wall_angels_opm'),
+    overhead_squat:radio('overhead_squat'),overhead_squat_opm:v('overhead_squat_opm'),
+    sit_reach:v('sit_reach'),
+    sp_hh_li:v('sp_hh_li'),sp_kg_li:v('sp_kg_li'),sp_hh_re:v('sp_hh_re'),sp_kg_re:v('sp_kg_re'),
+    slsu_li:v('slsu_li'),slsu_re:v('slsu_re'),
+    brug_li:v('brug_li'),brug_re:v('brug_re'),
+    biering_variant:v('biering-variant'),biering:v('biering'),
+    roman_variant:v('roman-variant'),roman_li:v('roman_li'),roman_re:v('roman_re'),
+    dll:radio('dll'),dll_hoek:v('dll_hoek'),
+    plank_variant:v('plank-variant'),plank:v('plank'),
+    conditie_variant:v('conditie-variant'),
+    roei_tijd:v('roei_tijd'),roei_pace:v('roei_pace'),
+    step_hf:v('step_hf'),
+    astrand_hf5:v('astrand_hf5'),astrand_hf6:v('astrand_hf6'),astrand_watt:v('astrand_watt'),astrand_vo2:v('astrand_vo2'),
+    blessure_info:v('blessure_info'),blessure_invloed:v('blessure_invloed'),
+  };
+}
+
+function vulFormulierIn(d){
+  if(!d)return;
+  const stel=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null&&val!=='')el.value=val;};
+  ['input-datum','input-geslacht','input-leeftijd','input-tester',
+   'lengte','gewicht','buikomvang','wall_angels_opm','overhead_squat_opm','sit_reach',
+   'sp_hh_li','sp_kg_li','sp_hh_re','sp_kg_re','slsu_li','slsu_re',
+   'brug_li','brug_re','biering','roman_li','roman_re','dll_hoek','plank',
+   'roei_tijd','roei_pace','step_hf','astrand_hf5','astrand_hf6','astrand_watt','astrand_vo2',
+   'blessure_info','blessure_invloed'
+  ].forEach(id=>stel(id,d[id.replace(/-/g,'_')]));
+  if(d.wall_angels)zetRadio('wall_angels',d.wall_angels);
+  if(d.overhead_squat)zetRadio('overhead_squat',d.overhead_squat);
+  if(d.dll)zetRadio('dll',d.dll);
+  if(d.biering_variant){stel('biering-variant',d.biering_variant);updateBieringNorm();}
+  if(d.roman_variant){stel('roman-variant',d.roman_variant);updateRomanNorm();}
+  if(d.plank_variant){stel('plank-variant',d.plank_variant);updatePlankNorm();}
+  if(d.conditie_variant){stel('conditie-variant',d.conditie_variant);updateConditieVariant();}
+  updateNormBuik();updateNormSP();updateNormStep();
+}
+
+const v=id=>document.getElementById(id)?.value||'';
+const radio=name=>document.querySelector('input[name="'+name+'"]:checked')?.value||'';
+const zetRadio=(name,val)=>{const el=document.querySelector('input[name="'+name+'"][value="'+val+'"]');if(el)el.checked=true;};
+
+function toggleInstructie(header){
+  const instr=header.nextElementSibling;
+  const open=instr.classList.contains('zichtbaar');
+  instr.classList.toggle('zichtbaar',!open);
+  header.classList.toggle('open',!open);
+}
+
+function toonMelding(id,tekst,type){
+  const el=document.getElementById(id);
+  el.textContent=tekst;el.className='melding '+type+' zichtbaar';
+  if(type==='succes')setTimeout(()=>el.classList.remove('zichtbaar'),3000);
+}
+
+function updateConditieVariant(){
+  const cv=v('conditie-variant');
+  document.getElementById('blok-roei').style.display=cv==='roei'?'block':'none';
+  document.getElementById('blok-astrand').style.display=cv==='astrand'?'block':'none';
+  document.getElementById('blok-step').style.display=cv==='step'?'block':'none';
+}
+
+function updateProgress(){
+  const velden=['lengte','gewicht','buikomvang','sit_reach','sp_hh_li','sp_hh_re','slsu_li','slsu_re','brug_li','brug_re','biering','roman_li','roman_re','plank'];
+  const radios=['wall_angels','overhead_squat','dll'];
+  let gevuld=0,totaal=velden.length+radios.length+1;
+  velden.forEach(id=>{if(v(id))gevuld++;});
+  radios.forEach(n=>{if(radio(n))gevuld++;});
+  const cv=v('conditie-variant');
+  if((cv==='roei'&&v('roei_tijd'))||(cv==='step'&&v('step_hf'))||(cv==='astrand'&&v('astrand_hf6')))gevuld++;
+  const pct=Math.round(gevuld/totaal*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-pct').textContent=pct+'%';
+  document.getElementById('progress-tekst').textContent=gevuld+' van '+totaal+' velden ingevuld';
+}
+
+function badge(inputId,badgeId,ranges){
+  const val=parseFloat(document.getElementById(inputId).value);
+  const b=document.getElementById(badgeId);
+  b.className='score-badge';b.textContent='';
+  if(isNaN(val))return;
+  const m=ranges.find(r=>val>=r[0]&&val<=r[1]);
+  if(!m)return;
+  const lbl={top:'Top',goed:'Goed',matig:'Matig',zwak:'Zwak'};
+  b.textContent=lbl[m[2]]||m[2];b.classList.add(m[2]);
+}
+
+function updateNormBuik(){
+  const val=parseFloat(v('buikomvang')),g=v('input-geslacht'),el=document.getElementById('norm-buik');
+  if(!val||!g){el.textContent='';return;}
+  const[a,b]=g==='vrouw'?[80,88]:[94,102];
+  el.textContent=val<a?'Gezond':val<=b?'Verhoogd risico':'Te hoog';
+}
+
+function updateNormSP(){
+  const hhLi=parseFloat(v('sp_hh_li')),kgLi=parseFloat(v('sp_kg_li')),hhRe=parseFloat(v('sp_hh_re')),kgRe=parseFloat(v('sp_kg_re'));
+  const el=document.getElementById('norm-sp');el.textContent='';
+  if(!hhLi||!kgLi||!hhRe||!kgRe)return;
+  const li=hhLi*kgLi,re=hhRe*kgRe;
+  const pct=Math.abs(li-re)/Math.max(li,re)*100;
+  el.textContent=pct>17?'Asymmetrie '+pct.toFixed(0)+'% - groter dan 17%, aandachtspunt':'Asymmetrie '+pct.toFixed(0)+'% - binnen norm';
+}
+
+function updateBieringNorm(){
+  const variant=v('biering-variant'),val=parseFloat(v('biering'));
+  const normEl=document.getElementById('norm-biering'),b=document.getElementById('biering_badge');
+  b.className='score-badge';b.textContent='';
+  if(variant==='verzwaard'){
+    normEl.textContent='Norm (verzwaard): Top >90 sec / Goed >60 sec / Zwak <45 sec';
+    if(!isNaN(val)){const[cat,cls]=val>90?['Top','top']:val>=60?['Goed','goed']:val>=45?['Matig','matig']:['Zwak','zwak'];b.textContent=cat;b.classList.add(cls);}
+  }else{
+    normEl.textContent='Norm (zonder gewicht): Goed >180 sec / Matig 120-180 sec / Zwak <120 sec';
+    if(!isNaN(val)){const[cat,cls]=val>180?['Goed','goed']:val>=120?['Matig','matig']:['Zwak','zwak'];b.textContent=cat;b.classList.add(cls);}
+  }
+}
+
+function updateRomanNorm(){
+  const variant=v('roman-variant'),li=parseFloat(v('roman_li')),re=parseFloat(v('roman_re'));
+  const normEl=document.getElementById('norm-roman');
+  const ranges=variant==='verzwaard'?[[61,999,'top'],[45,60,'goed'],[30,44,'matig'],[0,29,'zwak']]:[[91,999,'goed'],[60,90,'matig'],[0,59,'zwak']];
+  normEl.textContent=variant==='verzwaard'?'Norm (verzwaard): Top >60 sec / Goed plus of min 45 sec / Zwak <30 sec':'Norm (zonder gewicht): Goed >90 sec / Matig 60-90 sec / Zwak <60 sec';
+  [['roman_li','roman_badge_li',li],['roman_re','roman_badge_re',re]].forEach(([,bid,val])=>{
+    const b=document.getElementById(bid);b.className='score-badge';b.textContent='';
+    if(isNaN(val))return;
+    const m=ranges.find(r=>val>=r[0]&&val<=r[1]);
+    if(m){const lbl={top:'Top',goed:'Goed',matig:'Matig',zwak:'Zwak'};b.textContent=lbl[m[2]];b.classList.add(m[2]);}
+  });
+}
+
+function updatePlankNorm(){
+  const variant=v('plank-variant'),val=parseFloat(v('plank')),lft=parseInt(v('input-leeftijd'))||30,g=v('input-geslacht');
+  const normEl=document.getElementById('norm-plank'),b=document.getElementById('plank_badge');
+  b.className='score-badge';b.textContent='';
+  if(variant==='rkc'){
+    normEl.textContent='Norm RKC Plank: Goed >45 sec / Matig 30-45 sec / Zwak <30 sec';
+    if(!isNaN(val)){const[cat,cls]=val>45?['Goed','goed']:val>=30?['Matig','matig']:['Zwak','zwak'];b.textContent=cat;b.classList.add(cls);}
+  }else{
+    const normen={man:[[29,45,75,99],[39,40,65,80],[49,35,55,70],[59,30,50,65],[99,25,45,60]],vrouw:[[29,30,60,85],[39,25,50,75],[49,20,45,65],[59,15,40,55],[99,10,35,50]]};
+    const gKey=g==='vrouw'?'vrouw':'man';
+    const rij=normen[gKey].find(r=>lft<=r[0])||normen[gKey][normen[gKey].length-1];
+    normEl.textContent='Norm gewone plank ('+gKey+', '+lft+'j): Ondergemiddeld <'+rij[1]+'s / Gemiddeld '+rij[1]+'-'+rij[2]+'s / Uitstekend >'+rij[3]+'s';
+    if(!isNaN(val)){const[cat,cls]=val>=rij[3]?['Uitstekend','top']:val>=rij[1]?['Gemiddeld','goed']:['Ondergemiddeld','zwak'];b.textContent=cat;b.classList.add(cls);}
+  }
+}
+
+function updateNormRoei(){
+  const tijdStr=v('roei_tijd').trim(),g=v('input-geslacht');
+  const badge2=document.getElementById('roei_badge'),normEl=document.getElementById('norm-roei');
+  badge2.className='score-badge';badge2.textContent='';normEl.textContent='';
+  if(!tijdStr||!g)return;
+  const delen=tijdStr.split(':');
+  if(delen.length!==2)return;
+  const sec=parseInt(delen[0])*60+parseInt(delen[1]);
+  if(isNaN(sec))return;
+  if(g==='man'){
+    normEl.textContent='Norm mannen: Top <3:30 / Gemiddeld 3:30-4:20 / Matig >4:20';
+    if(sec<210){badge2.textContent='Top';badge2.classList.add('top');}
+    else if(sec<=260){badge2.textContent='Gemiddeld';badge2.classList.add('goed');}
+    else{badge2.textContent='Matig';badge2.classList.add('matig');}
+  }else{
+    normEl.textContent='Norm vrouwen: Top <4:10 / Gemiddeld 4:10-5:05 / Matig >5:05';
+    if(sec<250){badge2.textContent='Top';badge2.classList.add('top');}
+    else if(sec<=305){badge2.textContent='Gemiddeld';badge2.classList.add('goed');}
+    else{badge2.textContent='Matig';badge2.classList.add('matig');}
+  }
+}
+
+function updateNormStep(){
+  const hf=parseFloat(v('step_hf')),g=v('input-geslacht'),lft=parseInt(v('input-leeftijd'))||0;
+  const el=document.getElementById('norm-step');el.textContent='';
+  if(!hf||!g||!lft)return;
+  const normen={
+    man:[{max:25,r:[[0,79,'Excellent'],[80,89,'Goed'],[90,99,'Bovengemiddeld'],[100,105,'Gemiddeld'],[106,116,'Ondergemiddeld'],[117,999,'Slecht']]},{max:35,r:[[0,81,'Excellent'],[82,89,'Goed'],[90,99,'Bovengemiddeld'],[100,107,'Gemiddeld'],[108,117,'Ondergemiddeld'],[118,999,'Slecht']]},{max:45,r:[[0,83,'Excellent'],[84,96,'Goed'],[97,103,'Bovengemiddeld'],[104,112,'Gemiddeld'],[113,120,'Ondergemiddeld'],[121,999,'Slecht']]},{max:55,r:[[0,87,'Excellent'],[88,97,'Goed'],[98,105,'Bovengemiddeld'],[106,116,'Gemiddeld'],[117,122,'Ondergemiddeld'],[123,999,'Slecht']]},{max:65,r:[[0,86,'Excellent'],[87,97,'Goed'],[98,103,'Bovengemiddeld'],[104,112,'Gemiddeld'],[113,120,'Ondergemiddeld'],[121,999,'Slecht']]},{max:99,r:[[0,88,'Excellent'],[89,96,'Goed'],[97,103,'Bovengemiddeld'],[104,113,'Gemiddeld'],[114,120,'Ondergemiddeld'],[121,999,'Slecht']]}],
+    vrouw:[{max:25,r:[[0,85,'Excellent'],[86,98,'Goed'],[99,108,'Bovengemiddeld'],[109,117,'Gemiddeld'],[118,126,'Ondergemiddeld'],[127,999,'Slecht']]},{max:35,r:[[0,88,'Excellent'],[89,99,'Goed'],[100,111,'Bovengemiddeld'],[112,119,'Gemiddeld'],[120,129,'Ondergemiddeld'],[130,999,'Slecht']]},{max:45,r:[[0,90,'Excellent'],[91,102,'Goed'],[103,110,'Bovengemiddeld'],[111,118,'Gemiddeld'],[119,128,'Ondergemiddeld'],[129,999,'Slecht']]},{max:55,r:[[0,94,'Excellent'],[95,104,'Goed'],[105,115,'Bovengemiddeld'],[116,120,'Gemiddeld'],[121,129,'Ondergemiddeld'],[130,999,'Slecht']]},{max:65,r:[[0,95,'Excellent'],[96,104,'Goed'],[105,112,'Bovengemiddeld'],[113,118,'Gemiddeld'],[119,128,'Ondergemiddeld'],[129,999,'Slecht']]},{max:99,r:[[0,90,'Excellent'],[91,102,'Goed'],[103,115,'Bovengemiddeld'],[116,122,'Gemiddeld'],[123,128,'Ondergemiddeld'],[129,999,'Slecht']]}]
+  };
+  const gKey=g==='man'?'man':'vrouw';
+  const groep=normen[gKey].find(r=>lft<=r.max);
+  const cat=groep?.r.find(r=>hf>=r[0]&&hf<=r[1]);
+  el.textContent=cat?'Categorie: '+cat[2]:'';
+}
+
+async function verwerkVerslag(input){
+  const file=input.files[0];if(!file)return;
+  toonMelding('verslag-status','Verslag wordt gelezen...','laden');
+  document.getElementById('upload-zone').classList.add('geladen');
+  document.getElementById('upload-label').textContent=file.name;
+  try{
+    if(file.name.endsWith('.docx')){
+      const buf=await file.arrayBuffer();
+      const result=await mammoth.extractRawText({arrayBuffer:buf});
+      vorigVerslagTekst=result.value;
+    }else{
+      vorigVerslagTekst=await leesPDF(file);
+    }
+    toonMelding('verslag-status','Verslag geladen ('+vorigVerslagTekst.length+' tekens) - wordt meegenomen in het rapport.','succes');
+    const prev=document.getElementById('verslag-preview');
+    prev.style.display='block';
+    prev.textContent=vorigVerslagTekst.substring(0,400)+(vorigVerslagTekst.length>400?'...':'');
+  }catch(e){toonMelding('verslag-status','Lezen mislukt: '+e.message,'fout');}
+}
+
+async function leesPDF(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const bytes=new Uint8Array(e.target.result);
+        let tekst='';
+        for(let i=0;i<bytes.length;i++){const c=bytes[i];if((c>=32&&c<=126)||(c>=160&&c<=255))tekst+=String.fromCharCode(c);else if(c===10||c===13)tekst+=' ';}
+        resolve(tekst.replace(/\s{3,}/g,' ').trim().substring(0,5000));
+      }catch(err){reject(err);}
+    };
+    reader.onerror=reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function genereerRapport(){
+  await slaOp(true);
+  const data=verzamelData();
+  const scores=bouwScoreSamenvatting(data);
+  const btn=document.getElementById('btn-rapport');
+  btn.disabled=true;btn.innerHTML='<div class="loader"></div> Rapport wordt gegenereerd...';
+  toonMelding('melding-globaal','AI genereert het testverslag, even geduld...','laden');
+
+  const vergelijkingDeel=vorigVerslagTekst
+    ?'\n\nVORIG TESTVERSLAG:\n"""\n'+vorigVerslagTekst.substring(0,3500)+'\n"""\n\nVergelijk de nieuwe scores uitdrukkelijk met het vorige verslag. Benoem meetbare vooruitgang positief en concreet (bijv. "Je plank is van 45 naar 62 seconden gegaan"). Bij gelijkblijvende scores: benadruk dat het niveau is vastgehouden als prestatie. Noem NOOIT achteruitgang als negatief feit; formuleer dit als aandachtspunt met perspectief.'
+    :'';
+
+  const blessureDeel=(data.blessure_info||data.blessure_invloed)
+    ?'\n\nBLESSUREGESCHIEDENIS:\n'+(data.blessure_info||'')+'\nINVLOED OP SCORES:\n'+(data.blessure_invloed||'')+'\n\nAls een test beinvloed is door een blessure of operatie: leg dit kort en positief uit in de lopende tekst. Bijv. "Doordat bij jouw kniereconstructie een stukje van de hamstring is gebruikt, is het logisch dat dit been wat minder scoort op de brugtest. Dit herstelt verder naarmate je traint."'
+    :'';
+
+  const prompt=`Je bent een fysiotherapeut bij Fyzio Totaal en schrijft een persoonlijk testverslag voor een deelnemer aan het fysiofitnessprogramma.
+
+TAAL EN STIJL:
+- Schrijf in correct Nederlands. Gebruik geen Engelse woorden waar een goed Nederlands alternatief bestaat (bijv. niet "overall" maar "over het algemeen", niet "feedback" maar "terugkoppeling").
+- Informeel, jij-vorm ("je/jij"), nooit "u".
+- Warm maar nuchter en compact. Geen zweverige of omslachtige zinnen.
+- Geen medische diagnoses.
+- Geen gedachtestreepjes als opsommingsteken of als leesteken in de lopende tekst.
+- Geen markdown-hekjes voor kopjes. Kopjes zijn gewone vetgedrukte regels.
+- Geen nocebo-taal.
+- Gebruik begrijpelijke taal, maar behoud correcte medische termen waar dat gepast is (bijv. "voorste kruisbandreconstructie" niet "kniereconstructie", "hamstrings" niet "achterkant van je bovenbeen"). Vertaal alleen termen die voor de sporter echt niets zeggen: bijv. niet "valgus" maar "knieen zakken naar binnen"; niet "lumbale extensoren" maar "rugspieren".
+- Let op grammatica, ook bij meervoud: "je rugspieren hielden het vol" (niet "hield").
+
+ADVIESTOON:
+- Als een score goed is, benoem dat positief en geef geen vervolgadvies voor dat onderdeel. Goed is goed.
+- Aandachtspunten formuleer je als kansen met een concrete richting, nooit als tekortkomingen.
+- Als er een blessuregeschiedenis is vermeld: benoem bij de betreffende testen dat de voorgeschiedenis mogelijk van invloed kan zijn op de score. Wees voorzichtig ("kan mogelijk te maken hebben met", "is soms een gevolg van"). Gebruik je kennis als fysiotherapeut om dit begrijpelijk en geruststellend te verklaren voor de sporter. Stel nooit iets met zekerheid vast.
+
+DEELNEMER:
+Naam: ${data.naam} | Leeftijd: ${data.leeftijd||'onbekend'} | Geslacht: ${data.geslacht||'onbekend'} | Datum: ${data.datum}
+
+TESTRESULTATEN:
+${scores}
+${blessureDeel}
+${vergelijkingDeel}
+
+COLLEGA'S - noem alleen wie relevant is op basis van de daadwerkelijke aandachtspunten in dit verslag:
+- Mayke (ExcluFit): alleen bij aandachtspunten rondom leefstijl, voeding, gewicht of buikomvang.
+- Jan Willem: alleen bij aandachtspunten rondom schouder, rug of wanneer manuele therapie zinvol kan zijn.
+- Laura: alleen bij sportspecifieke begeleiding of revalidatievragen.
+Als er geen aandachtspunten zijn op een van deze gebieden, noem die persoon dan niet.
+
+STRUCTUUR - volg dit patroon exact:
+
+Testverslag en vervolgadvies [Naam]
+
+Conditie
+[Beschrijf de score feitelijk in 1-2 zinnen. Conclusie en advies in dezelfde alinea. Geen subkopjes.]
+
+Mobiliteit
+[Beschrijf elke mobiliteitstest kort met score. Overkoepelende conclusie en advies in dezelfde alinea.]
+
+Kracht benen
+[Score en conclusie. Advies alleen als er een aandachtspunt is.]
+
+Kracht schouders
+[Score en conclusie. Advies alleen als er een aandachtspunt is.]
+
+Core (rompstabiliteit)
+[Beschrijf alle corescores samen. Conclusie en advies in dezelfde alinea.]
+
+Lichaamssamenstelling
+[Benoem lengte, gewicht en buikomvang met feitelijke duiding. Kort concreet advies. Zorg dat de sectie volledig afgerond is.]
+
+Belangrijk om mee te nemen
+Gebruik hier een opsomming waarbij elke regel begint met een asterisk en een spatie (* ). Schrijf 4 tot 5 volledige zinnen, een mix van sterke punten en aandachtspunten als kansen. Voorbeeld van de opmaak:
+* Je conditie is goed en biedt een mooie basis om op voort te bouwen.
+* De stabiliteit van je linkerknie verdient aandacht bij krachttraining.
+
+Overzicht mogelijke vervolgafspraken
+[Concreet en gericht advies op basis van de daadwerkelijke aandachtspunten uit dit verslag. Noem alleen de collega die relevant is gezien de scores. Vermeld altijd dat er een persoonlijk oefenschema wordt opgesteld waarmee de sporter direct aan de slag kan. Geen naam van de tester. Sluit altijd af met: "Met de persoon waarbij je traint, bespreek je het vervolg dat het beste bij jou past. Alle adviezen zijn altijd gebaseerd op onderling overleg, zodat het plan optimaal aansluit bij jouw doelen en mogelijkheden."]
+
+Maximaal 650 woorden. Schrijf in het Nederlands. Zorg dat elke sectie volledig is afgerond.`;
+
+  try{
+    const response=await Promise.race([
+      fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]})}),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),30000))
+    ]);
+    const json=await response.json();
+    rapportTekst=json.content?.[0]?.text||'';
+    if(!rapportTekst)throw new Error('Geen tekst ontvangen');
+    document.getElementById('melding-globaal').classList.remove('zichtbaar');
+    toonRapport(rapportTekst);
+  }catch(e){
+    rapportTekst='Testverslag '+data.naam+' - '+data.datum+'\n\n'+scores+'\n\nNoot: rapport kon niet automatisch worden gegenereerd. Gebruik de bewerkfunctie om het handmatig op te stellen.';
+    document.getElementById('melding-globaal').classList.remove('zichtbaar');
+    toonRapport(rapportTekst);
+  }
+  btn.disabled=false;btn.innerHTML='Rapport opnieuw genereren';
+}
+
+function bouwScoreSamenvatting(d){
+  const r=[];
+  if(d.lengte)r.push('Lengte: '+d.lengte+' cm');
+  if(d.gewicht)r.push('Gewicht: '+d.gewicht+' kg');
+  if(d.buikomvang){const g=d.geslacht,b=parseFloat(d.buikomvang),[a,c]=g==='vrouw'?[80,88]:[94,102];r.push('Buikomvang: '+b+' cm ('+(b<a?'gezond':b<=c?'verhoogd risico':'te hoog')+')');}
+  if(d.wall_angels)r.push('Wall Angels: '+d.wall_angels+(d.wall_angels_opm?' - '+d.wall_angels_opm:''));
+  if(d.overhead_squat)r.push('Overhead Squat: '+d.overhead_squat+(d.overhead_squat_opm?' - '+d.overhead_squat_opm:''));
+  if(d.sit_reach)r.push('Sit en Reach: '+d.sit_reach+' cm');
+  if(d.sp_hh_li)r.push('Shoulder Press: links '+d.sp_hh_li+' hh x '+d.sp_kg_li+' kg, rechts '+d.sp_hh_re+' hh x '+d.sp_kg_re+' kg');
+  if(d.slsu_li)r.push('Single Leg Stand Up (30 sec): links '+d.slsu_li+' hh, rechts '+d.slsu_re+' hh');
+  if(d.brug_li)r.push('1-Benige Brug: links '+d.brug_li+' hh, rechts '+d.brug_re+' hh');
+  if(d.biering)r.push('Biering-Sorensen ('+( d.biering_variant||'verzwaard')+'): '+d.biering+' sec');
+  if(d.roman_li)r.push('Laterale Roman Chair ('+(d.roman_variant||'verzwaard')+'): links '+d.roman_li+' sec, rechts '+d.roman_re+' sec');
+  if(d.dll)r.push('Double Leg Lowering: '+d.dll+(d.dll_hoek?' (losgelaten bij '+d.dll_hoek+' graden)':''));
+  if(d.plank)r.push('Plank ('+(d.plank_variant||'rkc')+'): '+d.plank+' sec');
+  if(d.conditie_variant==='roei'&&d.roei_tijd)r.push('Roeitest 1000m: '+d.roei_tijd+' (pace '+d.roei_pace+'/500m)');
+  if(d.conditie_variant==='step'&&d.step_hf)r.push('YMCA Steptest: herstelHF '+d.step_hf+' bpm na 60 sec');
+  if(d.conditie_variant==='astrand'&&d.astrand_hf6)r.push('Astrand fietstest: HF min5='+d.astrand_hf5+' min6='+d.astrand_hf6+' bpm, '+d.astrand_watt+'W'+(d.astrand_vo2?', VO2max '+d.astrand_vo2+' ml/kg/min':''));
+  return r.join('\n');
+}
+
+function toonRapport(tekst){
+  const preview=document.getElementById('rapport-preview');
+  preview.style.display='block';
+  document.getElementById('rapport-weergave').innerHTML=opmaakRapport(tekst);
+  document.getElementById('rapport-edit').value=tekst;
+  bewerkModus=false;
+  document.getElementById('rapport-weergave').style.display='block';
+  document.getElementById('rapport-edit').style.display='none';
+  preview.scrollIntoView({behavior:'smooth'});
+}
+
+function opmaakRapport(tekst){
+  return tekst.split('\n').map(regel=>{
+    regel=regel.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+    if(!regel.trim())return '<br>';
+    if(/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijk om mee te nemen|Overzicht mogelijke vervolgafspraken|Testverslag)/.test(regel.trim())){
+      return '<p><strong style="font-size:.95rem;color:var(--groen);display:block;margin-top:18px;margin-bottom:3px">'+regel+'</strong></p>';
+    }
+    if(/^\*\s/.test(regel)){
+      return '<p style="margin-bottom:4px;padding-left:16px;text-indent:-16px">&bull; '+regel.replace(/^\*\s/,'')+'</p>';
+    }
+    return '<p style="margin-bottom:5px">'+regel+'</p>';
+  }).join('');
+}
+
+function toggleEdit(){
+  bewerkModus=!bewerkModus;
+  const weergave=document.getElementById('rapport-weergave'),edit=document.getElementById('rapport-edit');
+  if(bewerkModus){edit.value=rapportTekst;weergave.style.display='none';edit.style.display='block';document.querySelector('.rapport-acties .btn-secondary').textContent='Voorbeeld';}
+  else{rapportTekst=edit.value;weergave.innerHTML=opmaakRapport(edit.value);weergave.style.display='block';edit.style.display='none';document.querySelector('.rapport-acties .btn-secondary').textContent='Bewerken';}
+}
+
+function downloadPDF(){
+  const tekst=bewerkModus?document.getElementById('rapport-edit').value:rapportTekst;
+  const d=verzamelData();
+
+  const regels=tekst.split('\n').map(r=>{
+    if(!r.trim())return '<br>';
+    if(/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijk om mee te nemen|Overzicht mogelijke vervolgafspraken|Testverslag)/.test(r.trim()))
+      return '<div class="sectie-kop">'+r+'</div>';
+    if(/^\* /.test(r))
+      return '<p style="padding-left:16px;text-indent:-16px">&bull; '+r.replace(/^\* /,'')+'</p>';
+    return '<p>'+r+'</p>';
+  }).join('');
+
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Testverslag '+d.naam+'</title><style>'
+    +'body{font-family:"Segoe UI",Arial,sans-serif;max-width:660px;margin:40px auto;padding:0 24px;font-size:13.5px;line-height:1.8;color:#1a1a1a}'
+    +'.kop{border-bottom:3px solid #1a4a3a;padding-bottom:12px;margin-bottom:20px}'
+    +'h1{color:#1a4a3a;font-size:20px;margin-bottom:4px}'
+    +'.meta{color:#666;font-size:12px;margin-bottom:8px}'
+    +'.sectie-kop{color:#1a4a3a;font-weight:700;font-size:14px;margin-top:22px;margin-bottom:5px;border-bottom:1px solid #dde8e4;padding-bottom:3px}'
+    +'p{margin:0 0 6px}'
+    +'@media print{body{margin:20px;max-width:100%}}'
+    +'</style></head><body>'
+    +'<div class="kop"><h1>Testverslag '+d.naam+'</h1>'
+    +'<div class="meta">Patientnummer: '+d.pnr+' &nbsp;|&nbsp; Testdatum: '+d.datum+' &nbsp;|&nbsp; Fyzio Totaal</div></div>'
+    +regels
+    +'</body></html>';
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='Testverslag_'+d.naam+'_'+d.datum+'.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+</script>
+</body>
+</html>
