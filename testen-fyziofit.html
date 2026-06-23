@@ -339,8 +339,8 @@
           <div class="test-instructie">Submaximale fietstest van 6 minuten op een ergometer. Trapfrequentie 50 rpm. Weerstand zodanig dat hartslag stabiel uitkomt tussen 125-170 bpm.<br><br>Noteer de hartslag in minuut 5 en 6 en de weerstand (Watt). VO2max wordt geschat via de Astrand-nomogram of formule.<br><br><strong>Stopcriterium:</strong> bij klachten, duizeligheid of hartslag boven 85% van de maximale hartslag.</div>
           <div class="test-invoer">
             <div class="score-rij">
-              <div class="score-veld"><label>Hartslag min 5 (bpm)</label><input type="number" id="astrand_hf5" placeholder="bpm" min="40" max="200"></div>
-              <div class="score-veld"><label>Hartslag min 6 (bpm)</label><input type="number" id="astrand_hf6" placeholder="bpm" min="40" max="200"></div>
+              <div class="score-veld"><label>Hartslag min 5 (bpm)</label><input type="number" id="astrand_hf5" placeholder="bpm" min="40" max="200" oninput="berekenVO2max()"></div>
+              <div class="score-veld"><label>Hartslag min 6 (bpm)</label><input type="number" id="astrand_hf6" placeholder="bpm" min="40" max="200" oninput="berekenVO2max()"></div>
             </div>
             <div class="score-rij">
               <div class="score-veld">
