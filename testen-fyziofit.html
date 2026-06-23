@@ -737,21 +737,25 @@ function berekenVO2max(){
     const vo2mlkg=vo2mlkg_corr;
     vo2rel.value=vo2mlkg.toFixed(1);
 
-    // VO2max normen (ACSM, algemeen)
+    // VO2max normwaarden (uploaded tabel)
+    // Vrouwen - bovenste tabel: Very poor / Poor / Fair / Good / Excellent / Superior
+    // Mannen  - onderste tabel: Very poor / Poor / Fair / Good / Excellent / Superior
     const g=v('input-geslacht');
     let norm='';
-    if(g==='man'){
-      if(lft<=29)norm=vo2mlkg>=55?'Uitstekend':vo2mlkg>=46?'Goed':vo2mlkg>=38?'Gemiddeld':vo2mlkg>=30?'Ondergemiddeld':'Slecht';
-      else if(lft<=39)norm=vo2mlkg>=51?'Uitstekend':vo2mlkg>=43?'Goed':vo2mlkg>=35?'Gemiddeld':vo2mlkg>=27?'Ondergemiddeld':'Slecht';
-      else if(lft<=49)norm=vo2mlkg>=47?'Uitstekend':vo2mlkg>=39?'Goed':vo2mlkg>=31?'Gemiddeld':vo2mlkg>=24?'Ondergemiddeld':'Slecht';
-      else if(lft<=59)norm=vo2mlkg>=43?'Uitstekend':vo2mlkg>=36?'Goed':vo2mlkg>=28?'Gemiddeld':vo2mlkg>=20?'Ondergemiddeld':'Slecht';
-      else norm=vo2mlkg>=37?'Uitstekend':vo2mlkg>=31?'Goed':vo2mlkg>=23?'Gemiddeld':vo2mlkg>=16?'Ondergemiddeld':'Slecht';
-    }else if(g==='vrouw'){
-      if(lft<=29)norm=vo2mlkg>=49?'Uitstekend':vo2mlkg>=40?'Goed':vo2mlkg>=32?'Gemiddeld':vo2mlkg>=24?'Ondergemiddeld':'Slecht';
-      else if(lft<=39)norm=vo2mlkg>=45?'Uitstekend':vo2mlkg>=36?'Goed':vo2mlkg>=28?'Gemiddeld':vo2mlkg>=20?'Ondergemiddeld':'Slecht';
-      else if(lft<=49)norm=vo2mlkg>=41?'Uitstekend':vo2mlkg>=32?'Goed':vo2mlkg>=24?'Gemiddeld':vo2mlkg>=16?'Ondergemiddeld':'Slecht';
-      else if(lft<=59)norm=vo2mlkg>=37?'Uitstekend':vo2mlkg>=28?'Goed':vo2mlkg>=20?'Gemiddeld':vo2mlkg>=13?'Ondergemiddeld':'Slecht';
-      else norm=vo2mlkg>=33?'Uitstekend':vo2mlkg>=24?'Goed':vo2mlkg>=17?'Gemiddeld':vo2mlkg>=11?'Ondergemiddeld':'Slecht';
+    if(g==='vrouw'){
+      if(lft<=19)     norm=vo2mlkg>=41.9?'Uitmuntend':vo2mlkg>=39.0?'Uitstekend':vo2mlkg>=35.0?'Goed':vo2mlkg>=31.0?'Matig':vo2mlkg>=25.0?'Zwak':'Zeer zwak';
+      else if(lft<=29)norm=vo2mlkg>=41.0?'Uitmuntend':vo2mlkg>=37.0?'Uitstekend':vo2mlkg>=33.0?'Goed':vo2mlkg>=29.0?'Matig':vo2mlkg>=23.6?'Zwak':'Zeer zwak';
+      else if(lft<=39)norm=vo2mlkg>=40.0?'Uitmuntend':vo2mlkg>=35.7?'Uitstekend':vo2mlkg>=31.5?'Goed':vo2mlkg>=27.0?'Matig':vo2mlkg>=22.8?'Zwak':'Zeer zwak';
+      else if(lft<=49)norm=vo2mlkg>=36.9?'Uitmuntend':vo2mlkg>=32.9?'Uitstekend':vo2mlkg>=29.0?'Goed':vo2mlkg>=24.5?'Matig':vo2mlkg>=21.0?'Zwak':'Zeer zwak';
+      else if(lft<=59)norm=vo2mlkg>=35.8?'Uitmuntend':vo2mlkg>=31.5?'Uitstekend':vo2mlkg>=27.0?'Goed':vo2mlkg>=22.8?'Matig':vo2mlkg>=20.2?'Zwak':'Zeer zwak';
+      else             norm=vo2mlkg>=31.4?'Uitmuntend':vo2mlkg>=30.3?'Uitstekend':vo2mlkg>=24.5?'Goed':vo2mlkg>=20.2?'Matig':vo2mlkg>=17.5?'Zwak':'Zeer zwak';
+    }else if(g==='man'){
+      if(lft<=19)     norm=vo2mlkg>=55.9?'Uitmuntend':vo2mlkg>=51.0?'Uitstekend':vo2mlkg>=45.2?'Goed':vo2mlkg>=38.4?'Matig':vo2mlkg>=35.0?'Zwak':'Zeer zwak';
+      else if(lft<=29)norm=vo2mlkg>=54.2?'Uitmuntend':vo2mlkg>=46.5?'Uitstekend':vo2mlkg>=42.5?'Goed':vo2mlkg>=36.5?'Matig':vo2mlkg>=33.0?'Zwak':'Zeer zwak';
+      else if(lft<=39)norm=vo2mlkg>=49.4?'Uitmuntend':vo2mlkg>=45.0?'Uitstekend':vo2mlkg>=41.0?'Goed':vo2mlkg>=35.5?'Matig':vo2mlkg>=31.5?'Zwak':'Zeer zwak';
+      else if(lft<=49)norm=vo2mlkg>=48.0?'Uitmuntend':vo2mlkg>=43.8?'Uitstekend':vo2mlkg>=39.0?'Goed':vo2mlkg>=33.6?'Matig':vo2mlkg>=30.2?'Zwak':'Zeer zwak';
+      else if(lft<=59)norm=vo2mlkg>=45.3?'Uitmuntend':vo2mlkg>=41.0?'Uitstekend':vo2mlkg>=35.8?'Goed':vo2mlkg>=31.0?'Matig':vo2mlkg>=26.1?'Zwak':'Zeer zwak';
+      else             norm=vo2mlkg>=44.2?'Uitmuntend':vo2mlkg>=36.5?'Uitstekend':vo2mlkg>=32.3?'Goed':vo2mlkg>=26.1?'Matig':vo2mlkg>=20.5?'Zwak':'Zeer zwak';
     }
     if(norm)normEl.textContent='Categorie: '+norm+(lft?'':' (voer leeftijd in voor norm)');
   }else{
