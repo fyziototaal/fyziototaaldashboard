@@ -18,8 +18,8 @@
   <script type="text/babel">
     const { useState } = React;
 
-    // ─── VERVANG DEZE WAARDE MET JE EIGEN ANTHROPIC API KEY ───
-    const API_KEY = "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";
+    // ─── API KEY VIA LOKALE OPSLAG ───
+    const API_KEY = "JOUW_API_KEY_HIER";
 
     const G = {
       green: "#1a4a3a", greenMid: "#2d6b55", greenLight: "#e8f2ee", greenLighter: "#f2f8f5",
@@ -54,12 +54,12 @@
       { id: "degeneratief", label: "Degeneratieve fase", kort: "Degeneratief", kleur: "#b94a2c", kleurLight: "#fdf0ec" },
     ];
 
-    const callClaude = async function(prompt) {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+    var callClaude = async function(prompt, apiKey) {
+      var res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": API_KEY,
+          "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
@@ -69,7 +69,7 @@
         }),
       });
       if (!res.ok) throw new Error("API error " + res.status);
-      const data = await res.json();
+      var data = await res.json();
       return data.content.map(function(b) { return b.text || ""; }).join("") || "";
     };
 
@@ -254,7 +254,50 @@
 
     var LEEG_FORM = { pees: "achilles", fase: "acuut", duur: "", oorzaak: "", ochtendstijfheid: false, stijfheidDuur: "", extraNotities: "" };
 
+    function ApiKeyScherm(props) {
+      var inputState = useState("");
+      var input = inputState[0]; var setInput = inputState[1];
+      var foutState = useState(false);
+      var fout = foutState[0]; var setFout = foutState[1];
+
+      var opslaan = function() {
+        if (!input.trim().startsWith("sk-ant-")) { setFout(true); return; }
+        localStorage.setItem("ft_apikey", input.trim());
+        props.onOpgeslagen(input.trim());
+      };
+
+      return React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", maxWidth: 720, margin: "0 auto", padding: "0 0 40px" } },
+        React.createElement("div", { style: { background: G.green, borderRadius: "0 0 20px 20px", padding: "22px 28px", marginBottom: 24 } },
+          React.createElement("p", { style: { margin: 0, fontSize: 20, fontWeight: 700, color: G.white } },
+            "Fyzio", React.createElement("span", { style: { color: G.orange } }, "Totaal")
+          ),
+          React.createElement("p", { style: { margin: 0, fontSize: 13, color: "rgba(255,255,255,0.65)" } }, "Patiënteninformatie · Peesklachten")
+        ),
+        React.createElement("div", { style: { padding: "0 4px" } },
+          React.createElement("div", { style: { background: G.white, border: "1px solid " + G.grayBorder, borderRadius: 16, padding: 24 } },
+            React.createElement("p", { style: { margin: "0 0 8px", fontSize: 15, fontWeight: 700, color: G.green } }, "API key invoeren"),
+            React.createElement("p", { style: { margin: "0 0 20px", fontSize: 13, color: G.textMuted, lineHeight: 1.6 } }, "Voer eenmalig de API key in. Deze wordt opgeslagen in je browser en hoef je daarna niet opnieuw in te voeren."),
+            React.createElement("input", {
+              type: "password",
+              placeholder: "sk-ant-api03-...",
+              value: input,
+              onChange: function(e) { setInput(e.target.value); setFout(false); },
+              onKeyDown: function(e) { if (e.key === "Enter") opslaan(); },
+              style: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + (fout ? "#f87171" : G.grayBorder), fontSize: 14, boxSizing: "border-box", marginBottom: 8, fontFamily: "monospace" }
+            }),
+            fout && React.createElement("p", { style: { fontSize: 12, color: "#f87171", margin: "0 0 12px" } }, "Voer een geldige API key in (begint met sk-ant-)."),
+            React.createElement("button", { onClick: opslaan, style: { width: "100%", padding: "12px", borderRadius: 10, border: "none", cursor: "pointer", background: G.green, color: G.white, fontSize: 14, fontWeight: 700 } }, "Opslaan en doorgaan →")
+          )
+        )
+      );
+    }
+
     function App() {
+      var apiKeyState = useState(localStorage.getItem("ft_apikey") || "");
+      var apiKey = apiKeyState[0]; var setApiKey = apiKeyState[1];
+
+      if (!apiKey) return React.createElement(ApiKeyScherm, { onOpgeslagen: function(k) { setApiKey(k); } });
+
       var state = useState(LEEG_FORM);
       var form = state[0]; var setForm = state[1];
       var resultState = useState(null);
@@ -287,7 +330,7 @@
         var prompt = "Je bent fysiotherapeut bij Fyzio Totaal in Wierden. Schrijf een patiënteninformatiebrief in het Nederlands over peesklachten aan de " + peesData.label.toLowerCase() + ".\n\nVASTE INHOUD PER FASE — dit verwerk je altijd, in deze volgorde en structuur:\n" + faseInstructies[form.fase] + "\n\nVARIABELEN — verwerk alleen wat hieronder staat, verzin niets:\n" + (variabelen.length > 0 ? variabelen.join("\n") : "Geen variabelen ingevuld — gebruik alleen de vaste inhoud hierboven.") + "\n\nAANVULLENDE INSTRUCTIES VOOR OCHTEND-/STARTSTIJFHEID (alleen verwerken als hierboven aanwezig):\nKortdurende stijfheid na rust is een kenmerk van peesweefsel: een pees heeft geen eigen bloedtoevoer zoals spieren, maar wordt gevoed via beweging. Na een periode van rust droogt het weefsel licht in en heeft het een paar minuten belasting nodig om weer soepel te functioneren. Alleen als duur is opgegeven: benoem die duur en vermeld dat de duur een nuttige graadmeter is voor hoe de pees reageert op het belastingpatroon.\n\nSCHRIJFREGELS:\n- Begin exact met: \"Je bent bij ons geweest met klachten aan je " + peesData.label.toLowerCase() + ". Hieronder leggen we je nog eens uit wat er aan de hand is, zodat je dit thuis rustig kunt teruglezen.\"\n- Tutoyeer altijd\n- Klinisch en helder, niet overdreven empathisch\n- Geen nocebo's: geen 'scheur', 'beschadiging', 'slijtage', 'afwijking', 'ernstig letsel'\n- Geen anatomische uitleg van waar de pees loopt\n- Geen absolute hersteluitspraken ('we zijn er zeker van dat')\n- Geen gedachtestreepjes\n- Geen opvulzinnen\n- 3 tot 4 alinea's, geen bullet points, geen aanhef, geen afsluiting\n- Schrijf ALLEEN de brief";
 
         try {
-          var tekst = await callClaude(prompt);
+          var tekst = await callClaude(prompt, apiKey);
           setResult(tekst);
         } catch(e) {
           setResult("Er is een fout opgetreden. Probeer het opnieuw.");
