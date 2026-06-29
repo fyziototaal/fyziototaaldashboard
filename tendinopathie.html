@@ -468,7 +468,7 @@
       );
     }
 
-    var LEEG_FORM = { pees: "achilles", fase: "acuut", duur: "", oorzaak: "", ochtendstijfheid: false, stijfheidDuur: "", extraNotities: "" };
+    var LEEG_FORM = { pees: "achilles", fase: "acuut", duur: "", oorzaak: "", leeftijd: "", ochtendstijfheid: false, stijfheidDuur: "", extraNotities: "" };
 
     function App() {
       var apiKeyState = useState(localStorage.getItem("ft_apikey") || "");
@@ -501,6 +501,7 @@
         };
 
         var variabelen = [];
+        if (form.leeftijd) variabelen.push("Leeftijd: " + form.leeftijd + " jaar");
         if (form.duur) variabelen.push("Duur klachten: " + form.duur);
         if (form.oorzaak) variabelen.push("Oorzaak: " + form.oorzaak);
         if (form.ochtendstijfheid && form.stijfheidDuur) variabelen.push("Ochtend-/startstijfheid aanwezig, duurt: " + form.stijfheidDuur);
@@ -674,11 +675,15 @@
               React.createElement("input", { type: "text", placeholder: "bijv. 3 weken, 2 maanden", value: form.duur, onChange: function(e) { setForm(function(f) { return Object.assign({}, f, { duur: e.target.value }); }); }, style: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + G.grayBorder, fontSize: 14, boxSizing: "border-box" } })
             ),
             React.createElement("div", null,
-              React.createElement("label", { style: { fontSize: 13, fontWeight: 600, color: G.green, display: "block", marginBottom: 6 } }, "Oorzaak"),
-              React.createElement("select", { value: form.oorzaak, onChange: function(e) { setForm(function(f) { return Object.assign({}, f, { oorzaak: e.target.value }); }); }, style: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + G.grayBorder, fontSize: 14, background: G.white } },
-                React.createElement("option", { value: "" }, "Selecteer oorzaak"),
-                OORZAKEN.map(function(o) { return React.createElement("option", { key: o, value: o }, o); })
-              )
+              React.createElement("label", { style: { fontSize: 13, fontWeight: 600, color: G.green, display: "block", marginBottom: 6 } }, "Leeftijd"),
+              React.createElement("input", { type: "number", placeholder: "bijv. 45", value: form.leeftijd, onChange: function(e) { setForm(function(f) { return Object.assign({}, f, { leeftijd: e.target.value }); }); }, style: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + G.grayBorder, fontSize: 14, boxSizing: "border-box" } })
+            )
+          ),
+          React.createElement("div", { style: { marginBottom: 16 } },
+            React.createElement("label", { style: { fontSize: 13, fontWeight: 600, color: G.green, display: "block", marginBottom: 6 } }, "Oorzaak"),
+            React.createElement("select", { value: form.oorzaak, onChange: function(e) { setForm(function(f) { return Object.assign({}, f, { oorzaak: e.target.value }); }); }, style: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + G.grayBorder, fontSize: 14, background: G.white } },
+              React.createElement("option", { value: "" }, "Selecteer oorzaak"),
+              OORZAKEN.map(function(o) { return React.createElement("option", { key: o, value: o }, o); })
             )
           ),
 
