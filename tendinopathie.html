@@ -396,9 +396,13 @@
       var itemsState = useState(props.items || d.items);
       var items = itemsState[0]; var setItems = itemsState[1];
 
+      var prevItemsRef = React.useRef(null);
       React.useEffect(function() {
-        if (props.items) setItems(props.items);
-      }, [props.items]);
+        if (props.items && props.items !== prevItemsRef.current) {
+          prevItemsRef.current = props.items;
+          setItems(props.items);
+        }
+      });
 
       var updateItem = function(index, veld, waarde) {
         setItems(function(prev) {
@@ -729,7 +733,7 @@
               )
             ),
             React.createElement(Infographic, { activeFase: form.fase, oorzaak: form.oorzaak }),
-            adviesItems && React.createElement(BelastingAdvies, { fase: form.fase, items: adviesItems }),
+            React.createElement(BelastingAdvies, { fase: form.fase, items: adviesItems }),
             React.createElement("button", { onClick: reset, style: { width: "100%", padding: "10px", borderRadius: 10, border: "1px solid " + G.grayBorder, background: G.grayLight, color: G.textMuted, fontSize: 13, cursor: "pointer" } }, "← Nieuwe informatie genereren")
           )
         )
