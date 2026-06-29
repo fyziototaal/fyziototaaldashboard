@@ -464,7 +464,10 @@
           "<div class='footer'>Fyzio Totaal &nbsp;·&nbsp; Nijverheidsstraat 7, Wierden &nbsp;·&nbsp; www.fyziototaal.nl</div>" +
           "</div>";
 
-        window.print();
+        var img = new Image();
+        img.onload = function() { window.print(); };
+        img.onerror = function() { window.print(); };
+        img.src = "https://lonnekevv.github.io/fyziototaaldashboard/logo.png";
       };
 
       return React.createElement("div", { style: { fontFamily: "'Segoe UI', system-ui, sans-serif", maxWidth: 720, margin: "0 auto", padding: "0 0 40px" } },
