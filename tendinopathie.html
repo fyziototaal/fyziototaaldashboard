@@ -11,6 +11,20 @@
     *, *::before, *::after { box-sizing: border-box; }
     body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media print {
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+      body { background: #fff; font-family: 'Outfit', Arial, sans-serif; }
+      .geen-print { display: none !important; }
+      .print-header { display: flex !important; }
+      .print-badge { display: inline-block !important; }
+      .print-pagina1 { page-break-after: always; }
+      #resultaat-container { max-width: 720px; margin: 0 auto; padding: 24px; }
+    }
+    @media screen {
+      .print-header { display: none; }
+      .print-badge { display: none; }
+    }
   </style>
 </head>
 <body>
