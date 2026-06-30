@@ -435,6 +435,45 @@ const SUPABASE_KEY='sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5';
 const TABEL='fyziofit_testen';
 let huidigPNR='',huidigNaam='',vorigVerslagTekst='',rapportTekst='',bewerkModus=false;
 
+// ─── API KEY VIA LOKALE OPSLAG ───
+function getApiKey() {
+  return localStorage.getItem("ft_apikey") || "";
+}
+
+function vraagApiKey() {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px";
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:24px;max-width:380px;width:100%">
+      <p style="font-size:15px;font-weight:700;color:#1a4a3a;margin-bottom:8px">API key invoeren</p>
+      <p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:16px">Voer eenmalig de API key in. Deze wordt opgeslagen in je browser en hoef je daarna niet opnieuw in te voeren.</p>
+      <input id="apikey-input" type="password" placeholder="sk-ant-api03-..." style="width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid #dde8e4;font-size:14px;box-sizing:border-box;margin-bottom:8px;font-family:monospace">
+      <p id="apikey-fout" style="font-size:12px;color:#c0392b;display:none;margin-bottom:8px">Voer een geldige key in (begint met sk-ant-).</p>
+      <button id="apikey-opslaan" style="width:100%;padding:11px;border-radius:8px;border:none;background:#1a4a3a;color:#fff;font-size:14px;font-weight:700;cursor:pointer">Opslaan en doorgaan</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  return new Promise(resolve => {
+    const input = overlay.querySelector("#apikey-input");
+    const btn = overlay.querySelector("#apikey-opslaan");
+    const fout = overlay.querySelector("#apikey-fout");
+    const opslaan = () => {
+      const val = input.value.trim();
+      if (!val.startsWith("sk-ant-")) { fout.style.display = "block"; return; }
+      localStorage.setItem("ft_apikey", val);
+      document.body.removeChild(overlay);
+      resolve(val);
+    };
+    btn.onclick = opslaan;
+    input.onkeydown = e => { if (e.key === "Enter") opslaan(); };
+  });
+}
+
+async function zorgVoorApiKey() {
+  let key = getApiKey();
+  if (!key) key = await vraagApiKey();
+  return key;
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('input-datum').value=new Date().toISOString().split('T')[0];
   document.getElementById('input-pnr').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'').slice(0,6);});
@@ -682,11 +721,6 @@ function updateNormSitReach(){
 }
 
 function berekenVO2max(){
-  // Astrand-Rhyming nomogram formule
-  // VO2max (L/min) = (Watt x 12 + 300) / (HF_gem - 28)
-  // Leeftijdscorrectie: correctiefactor op basis van Astrand leeftijdstabel
-  // Daarna /1000 * (1000/gewicht) = /gewicht * 1000 voor ml/kg/min
-  // Gewicht spiegelen vanuit lichaamsmaten
   const gewichtHoofd=v('gewicht');
   const astGew=document.getElementById('astrand_gewicht');
   if(gewichtHoofd&&astGew)astGew.value=gewichtHoofd;
@@ -703,12 +737,9 @@ function berekenVO2max(){
   const hfGem=(hf5+hf6)/2;
   if(hfGem<=28)return;
 
-  // Astrand-Rhyming regressieformule (nomogram-benadering, bron: meetinstrumentenzorg)
-  // Belasting omrekenen van Watt naar kgm/min (1W = 6.12 kgm/min)
   const belastingKgm=watt*6.12;
   const g=v('input-geslacht');
 
-  // Regressieformule geeft VO2max in ml/kg/min
   let vo2mlkg=0;
   if(g==='man'){
     vo2mlkg=(0.00212*belastingKgm+0.299)/(0.769*hfGem-48.5)*1000;
@@ -716,7 +747,6 @@ function berekenVO2max(){
     vo2mlkg=(0.00193*belastingKgm+0.326)/(0.769*hfGem-56.1)*1000;
   }
 
-  // Leeftijdscorrectie (Astrand & Rodahl correctietabel)
   let correctie=1.0;
   if(lft>0){
     if(lft<=25)correctie=1.10;
@@ -729,7 +759,6 @@ function berekenVO2max(){
   }
   const vo2mlkg_corr=vo2mlkg*correctie;
 
-  // Omrekenen naar L/min via gewicht
   const vo2gecorr=(!isNaN(gew)&&gew>0)?(vo2mlkg_corr*gew/1000):0;
   vo2abs.value=vo2gecorr.toFixed(2);
 
@@ -737,9 +766,6 @@ function berekenVO2max(){
     const vo2mlkg=vo2mlkg_corr;
     vo2rel.value=vo2mlkg.toFixed(1);
 
-    // VO2max normwaarden (uploaded tabel)
-    // Vrouwen - bovenste tabel: Very poor / Poor / Fair / Good / Excellent / Superior
-    // Mannen  - onderste tabel: Very poor / Poor / Fair / Good / Excellent / Superior
     const g=v('input-geslacht');
     let norm='';
     if(g==='vrouw'){
@@ -894,8 +920,9 @@ Overzicht mogelijke vervolgafspraken
 Maximaal 650 woorden. Schrijf in het Nederlands. Zorg dat elke sectie volledig is afgerond.`;
 
   try{
+    const apiKey = await zorgVoorApiKey();
     const response=await Promise.race([
-      fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:prompt}]})}),
+      fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]})}),
       new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),30000))
     ]);
     const json=await response.json();
