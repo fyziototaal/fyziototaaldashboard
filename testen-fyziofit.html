@@ -71,6 +71,8 @@
   .score-veld label{display:block;font-size:.78rem;font-weight:600;color:var(--tekst-zacht);margin-bottom:4px}
   .score-veld input,.score-veld select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.9rem;font-family:inherit}
   .score-veld input:focus,.score-veld select:focus{outline:none;border-color:var(--groen-mid)}
+  input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
   .score-badge{display:none;margin-top:5px;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700}
   .score-badge.goed{background:#e8f5e9;color:#27ae60;display:inline-block}
   .score-badge.matig{background:#fef9e7;color:#e67e22;display:inline-block}
@@ -233,6 +235,7 @@
               <div class="score-veld"><label>Rechts - gewicht (kg)</label><input type="number" id="sp_kg_re" placeholder="kg" step="0.5" oninput="updateNormSP()"></div>
             </div>
             <div class="norm-tekst" id="norm-sp"></div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="sp_opm" placeholder="bijv. compensatie met onderrug rechts..."></textarea></div>
           </div>
         </div>
         <div class="test-item">
@@ -243,6 +246,7 @@
               <div class="score-veld"><label>Links (herhalingen)</label><input type="number" id="slsu_li" placeholder="hh" min="0" oninput="badge('slsu_li','slsu_badge_li',[[11,999,'goed'],[5,10,'matig'],[0,4,'zwak']])"><span class="score-badge" id="slsu_badge_li"></span></div>
               <div class="score-veld"><label>Rechts (herhalingen)</label><input type="number" id="slsu_re" placeholder="hh" min="0" oninput="badge('slsu_re','slsu_badge_re',[[11,999,'goed'],[5,10,'matig'],[0,4,'zwak']])"><span class="score-badge" id="slsu_badge_re"></span></div>
             </div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="slsu_opm" placeholder="bijv. links minder stabiel dan rechts..."></textarea></div>
           </div>
         </div>
       </div>
@@ -260,6 +264,7 @@
               <div class="score-veld"><label>Links (herhalingen)</label><input type="number" id="brug_li" placeholder="hh" min="0" oninput="badge('brug_li','brug_badge_li',[[31,999,'top'],[20,30,'goed'],[0,19,'zwak']])"><span class="score-badge" id="brug_badge_li"></span></div>
               <div class="score-veld"><label>Rechts (herhalingen)</label><input type="number" id="brug_re" placeholder="hh" min="0" oninput="badge('brug_re','brug_badge_re',[[31,999,'top'],[20,30,'goed'],[0,19,'zwak']])"><span class="score-badge" id="brug_badge_re"></span></div>
             </div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="brug_opm" placeholder="bijv. kramp na 22 hh rechts..."></textarea></div>
           </div>
         </div>
         <div class="test-item">
@@ -270,6 +275,7 @@
             <div class="score-rij enkel">
               <div class="score-veld"><label>Tijd (seconden)</label><input type="number" id="biering" placeholder="sec" min="0" oninput="updateBieringNorm()"><div class="norm-tekst" id="norm-biering">Norm (verzwaard): Top &gt;90 sec / Goed &gt;60 sec / Zwak &lt;45 sec</div><span class="score-badge" id="biering_badge"></span></div>
             </div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="biering_opm" placeholder="bijv. na 64 seconden pijn in onderrug..."></textarea></div>
           </div>
         </div>
         <div class="test-item">
@@ -282,6 +288,7 @@
               <div class="score-veld"><label>Rechts (seconden)</label><input type="number" id="roman_re" placeholder="sec" min="0" oninput="updateRomanNorm()"><span class="score-badge" id="roman_badge_re"></span></div>
             </div>
             <div class="norm-tekst" id="norm-roman">Norm (verzwaard): Top &gt;60 sec / Goed plus of min 45 sec / Zwak &lt;30 sec</div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="roman_opm" placeholder="bijv. rechts duidelijk minder stabiel..."></textarea></div>
           </div>
         </div>
         <div class="test-item">
@@ -303,6 +310,7 @@
             <div class="score-rij enkel">
               <div class="score-veld"><label>Tijd (seconden)</label><input type="number" id="plank" placeholder="sec" min="0" oninput="updatePlankNorm()"><div class="norm-tekst" id="norm-plank">Norm RKC: Goed &gt;45 sec / Matig 30-45 sec / Zwak &lt;30 sec</div><span class="score-badge" id="plank_badge"></span></div>
             </div>
+            <div class="opmerkingen"><label>Opmerkingen</label><textarea id="plank_opm" placeholder="bijv. heupen zakten naar 50 sec..."></textarea></div>
           </div>
         </div>
       </div>
@@ -477,6 +485,9 @@ async function zorgVoorApiKey() {
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('input-datum').value=new Date().toISOString().split('T')[0];
   document.getElementById('input-pnr').addEventListener('input',function(){this.value=this.value.replace(/\D/g,'').slice(0,6);});
+  document.addEventListener('wheel',function(e){
+    if(document.activeElement&&document.activeElement.type==='number'){document.activeElement.blur();}
+  },{passive:true});
 });
 
 async function startSessie(){
@@ -545,13 +556,13 @@ function verzamelData(){
     wall_angels:radio('wall_angels'),wall_angels_opm:v('wall_angels_opm'),
     overhead_squat:radio('overhead_squat'),overhead_squat_opm:v('overhead_squat_opm'),
     sit_reach:v('sit_reach'),
-    sp_hh_li:v('sp_hh_li'),sp_kg_li:v('sp_kg_li'),sp_hh_re:v('sp_hh_re'),sp_kg_re:v('sp_kg_re'),
-    slsu_li:v('slsu_li'),slsu_re:v('slsu_re'),
-    brug_li:v('brug_li'),brug_re:v('brug_re'),
-    biering_variant:v('biering-variant'),biering:v('biering'),
-    roman_variant:v('roman-variant'),roman_li:v('roman_li'),roman_re:v('roman_re'),
+    sp_hh_li:v('sp_hh_li'),sp_kg_li:v('sp_kg_li'),sp_hh_re:v('sp_hh_re'),sp_kg_re:v('sp_kg_re'),sp_opm:v('sp_opm'),
+    slsu_li:v('slsu_li'),slsu_re:v('slsu_re'),slsu_opm:v('slsu_opm'),
+    brug_li:v('brug_li'),brug_re:v('brug_re'),brug_opm:v('brug_opm'),
+    biering_variant:v('biering-variant'),biering:v('biering'),biering_opm:v('biering_opm'),
+    roman_variant:v('roman-variant'),roman_li:v('roman_li'),roman_re:v('roman_re'),roman_opm:v('roman_opm'),
     dll:radio('dll'),dll_hoek:v('dll_hoek'),
-    plank_variant:v('plank-variant'),plank:v('plank'),
+    plank_variant:v('plank-variant'),plank:v('plank'),plank_opm:v('plank_opm'),
     conditie_variant:v('conditie-variant'),
     roei_tijd:v('roei_tijd'),
     step_hf:v('step_hf'),
@@ -565,8 +576,8 @@ function vulFormulierIn(d){
   const stel=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null&&val!=='')el.value=val;};
   ['input-datum','input-geslacht','input-leeftijd','input-tester',
    'lengte','gewicht','buikomvang','wall_angels_opm','overhead_squat_opm','sit_reach',
-   'sp_hh_li','sp_kg_li','sp_hh_re','sp_kg_re','slsu_li','slsu_re',
-   'brug_li','brug_re','biering','roman_li','roman_re','dll_hoek','plank',
+   'sp_hh_li','sp_kg_li','sp_hh_re','sp_kg_re','sp_opm','slsu_li','slsu_re','slsu_opm',
+   'brug_li','brug_re','brug_opm','biering','biering_opm','roman_li','roman_re','roman_opm','dll_hoek','plank','plank_opm',
    'roei_tijd','step_hf','astrand_hf5','astrand_hf6','astrand_watt','astrand_vo2','astrand_vo2_abs','astrand_gewicht',
    'blessure_info','blessure_invloed'
   ].forEach(id=>stel(id,d[id.replace(/-/g,'_')]));
@@ -948,13 +959,13 @@ function bouwScoreSamenvatting(d){
   if(d.wall_angels)r.push('Wall Angels: '+d.wall_angels+(d.wall_angels_opm?' - '+d.wall_angels_opm:''));
   if(d.overhead_squat)r.push('Overhead Squat: '+d.overhead_squat+(d.overhead_squat_opm?' - '+d.overhead_squat_opm:''));
   if(d.sit_reach)r.push('Sit en Reach: '+d.sit_reach+' cm');
-  if(d.sp_hh_li)r.push('Shoulder Press: links '+d.sp_hh_li+' hh x '+d.sp_kg_li+' kg, rechts '+d.sp_hh_re+' hh x '+d.sp_kg_re+' kg');
-  if(d.slsu_li)r.push('Single Leg Stand Up (30 sec): links '+d.slsu_li+' hh, rechts '+d.slsu_re+' hh');
-  if(d.brug_li)r.push('1-Benige Brug: links '+d.brug_li+' hh, rechts '+d.brug_re+' hh');
-  if(d.biering)r.push('Biering-Sorensen ('+( d.biering_variant||'verzwaard')+'): '+d.biering+' sec');
-  if(d.roman_li)r.push('Laterale Roman Chair ('+(d.roman_variant||'verzwaard')+'): links '+d.roman_li+' sec, rechts '+d.roman_re+' sec');
+  if(d.sp_hh_li)r.push('Shoulder Press: links '+d.sp_hh_li+' hh x '+d.sp_kg_li+' kg, rechts '+d.sp_hh_re+' hh x '+d.sp_kg_re+' kg'+(d.sp_opm?' - opmerking: '+d.sp_opm:''));
+  if(d.slsu_li)r.push('Single Leg Stand Up (30 sec): links '+d.slsu_li+' hh, rechts '+d.slsu_re+' hh'+(d.slsu_opm?' - opmerking: '+d.slsu_opm:''));
+  if(d.brug_li)r.push('1-Benige Brug: links '+d.brug_li+' hh, rechts '+d.brug_re+' hh'+(d.brug_opm?' - opmerking: '+d.brug_opm:''));
+  if(d.biering)r.push('Biering-Sorensen ('+( d.biering_variant||'verzwaard')+'): '+d.biering+' sec'+(d.biering_opm?' - opmerking: '+d.biering_opm:''));
+  if(d.roman_li)r.push('Laterale Roman Chair ('+(d.roman_variant||'verzwaard')+'): links '+d.roman_li+' sec, rechts '+d.roman_re+' sec'+(d.roman_opm?' - opmerking: '+d.roman_opm:''));
   if(d.dll)r.push('Double Leg Lowering: '+d.dll+(d.dll_hoek?' (losgelaten bij '+d.dll_hoek+' graden)':''));
-  if(d.plank)r.push('Plank ('+(d.plank_variant||'rkc')+'): '+d.plank+' sec');
+  if(d.plank)r.push('Plank ('+(d.plank_variant||'rkc')+'): '+d.plank+' sec'+(d.plank_opm?' - opmerking: '+d.plank_opm:''));
   if(d.conditie_variant==='roei'&&d.roei_tijd)r.push('Roeitest 1000m: '+d.roei_tijd);
   if(d.conditie_variant==='step'&&d.step_hf)r.push('YMCA Steptest: herstelHF '+d.step_hf+' bpm na 60 sec');
   if(d.conditie_variant==='astrand'&&d.astrand_hf6)r.push('Astrand fietstest: HF min5='+d.astrand_hf5+' min6='+d.astrand_hf6+' bpm, '+d.astrand_watt+'W'+(d.astrand_vo2?' - VO2max '+d.astrand_vo2_abs+' L/min ('+d.astrand_vo2+' ml/kg/min)':''));
