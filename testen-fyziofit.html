@@ -396,7 +396,7 @@
         <p style="font-size:.82rem;color:var(--tekst-zacht);margin-bottom:14px">Vermeld relevante blessures of operaties die invloed kunnen hebben op de testscores. De AI verwerkt dit in het verslag met een passende toelichting naar de sporter.</p>
         <div style="display:grid;gap:12px">
           <div>
-            <label style="display:block;font-size:.82rem;font-weight:600;color:var(--groen);margin-bottom:4px">Blessures / operaties</label>
+            <label style="display:block;font-size:.82rem;font-weight:600;color:var(--groen);margin-bottom:4px">Relevante blessures / operaties</label>
             <textarea id="blessure_info" placeholder="bijv. VKB-reconstructie linkerknie (2022, hamstringpees gebruikt), eerdere schouderblessure rechts..." style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.85rem;font-family:inherit;resize:vertical;min-height:80px"></textarea>
           </div>
           <div>
@@ -865,13 +865,15 @@ TAAL EN STIJL:
 - Geen gedachtestreepjes als opsommingsteken of als leesteken in de lopende tekst.
 - Geen markdown-hekjes voor kopjes. Kopjes zijn gewone vetgedrukte regels.
 - Geen nocebo-taal.
-- Gebruik begrijpelijke taal, maar behoud correcte medische termen waar dat gepast is (bijv. "voorste kruisbandreconstructie" niet "kniereconstructie", "hamstrings" niet "achterkant van je bovenbeen"). Vertaal alleen termen die voor de sporter echt niets zeggen: bijv. niet "valgus" maar "knieen zakken naar binnen"; niet "lumbale extensoren" maar "rugspieren".
+- Gebruik begrijpelijke taal, maar behoud correcte medische termen waar dat gepast is (bijv. "voorste kruisbandreconstructie" niet "kniereconstructie", "hamstrings" niet "achterkant van je bovenbeen"). Vertaal alleen termen die voor de sporter echt niets zeggen: bijv. niet "valgus" maar "knieen zakken naar binnen"; niet "lumbale extensoren" maar "rugspieren". Herkenbare woorden als "squat" mogen gewoon gebruikt worden, maar vermijd stijve technische samenstellingen zoals "squat-patroon"; schrijf in plaats daarvan gewoon hoe iemand de squat uitvoert, in spreektaal.
+- Wees ANATOMISCH SECUUR: controleer bij elke test welk lichaamsdeel daadwerkelijk getest wordt en gebruik dat consequent. Shoulder Press test de ARMEN/SCHOUDERS, nooit "benen". Single Leg Stand Up, 1-Benige Brug en Roman Chair testen BENEN/HEUPEN. Verwar links/rechts zijde nooit met het verkeerde lichaamsdeel.
 - Let op grammatica, ook bij meervoud: "je rugspieren hielden het vol" (niet "hield").
 
 ADVIESTOON:
 - Als een score goed is, benoem dat positief en geef geen vervolgadvies voor dat onderdeel. Goed is goed.
 - Aandachtspunten formuleer je als kansen met een concrete richting, nooit als tekortkomingen.
-- Als er een blessuregeschiedenis is vermeld: benoem bij de betreffende testen dat de voorgeschiedenis mogelijk van invloed kan zijn op de score. Wees voorzichtig ("kan mogelijk te maken hebben met", "is soms een gevolg van"). Gebruik je kennis als fysiotherapeut om dit begrijpelijk en geruststellend te verklaren voor de sporter. Stel nooit iets met zekerheid vast.
+- Als er een blessuregeschiedenis is vermeld die AL LANGER GELEDEN is (bijv. een operatie jaren terug): benoem dit alleen als mogelijke achtergrondfactor, nooit als rechtvaardiging voor een lagere score nu. Een oude blessure verklaart een verschil niet automatisch; het lichaam kan en moet zich daarna weer volledig kunnen ontwikkelen. Formuleer dit dus voorzichtig en relativerend, bijvoorbeeld: "Dit zou nog kunnen samenhangen met je eerdere blessure, al is dat na deze tijd niet vanzelfsprekend. Het is in elk geval een mooi punt om gericht aan te werken."
+- Als de blessuregeschiedenis aangeeft dat iemand HUIDIG of RECENT met klachten kampt: dan mag het verband tussen de score en de blessure duidelijker en directer worden gelegd.
 
 DEELNEMER:
 Naam: ${data.naam} | Leeftijd: ${data.leeftijd||'onbekend'} | Geslacht: ${data.geslacht||'onbekend'} | Datum: ${data.datum}
