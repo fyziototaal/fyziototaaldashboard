@@ -1023,31 +1023,43 @@ function toggleEdit(){
 function downloadPDF(){
   const tekst=bewerkModus?document.getElementById('rapport-edit').value:rapportTekst;
   const d=verzamelData();
+  const sectieRe=/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijk om mee te nemen|Overzicht mogelijke vervolgafspraken)/;
 
-  const regels=tekst.split('\n').map((r,i)=>{
+  const delen=[];
+  let open=false;
+  tekst.split('\n').forEach((r,i)=>{
     const kaal=r.replace(/\*\*/g,'').trim();
-    if(!kaal)return '<br>';
-    if(i===0||/^Testverslag\s/.test(kaal))return '';
-    if(/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijk om mee te nemen|Overzicht mogelijke vervolgafspraken)/.test(kaal))
-      return '<div class="sectie-kop">'+kaal+'</div>';
+    if(!kaal)return;
+    if(i===0||/^Testverslag\s/.test(kaal))return;
+    if(sectieRe.test(kaal)){
+      if(open)delen.push('</div>');
+      delen.push('<div class="sectie-blok"><div class="sectie-kop">'+kaal+'</div>');
+      open=true;
+      return;
+    }
     if(/^\*\s/.test(r)){
       const inhoud=r.replace(/^\*\s/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-      return '<p style="padding-left:16px;text-indent:-16px">&bull; '+inhoud+'</p>';
+      delen.push('<p style="padding-left:16px;text-indent:-16px">&bull; '+inhoud+'</p>');
+      return;
     }
     const inhoud=r.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-    return '<p>'+inhoud+'</p>';
-  }).join('');
+    delen.push('<p>'+inhoud+'</p>');
+  });
+  if(open)delen.push('</div>');
+  const regels=delen.join('');
 
   const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Testverslag '+d.naam+'</title>'
     +'<style>'
-    +'body{font-family:"Segoe UI",Inter,Arial,sans-serif;max-width:680px;margin:40px auto;padding:0 24px;font-size:13.5px;line-height:1.8;color:#1a1a1a}'
-    +'.header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #82176D;padding-bottom:14px;margin-bottom:20px}'
+    +'body{font-family:"Segoe UI",Inter,Arial,sans-serif;max-width:680px;margin:40px auto;padding:0 24px;font-size:13.5px;line-height:1.55;color:#1a1a1a}'
+    +'.header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #82176D;padding-bottom:14px;margin-bottom:16px}'
     +'.logo{height:44px}'
     +'.meta{font-size:11px;color:#6b7280;text-align:right;line-height:1.6}'
     +'.titel{font-size:18px;font-weight:700;color:#82176D;margin-bottom:4px}'
-    +'.sectie-kop{color:#82176D;font-weight:700;font-size:13.5px;margin-top:20px;margin-bottom:4px;border-left:3px solid #00B6E8;padding-left:8px}'
-    +'p{margin:0 0 5px}'
-    +'.footer{border-top:1px solid #e5e7eb;padding-top:12px;font-size:11px;color:#9ca3af;margin-top:20px}'
+    +'.sectie-blok{margin-top:12px;break-inside:avoid;page-break-inside:avoid}'
+    +'.sectie-blok:first-of-type{margin-top:0}'
+    +'.sectie-kop{color:#82176D;font-weight:700;font-size:13.5px;margin-bottom:3px;border-left:3px solid #00B6E8;padding-left:8px}'
+    +'p{margin:0 0 4px}'
+    +'.footer{border-top:1px solid #e5e7eb;padding-top:12px;font-size:11px;color:#9ca3af;margin-top:16px}'
     +'@media print{body{margin:20px;max-width:100%}}'
     +'</style></head><body>'
     +'<div class="header">'
