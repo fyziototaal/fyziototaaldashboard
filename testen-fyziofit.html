@@ -1066,7 +1066,7 @@ async function downloadPDF(){
   const regels=delen.join('');
 
   const wrapper=document.createElement('div');
-  wrapper.style.cssText='position:absolute;left:0;top:0;width:680px;background:#fff;font-family:"Segoe UI",Inter,Arial,sans-serif;font-size:13.5px;line-height:1.55;color:#1a1a1a;padding:28px;z-index:-9999;';
+  wrapper.style.cssText='position:fixed;left:0;top:0;width:680px;max-height:100vh;overflow:auto;background:#fff;font-family:"Segoe UI",Inter,Arial,sans-serif;font-size:13.5px;line-height:1.55;color:#1a1a1a;padding:28px;z-index:99999;box-shadow:0 0 40px rgba(0,0,0,.3)';
   wrapper.innerHTML=
     '<style>'
     +'.header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #82176D;padding-bottom:14px;margin-bottom:16px}'
@@ -1089,6 +1089,11 @@ async function downloadPDF(){
     +regels
     +'<div class="footer">Fyzio Totaal &nbsp;&middot;&nbsp; Nijverheidsstraat 7, Wierden &nbsp;&middot;&nbsp; www.fyziototaal.nl</div>';
 
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(20,20,20,.6);z-index:99998;display:flex;align-items:flex-start;justify-content:center;padding-top:24px;color:#fff;font-family:"Segoe UI",Inter,Arial,sans-serif;font-size:14px;font-weight:600';
+  overlay.textContent='PDF wordt gemaakt...';
+
+  document.body.appendChild(overlay);
   document.body.appendChild(wrapper);
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
 
@@ -1105,6 +1110,7 @@ async function downloadPDF(){
     toonMelding('melding-globaal','PDF genereren mislukt: '+e.message,'fout');
   }finally{
     document.body.removeChild(wrapper);
+    document.body.removeChild(overlay);
     knop.disabled=false;knop.textContent=oorspronkelijkeTekst;
   }
 }
@@ -1116,7 +1122,7 @@ function mailRapport(){
   const herstelcheckRegel='Herstelcheck ingevuld: '+(d.herstelcheck?'ja':'nee');
   const body=herstelcheckRegel+'\n\n'+platteTekst;
   const onderwerp='Testverslag '+d.naam+' - '+d.datum;
-  const testadres='lonneke@fyziototaal.nl';
+  const testadres='mayke@fyziototaal.nl';
   const gmailLink='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(testadres)+'&su='+encodeURIComponent(onderwerp)+'&body='+encodeURIComponent(body);
   window.open(gmailLink,'_blank');
 }
