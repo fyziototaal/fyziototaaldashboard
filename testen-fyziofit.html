@@ -434,6 +434,7 @@
         <div class="rapport-acties">
           <button class="btn btn-secondary" onclick="toggleEdit()">Bewerken</button>
           <button class="btn btn-primary" onclick="downloadPDF()">Download als PDF</button>
+          <button class="btn btn-secondary" onclick="mailRapport()">Mail naar Mayke</button>
         </div>
         <p style="font-size:.75rem;color:var(--tekst-zacht);margin-top:10px">Het bestand wordt gedownload als HTML-bestand. Open het in je browser en druk op <strong>Ctrl+P</strong> (Windows) of <strong>Cmd+P</strong> (Mac) om het op te slaan als PDF of af te drukken.</p>
       </div>
@@ -1080,6 +1081,16 @@ function downloadPDF(){
   a.click();
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+
+function mailRapport(){
+  const tekst=bewerkModus?document.getElementById('rapport-edit').value:rapportTekst;
+  const d=verzamelData();
+  const platteTekst=tekst.replace(/\*\*(.*?)\*\*/g,'$1');
+  const onderwerp='Testverslag '+d.naam+' - '+d.datum;
+  const testadres='lonneke@fyziototaal.nl';
+  const link='mailto:'+testadres+'?subject='+encodeURIComponent(onderwerp)+'&body='+encodeURIComponent(platteTekst);
+  window.location.href=link;
 }
 </script>
 </body>
