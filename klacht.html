@@ -219,7 +219,9 @@
             callClaude([{ role: "user", content: inputVoorKlacht }], KLACHT_SYSTEM),
             callClaude([{ role: "user", content: tInput }], T_SYSTEM),
           ]);
-          setFullKlacht(res2[0] + "\nH: " + hVal + "\n" + res2[1]);
+          // Verwijder witregels tussen KLACHT-onderdelen
+          var klachtTekst = res2[0].replace(/\n\s*\n/g, "\n").trim();
+          setFullKlacht(klachtTekst + "\nH: " + hVal + "\n" + res2[1].trim());
           setExtras({ behandelplan: null, patientbrief: null });
           setPatientbriefEdit("");
           setStep(2); scrollTo(step3Ref);
