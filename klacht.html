@@ -93,7 +93,10 @@
         },
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, temperature: 0, system: system, messages: messages }),
       });
-      if (!res.ok) throw new Error("API error " + res.status);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error("HTTP " + res.status + ": " + errText);
+      }
       const data = await res.json();
       return data.content.map(function(b) { return b.text || ""; }).join("") || "";
     };
@@ -176,7 +179,7 @@
             setTMode(p.isRevalidatie ? T_MODE_PROTOCOL : T_MODE_MANUAL);
           } catch(e) { setRevalidatie({ isRevalidatie: false, label: null }); setTMode(T_MODE_MANUAL); }
           setStep(1); scrollTo(step2Ref);
-        } catch(e) { alert("Er is een fout opgetreden. Controleer je API-sleutel en probeer opnieuw."); }
+        } catch(e) { alert("Fout: " + e.message); }
         setLoading(false);
       };
 
