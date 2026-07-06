@@ -19,7 +19,7 @@
     const { useState, useRef } = React;
 
     function getApiKey() {
-      return localStorage.getItem("klacht_apikey") || "";
+      return localStorage.getItem("ft_apikey") || "";
     }
 
     async function vraagApiKey() {
@@ -34,7 +34,7 @@
         var opslaan = function() {
           var val = input.value.trim();
           if (!val.startsWith("sk-ant-")) { fout.style.display = "block"; return; }
-          localStorage.setItem("klacht_apikey", val);
+          localStorage.setItem("ft_apikey", val);
           document.body.removeChild(overlay);
           resolve(val);
         };
