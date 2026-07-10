@@ -220,7 +220,7 @@
             <div class="score-rij enkel">
               <div class="score-veld">
                 <label>Score (cm)</label>
-                <input type="number" id="sit_reach" placeholder="bijv. 8 of -3" step="0.5" oninput="updateNormSitReach()">
+                <input type="number" id="sit_reach" placeholder="bijv. 15 of 8" step="0.5" oninput="updateNormSitReach()">
                 <div class="norm-tekst" id="norm-sit-reach">Norm: Goed &gt;10 cm / Gemiddeld 0-10 cm / Slecht &lt;0 cm</div>
                 <span class="score-badge" id="sit_reach_badge"></span>
               </div>
@@ -738,14 +738,47 @@ function updateNormRoei(){
 }
 
 
+const SIT_REACH_NORMEN={
+  man:{
+    superior:[23.4,23.0,22.0,21.3,20.5,20.0],
+    excellent:[21.7,20.5,19.5,18.5,17.5,17.3],
+    good:[19.0,18.5,17.5,16.3,15.5,14.5],
+    fair:[16.5,16.5,15.5,14.3,13.3,12.5],
+    poor:[13.2,14.4,13.0,12.0,10.5,10.0]
+  },
+  vrouw:{
+    superior:[24.3,24.5,24.0,22.8,23.0,23.0],
+    excellent:[22.5,22.5,21.5,20.5,20.3,19.0],
+    good:[21.5,20.5,20.0,19.0,18.5,17.0],
+    fair:[20.5,18.3,16.8,16.8,16.8,15.5],
+    poor:[18.5,16.5,14.8,13.6,13.6,13.0]
+  }
+};
+function sitReachLeeftijdIndex(lft){
+  if(lft<20)return 0;
+  if(lft<=29)return 1;
+  if(lft<=39)return 2;
+  if(lft<=49)return 3;
+  if(lft<=59)return 4;
+  return 5;
+}
 function updateNormSitReach(){
   const val=parseFloat(v('sit_reach'));
   const b=document.getElementById('sit_reach_badge');
   b.className='score-badge';b.textContent='';
   if(isNaN(val))return;
-  if(val>10){b.textContent='Goed';b.classList.add('goed');}
-  else if(val>=0){b.textContent='Gemiddeld';b.classList.add('matig');}
-  else{b.textContent='Slecht';b.classList.add('zwak');}
+  const geslacht=v('input-geslacht')==='vrouw'?'vrouw':'man';
+  const leeftijd=parseInt(v('input-leeftijd'))||30;
+  const idx=sitReachLeeftijdIndex(leeftijd);
+  const n=SIT_REACH_NORMEN[geslacht];
+  let label,klasse;
+  if(val>=n.superior[idx]){label='Superieur';klasse='goed';}
+  else if(val>=n.excellent[idx]){label='Uitstekend';klasse='goed';}
+  else if(val>=n.good[idx]){label='Goed';klasse='goed';}
+  else if(val>=n.fair[idx]){label='Redelijk';klasse='matig';}
+  else if(val>=n.poor[idx]){label='Zwak';klasse='zwak';}
+  else{label='Zeer zwak';klasse='zwak';}
+  b.textContent=label;b.classList.add(klasse);
 }
 
 function berekenVO2max(){
@@ -981,7 +1014,20 @@ function bouwScoreSamenvatting(d){
   if(d.buikomvang){const g=d.geslacht,b=parseFloat(d.buikomvang),[a,c]=g==='vrouw'?[80,88]:[94,102];r.push('Buikomvang: '+b+' cm ('+(b<a?'gezond':b<=c?'verhoogd risico':'te hoog')+')');}
   if(d.wall_angels)r.push('Wall Angels: '+d.wall_angels+(d.wall_angels_opm?' - '+d.wall_angels_opm:''));
   if(d.overhead_squat)r.push('Overhead Squat: '+d.overhead_squat+(d.overhead_squat_opm?' - '+d.overhead_squat_opm:''));
-  if(d.sit_reach)r.push('Sit en Reach: '+d.sit_reach+' cm');
+  if(d.sit_reach){
+    const val=parseFloat(d.sit_reach);
+    const geslacht=d.geslacht==='vrouw'?'vrouw':'man';
+    const leeftijd=parseInt(d.leeftijd)||30;
+    const idx=sitReachLeeftijdIndex(leeftijd);
+    const n=SIT_REACH_NORMEN[geslacht];
+    let label='Zeer zwak';
+    if(val>=n.superior[idx])label='Superieur';
+    else if(val>=n.excellent[idx])label='Uitstekend';
+    else if(val>=n.good[idx])label='Goed';
+    else if(val>=n.fair[idx])label='Redelijk';
+    else if(val>=n.poor[idx])label='Zwak';
+    r.push('Sit en Reach: '+d.sit_reach+' cm (norm voor leeftijd/geslacht: '+label+')');
+  }
   if(d.sp_hh_li)r.push('Shoulder Press: links '+d.sp_hh_li+' hh x '+d.sp_kg_li+' kg, rechts '+d.sp_hh_re+' hh x '+d.sp_kg_re+' kg'+(d.sp_opm?' - opmerking: '+d.sp_opm:''));
   if(d.slsu_li)r.push('Single Leg Stand Up (30 sec): links '+d.slsu_li+' hh, rechts '+d.slsu_re+' hh'+(d.slsu_opm?' - opmerking: '+d.slsu_opm:''));
   if(d.brug_li)r.push('1-Benige Brug: links '+d.brug_li+' hh, rechts '+d.brug_re+' hh'+(d.brug_opm?' - opmerking: '+d.brug_opm:''));
