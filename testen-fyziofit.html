@@ -136,8 +136,8 @@
     <div class="input-group"><label>Patiëntnummer (cijfers)</label><input type="text" id="input-pnr" placeholder="bijv. 12345" maxlength="6" inputmode="numeric"></div>
     <div class="input-group"><label>Voornaam</label><input type="text" id="input-naam" placeholder="Voornaam"></div>
     <div class="input-group"><label>Testdatum</label><input type="date" id="input-datum"></div>
-    <div class="input-group"><label>Geslacht</label><select id="input-geslacht"><option value="">selecteer</option><option value="man">Man</option><option value="vrouw">Vrouw</option></select></div>
-    <div class="input-group"><label>Leeftijd</label><input type="number" id="input-leeftijd" placeholder="48" min="18" max="99"></div>
+    <div class="input-group"><label>Geslacht</label><select id="input-geslacht" onchange="updateNormSitReach()"><option value="">selecteer</option><option value="man">Man</option><option value="vrouw">Vrouw</option></select></div>
+    <div class="input-group"><label>Leeftijd</label><input type="number" id="input-leeftijd" placeholder="48" min="18" max="99" oninput="updateNormSitReach()"></div>
     <div class="input-group"><label>Tester</label><select id="input-tester"><option value="">selecteer</option><option value="Lynn">Lynn</option><option value="Jesper">Jesper</option><option value="Julia">Julia</option><option value="Thomas">Thomas</option></select></div>
     <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--groen-licht);border-radius:8px;border:1.5px solid #dde8e4;margin-bottom:16px">
       <input type="checkbox" id="input-herstelcheck" style="width:18px;height:18px;accent-color:var(--groen);cursor:pointer">
@@ -221,7 +221,7 @@
               <div class="score-veld">
                 <label>Score (cm)</label>
                 <input type="number" id="sit_reach" placeholder="bijv. 15 of 8" step="0.5" oninput="updateNormSitReach()">
-                <div class="norm-tekst" id="norm-sit-reach">Norm: Goed &gt;10 cm / Gemiddeld 0-10 cm / Slecht &lt;0 cm</div>
+                <div class="norm-tekst" id="norm-sit-reach">Norm: vul geslacht en leeftijd in voor de normwaarden</div>
                 <span class="score-badge" id="sit_reach_badge"></span>
               </div>
             </div>
@@ -744,14 +744,14 @@ const SIT_REACH_NORMEN={
     excellent:[21.7,20.5,19.5,18.5,17.5,17.3],
     good:[19.0,18.5,17.5,16.3,15.5,14.5],
     fair:[16.5,16.5,15.5,14.3,13.3,12.5],
-    poor:[13.2,14.4,13.0,12.0,10.5,10.0]
+    poor:[11.9,13.5,12.0,11.0,9.7,9.0]
   },
   vrouw:{
     superior:[24.3,24.5,24.0,22.8,23.0,23.0],
     excellent:[22.5,22.5,21.5,20.5,20.3,19.0],
     good:[21.5,20.5,20.0,19.0,18.5,17.0],
     fair:[20.5,18.3,16.8,16.8,16.8,15.5],
-    poor:[18.5,16.5,14.8,13.6,13.6,13.0]
+    poor:[17.8,16.4,15.5,14.0,14.0,11.5]
   }
 };
 function sitReachLeeftijdIndex(lft){
@@ -763,14 +763,19 @@ function sitReachLeeftijdIndex(lft){
   return 5;
 }
 function updateNormSitReach(){
-  const val=parseFloat(v('sit_reach'));
-  const b=document.getElementById('sit_reach_badge');
-  b.className='score-badge';b.textContent='';
-  if(isNaN(val))return;
   const geslacht=v('input-geslacht')==='vrouw'?'vrouw':'man';
   const leeftijd=parseInt(v('input-leeftijd'))||30;
   const idx=sitReachLeeftijdIndex(leeftijd);
   const n=SIT_REACH_NORMEN[geslacht];
+  const normEl=document.getElementById('norm-sit-reach');
+  if(normEl){
+    normEl.textContent='Norm ('+(geslacht==='vrouw'?'vrouw':'man')+', leeftijd '+leeftijd+'): Superieur \u2265'+n.superior[idx]+' / Uitstekend \u2265'+n.excellent[idx]+' / Goed \u2265'+n.good[idx]+' / Redelijk \u2265'+n.fair[idx]+' / Zwak \u2265'+n.poor[idx]+' / Zeer zwak <'+n.poor[idx]+' cm';
+  }
+
+  const val=parseFloat(v('sit_reach'));
+  const b=document.getElementById('sit_reach_badge');
+  b.className='score-badge';b.textContent='';
+  if(isNaN(val))return;
   let label,klasse;
   if(val>=n.superior[idx]){label='Superieur';klasse='goed';}
   else if(val>=n.excellent[idx]){label='Uitstekend';klasse='goed';}
