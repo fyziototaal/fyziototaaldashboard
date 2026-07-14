@@ -466,18 +466,37 @@ function VerlofForm(props) {
   var _done = useState(null), submitted = _done[0], setSubmitted = _done[1];
 
   var berekening = useMemo(function () { return computeLeaveCost(user.schedule, startDate, endDate); }, [user, startDate, endDate]);
-  var dagen = berekening.days;
-  var uren = Math.round(dagen * 8 * 100) / 100;
+  var autoDagen = berekening.days;
+  var autoUren = Math.round(autoDagen * 8 * 100) / 100;
+
+  // Dagen en uren staan in bewerkbare velden. Ze worden automatisch
+  // ingevuld zodra de periode verandert, maar iedereen kan de waarde
+  // daarna zelf corrigeren voordat de aanvraag wordt ingediend.
+  var _dagenStr = useState(fmtNum(autoDagen)), dagenStr = _dagenStr[0], setDagenStr = _dagenStr[1];
+  var _urenStr = useState(fmtNum(autoUren)), urenStr = _urenStr[0], setUrenStr = _urenStr[1];
+  useEffect(function () {
+    setDagenStr(fmtNum(autoDagen));
+    setUrenStr(fmtNum(autoUren));
+  }, [startDate, endDate, user.id]);
+
+  var dagen = parseNum(dagenStr);
+  var uren = parseNum(urenStr);
+  var handmatigAangepast = dagen !== autoDagen || uren !== autoUren;
 
   var beschikbaar = saldoFor(user, data.requests);
   var inAanvraag = sumHours(data.requests, user.id, "verlof", "pending");
   var overBudget = uren > 0 && uren + inAanvraag > beschikbaar;
 
+  function herstelAutomatisch() {
+    setDagenStr(fmtNum(autoDagen));
+    setUrenStr(fmtNum(autoUren));
+  }
+
   function submit() {
     setErr("");
     if (!startDate || !endDate) return setErr("Vul een begin- en einddatum in.");
     if (endDate < startDate) return setErr("De einddatum ligt voor de begindatum.");
-    if (!dagen || dagen <= 0) return setErr("Deze periode valt volledig op je vrije dagen — er is niets om aan te vragen.");
+    if (!dagen || dagen <= 0 || !uren || uren <= 0) return setErr("Vul een geldig aantal dagen en uren in.");
     var req = {
       id: uid(), employeeId: user.id, type: "verlof", startDate: startDate, endDate: endDate,
       hours: uren, days: dagen, note: note.trim(), status: "pending", adminNote: "", createdAt: new Date().toISOString()
@@ -510,10 +529,17 @@ function VerlofForm(props) {
         h(Field, { label: "Van" }, h("input", { className: INPUT_CLS, type: "date", value: startDate, onChange: function (e) { setStartDate(e.target.value); } })),
         h(Field, { label: "Tot en met" }, h("input", { className: INPUT_CLS, type: "date", value: endDate, onChange: function (e) { setEndDate(e.target.value); } }))
       ),
+      h("div", { className: "grid grid-cols-2 gap-3" },
+        h(Field, { label: "Aantal dagen" }, h("input", { className: INPUT_CLS, type: "text", inputMode: "decimal", value: dagenStr, onChange: function (e) { setDagenStr(e.target.value); } })),
+        h(Field, { label: "Aantal uren" }, h("input", { className: INPUT_CLS, type: "text", inputMode: "decimal", value: urenStr, onChange: function (e) { setUrenStr(e.target.value); } }))
+      ),
       h("div", { className: "rounded-xl bg-teal-50 p-3" },
         h("p", { className: "text-sm text-slate-700" },
-          "Dit kost je ", h("strong", null, fmtNum(dagen) + " dag(en)"), " · ", h("strong", null, fmtNum(uren) + " uur"),
-          " — automatisch berekend op basis van jouw rooster."
+          "Automatisch berekend op basis van jouw rooster: ", h("strong", null, fmtNum(autoDagen) + " dag(en)"), " · ", h("strong", null, fmtNum(autoUren) + " uur"), "."
+        ),
+        handmatigAangepast && h("p", { className: "mt-1.5 text-xs text-amber-700" },
+          "Je hebt dit hierboven zelf aangepast. ",
+          h("button", { type: "button", className: "font-semibold underline", onClick: herstelAutomatisch }, "Terugzetten naar automatische berekening")
         )
       ),
       h(LeavePreview, { breakdown: berekening.breakdown }),
