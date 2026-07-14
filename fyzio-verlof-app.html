@@ -11,29 +11,50 @@
 <noscript>Deze app heeft JavaScript nodig. Zet JavaScript aan in je browser.</noscript>
 <div id="root"></div>
 <script>
-// Opslag: buiten Claude bestaat window.storage niet — hier gebruiken we localStorage van de browser.
-// Let op: gegevens staan dan per apparaat/browser lokaal, niet gedeeld tussen teamleden.
+// Opslag: gedeelde Supabase-tabel, zodat verlof- en urengegevens voor het hele team
+// hetzelfde zijn, ongeacht wie inlogt of op welk apparaat.
 if (!window.storage) {
+  const SUPABASE_URL = "https://szunargvsmtzbbnmnghc.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
+  const TABLE = "fyzio_verlof";
+  const headers = {
+    apikey: SUPABASE_KEY,
+    Authorization: "Bearer " + SUPABASE_KEY,
+    "Content-Type": "application/json",
+  };
   window.storage = {
     async get(key, shared) {
-      const v = localStorage.getItem("fyzio-" + key);
-      if (v === null) throw new Error("Key not found: " + key);
-      return { key, value: v, shared: !!shared };
+      const res = await fetch(
+        SUPABASE_URL + "/rest/v1/" + TABLE + "?id=eq." + encodeURIComponent(key) + "&select=data",
+        { headers }
+      );
+      if (!res.ok) throw new Error("Supabase fout bij ophalen (" + res.status + ")");
+      const rows = await res.json();
+      if (!rows.length) throw new Error("Key not found: " + key);
+      return { key, value: JSON.stringify(rows[0].data), shared: !!shared };
     },
     async set(key, value, shared) {
-      localStorage.setItem("fyzio-" + key, value);
+      const res = await fetch(SUPABASE_URL + "/rest/v1/" + TABLE, {
+        method: "POST",
+        headers: { ...headers, Prefer: "resolution=merge-duplicates" },
+        body: JSON.stringify({ id: key, data: JSON.parse(value), updated_at: new Date().toISOString() }),
+      });
+      if (!res.ok) throw new Error("Supabase fout bij opslaan (" + res.status + ")");
       return { key, value, shared: !!shared };
     },
     async delete(key, shared) {
-      localStorage.removeItem("fyzio-" + key);
+      const res = await fetch(
+        SUPABASE_URL + "/rest/v1/" + TABLE + "?id=eq." + encodeURIComponent(key),
+        { method: "DELETE", headers }
+      );
+      if (!res.ok) throw new Error("Supabase fout bij verwijderen (" + res.status + ")");
       return { key, deleted: true, shared: !!shared };
     },
     async list(prefix, shared) {
-      const keys = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k.startsWith("fyzio-") && (!prefix || k.slice(6).startsWith(prefix))) keys.push(k.slice(6));
-      }
+      const res = await fetch(SUPABASE_URL + "/rest/v1/" + TABLE + "?select=id", { headers });
+      if (!res.ok) throw new Error("Supabase fout bij lijst ophalen (" + res.status + ")");
+      const rows = await res.json();
+      const keys = rows.map((r) => r.id).filter((k) => !prefix || k.startsWith(prefix));
       return { keys, prefix, shared: !!shared };
     },
   };
