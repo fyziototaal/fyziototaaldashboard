@@ -685,7 +685,7 @@ function NotifyButton(props) {
   }
 
   return h("div", { className: "mt-5 flex flex-col items-center gap-2" },
-    h("a", { className: BTN_PRIMARY + " inline-block no-underline", href: href, target: "_blank", rel: "noreferrer" }, "📧 Mail " + displayName),
+    h("a", { className: BTN_PRIMARY + " inline-block no-underline", href: href }, "📧 Mail " + displayName),
     h("button", { className: BTN_SECONDARY, onClick: copy }, copied ? "✓ Gekopieerd! Plak hem in je mail of appje" : "Kopieer melding"),
     h("button", { className: "mt-1 text-sm font-medium text-slate-500 transition hover:text-slate-700 hover:underline", onClick: done }, "Naar mijn overzicht")
   );
