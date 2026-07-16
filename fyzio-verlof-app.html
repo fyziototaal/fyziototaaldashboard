@@ -770,9 +770,14 @@ function NotifyButton(props) {
   var tekst = user.name + " heeft " + typeLabel + " aangevraagd: " + fmtPeriode(req.startDate, req.endDate) +
     " (" + fmtNum(req.hours) + " uur" + (req.days ? ", " + fmtNum(req.days) + " dag(en)" : "") + ")." +
     (req.note ? " Toelichting: " + req.note : "");
-  var subject = encodeURIComponent("Aanvraag " + typeLabel + " — " + user.name);
-  var body = encodeURIComponent(tekst);
-  var href = "mailto:" + email + "?subject=" + subject + "&body=" + body;
+  var subject = "Aanvraag " + typeLabel + " — " + user.name;
+  // Gmail-webcompose in plaats van mailto: dat is niet afhankelijk van een
+  // geïnstalleerde/gekoppelde mail-app op het toestel (mailto: faalt vaak
+  // stil als die ontbreekt) en werkt op precies dezelfde manier als de
+  // mailknop in de fitheidstest-tool.
+  var href = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(email) +
+    "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(tekst);
+  var mailtoHref = "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(tekst);
   var displayName = (name || "").trim() || "Lars";
 
   function copy() {
@@ -780,12 +785,13 @@ function NotifyButton(props) {
   }
 
   return h("div", { className: "mt-5 flex flex-col items-center gap-2" },
-    h("a", { className: BTN_PRIMARY + " inline-block no-underline", href: href, onClick: copy }, "📧 Mail " + displayName),
+    h("a", { className: BTN_PRIMARY + " inline-block no-underline", href: href, target: "_blank", rel: "noreferrer", onClick: copy }, "📧 Mail " + displayName),
     h("p", { className: "max-w-xs text-center text-xs text-slate-400" },
       copied
-        ? "De tekst staat ook op je klembord — als er geen mailvenster opent, plak 'm dan in WhatsApp, sms of je mailapp."
-        : "Opent je mailapp niet (bijv. geen mailapp ingesteld op dit toestel)? Gebruik dan de knop hieronder."
+        ? "De tekst staat ook op je klembord — mocht Gmail niet openen, plak 'm dan in WhatsApp, sms of je mailapp."
+        : "Dit opent Gmail in een nieuw tabblad. Gebruik je een andere mail-app? Probeer dan de knop hieronder."
     ),
+    h("a", { className: BTN_SECONDARY + " inline-block no-underline text-center", href: mailtoHref }, "Open in mijn eigen mailapp"),
     h("button", { className: BTN_SECONDARY, onClick: copy }, copied ? "✓ Gekopieerd! Plak hem in je mail of appje" : "Kopieer melding"),
     h("button", { className: "mt-1 text-sm font-medium text-slate-500 transition hover:text-slate-700 hover:underline", onClick: done }, "Naar mijn overzicht")
   );
