@@ -148,7 +148,8 @@ function dayCost(shift) {
 }
 
 // Pauzes tellen niet mee als werktijd bij het berekenen van de uren.
-var BREAKS = [[605, 620], [745, 780], [905, 920]]; // 10:05-10:20, 12:25-13:00, 15:05-15:20
+// 10:05-10:20, 12:25-13:00, 15:05-15:20, 17:25-18:00 (in minuten vanaf middernacht)
+var BREAKS = [[605, 620], [745, 780], [905, 920], [1045, 1080]];
 
 // Netto gewerkte uren voor één dienst, met pauzes die binnen die dienst
 // vallen eraf getrokken. Afgerond op één decimaal.
@@ -162,6 +163,50 @@ function shiftWorkedHours(shift) {
     if (overlap > 0) minutes -= overlap;
   }
   return Math.round((minutes / 60) * 10) / 10;
+}
+
+// Paaszondag volgens de formule van Gauss/Meeus.
+function paasZondag(y) {
+  var a = y % 19, b = Math.floor(y / 100), c = y % 100;
+  var d = Math.floor(b / 4), e = b % 4;
+  var f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  var hh = (19 * a + b - d - g + 15) % 30;
+  var i = Math.floor(c / 4), k = c % 4;
+  var l = (32 + 2 * e + 2 * i - hh - k) % 7;
+  var m = Math.floor((a + 11 * hh + 22 * l) / 451);
+  var maand = Math.floor((hh + l - 7 * m + 114) / 31);
+  var dag = ((hh + l - 7 * m + 114) % 31) + 1;
+  return new Date(y, maand - 1, dag);
+}
+
+// Vrije dagen van de praktijk voor een jaar: set met 'jjjj-mm-dd'. Iedereen is
+// deze dagen sowieso vrij, dus ze kosten geen verlof. Bewust ZONDER Goede
+// Vrijdag en Bevrijdingsdag (dan wordt gewoon gewerkt), MET Oudjaarsdag.
+var _feestCache = {};
+function feestdagenSet(y) {
+  if (_feestCache[y]) return _feestCache[y];
+  var set = {};
+  function add(dt) { set[dt.getFullYear() + "-" + pad2(dt.getMonth() + 1) + "-" + pad2(dt.getDate())] = true; }
+  function plus(dt, n) { return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + n); }
+  add(new Date(y, 0, 1));          // Nieuwjaarsdag
+  var pasen = paasZondag(y);
+  add(pasen);                      // Eerste Paasdag
+  add(plus(pasen, 1));             // Tweede Paasdag
+  var koningsdag = new Date(y, 3, 27);
+  if (koningsdag.getDay() === 0) koningsdag = new Date(y, 3, 26); // zondag -> 26 april
+  add(koningsdag);                 // Koningsdag
+  add(plus(pasen, 39));            // Hemelvaartsdag
+  add(plus(pasen, 49));            // Eerste Pinksterdag
+  add(plus(pasen, 50));            // Tweede Pinksterdag
+  add(new Date(y, 11, 25));        // Eerste Kerstdag
+  add(new Date(y, 11, 26));        // Tweede Kerstdag
+  add(new Date(y, 11, 31));        // Oudjaarsdag
+  _feestCache[y] = set;
+  return set;
+}
+function isFeestdag(iso) {
+  var jaar = Number(iso.slice(0, 4));
+  return !!feestdagenSet(jaar)[iso];
 }
 
 function eachDateISO(startISO, endISO) {
@@ -225,12 +270,14 @@ function computeLeaveCost(schedule, startISO, endISO) {
   for (var i = 0; i < dates.length; i++) {
     var iso = dates[i];
     var key = weekdayKeyFromISO(iso);
-    var shift = key ? sched[key] : null;
-    var cost = dayCost(shift);
-    var hrs = shiftWorkedHours(shift);
+    var feest = isFeestdag(iso);
+    // Feestdag: iedereen sowieso vrij, dus geen verlof (net als weekend).
+    var shift = key && !feest ? sched[key] : null;
+    var cost = shift ? dayCost(shift) : 0;
+    var hrs = shift ? shiftWorkedHours(shift) : 0;
     totalDays += cost;
     totalHours += hrs;
-    breakdown.push({ iso: iso, key: key, shift: shift, cost: cost, hours: hrs });
+    breakdown.push({ iso: iso, key: key, feest: feest, shift: shift, cost: cost, hours: hrs });
   }
   return { days: Math.round(totalDays * 2) / 2, hours: Math.round(totalHours * 10) / 10, breakdown: breakdown };
 }
@@ -655,9 +702,10 @@ function LeavePreview(props) {
     h("p", { className: "mb-1.5 font-semibold text-slate-500" }, "Berekening op basis van jouw rooster:"),
     h("ul", { className: "space-y-0.5" },
       werkdagen.map(function (b) {
+        var omschrijving = b.feest ? " (feestdag)" : b.shift ? " (" + b.shift.start + "–" + b.shift.end + ")" : " (vrije dag)";
         return h("li", { key: b.iso, className: "flex justify-between gap-2" },
-          h("span", null, DAY_LABELS[b.key] + " " + fmtDatumKort(b.iso) + (b.shift ? " (" + b.shift.start + "–" + b.shift.end + ")" : " (vrije dag)")),
-          h("span", { className: "font-medium" }, b.cost > 0 ? fmtNum(b.cost) + " dag · " + fmtNum(b.hours) + " uur" : "geen verlof")
+          h("span", null, DAY_LABELS[b.key] + " " + fmtDatumKort(b.iso) + omschrijving),
+          h("span", { className: "font-medium" }, b.cost > 0 ? fmtNum(b.cost) + " dag · " + fmtNum(b.hours) + " uur" : (b.feest ? "vrij, geen verlof" : "geen verlof"))
         );
       })
     )
