@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Knie App"/>
 <meta name="theme-color" content="#1a4a3a"/>
 <title>Fyzio Totaal – Knie Testen</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh;}
@@ -52,6 +53,9 @@ textarea.ft-input{resize:vertical;min-height:70px;}
 // ─── SUPABASE ─────────────────────────────────────────────────────
 const SUPABASE_URL="https://szunargvsmtzbbnmnghc.supabase.co";
 const SUPABASE_KEY="sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
+
+// ── Drive-upload endpoint (VKB Rapport Ontvanger, Apps Script Web App) ──
+const DRIVE_UPLOAD_URL = 'https://script.google.com/a/macros/fyziototaal.nl/s/AKfycbyyig4h1KMi4uZjKy1pj7HZ6d1BL7lFXroGeGvTPzGsmG0pqmbDHa31Nx82bMm2elPm/exec';
 
 async function dbGet(key){
   try{
@@ -104,7 +108,7 @@ function badge(bg,col,tekst){return`<span class="badge" style="background:${bg};
 function lsiBadge(v,type,fase){const k=lsiKleur(v,type,fase);return k?badge(k.bg,k.col,Number(v).toFixed(1)+"%"):"";}
 
 // ─── STATE ────────────────────────────────────────────────────────
-let S={sc:"start",patNr:"",been:"Links",patData:null,laden:false,fout:"",fase:null,mm:null,test:null,stap:0,hhdStap:0,waarden:{},galnW:{},crit:{},toonVlaggen:false,rapMm:null,ok:false,opslaan:false};
+let S={sc:"start",patNr:"",been:"Links",patData:null,laden:false,fout:"",fase:null,mm:null,test:null,stap:0,hhdStap:0,waarden:{},galnW:{},crit:{},toonVlaggen:false,rapMm:null,ok:false,opslaan:false,pdfBezig:false};
 
 function render(){
   const app=document.getElementById("app");
@@ -254,9 +258,10 @@ function renderRapport(){
   if(m.testen?.galn){const r=m.testen.galn,w=r.waarden||{};const jaI=GALN_ITEMS.filter(i=>w[i.id]==="ja").length;const catRows=GALN_CATS.map(cat=>{const items=GALN_ITEMS.filter(i=>i.cat===cat&&(w[i.id]==="ja"||w[i.id]==="nee"));if(!items.length)return"";return`<div style="margin-bottom:6px"><div style="font-size:12px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">${cat}</div>${items.map(item=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${item.label}</span><span style="font-weight:500;color:${w[item.id]==="ja"?C.ok:C.rood};margin-left:8px;flex-shrink:0">${w[item.id]==="ja"?"Ja":"Nee"}</span></div>`).join("")}</div>`;}).join("");galnHTML=`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">Verkorte GALN – Looppatroon</div><div style="font-size:13px;margin-bottom:8px"><span style="color:${C.muted}">Aanwezig: </span><strong>${jaI}/${GALN_ITEMS.length}</strong>${w.galn_normaal?`<span style="margin-left:12px;color:${C.muted}">Genormaliseerd: <strong style="color:${w.galn_normaal==="ja"?C.ok:C.rood}">${w.galn_normaal==="ja"?"Ja":"Nee"}</strong></span>`:""}</div>${catRows}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
   const testenHTML=rapTesten.map(t=>{const r=m.testen?.[t.id];if(!r)return"";const groepen=RAPPORT_GROEPEN[t.id]||[];const rijHTML=groepen.map(rij=>{const cols=rij.map(v=>{const val=r.waarden?.[v.id];if(!val&&val!==0)return`<div></div>`;let disp;if(v.lsi)disp=lsiBadge(val,v.lsi,m.fase);else if(v.isPlank){const k=plankKleur(val);disp=badge(k.bg,k.col,`${val} sec – ${k.label}`);}else if(v.isRoeien){const k=roeiKleur(val);disp=k?`<strong>${val}</strong> ${badge(k.bg,k.col,k.label)}`:`<strong>${val}</strong>`;}else disp=`<strong>${val}${v.e&&!v.lsi?v.e:""}</strong>`;return`<div style="font-size:13px;padding:3px 0"><span style="color:${C.muted}">${v.l}: </span>${disp}</div>`;}).join("");return`<div style="display:grid;grid-template-columns:${rij.length>1?"1fr 1fr":"1fr"};gap:4px 16px;margin-bottom:4px">${cols}</div>`;}).join("");const lsiVelden=t.velden.filter(v=>v.ber&&v.lsiType);let progHTML="";if(eerder.length&&lsiVelden.length){const prog=lsiVelden.map(v=>({l:v.label,id:v.id,type:v.lsiType,huidig:r.waarden?.[v.id],hist:eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.[v.id],f:em.fase})).filter(e=>e.w)})).filter(x=>x.huidig||x.hist.length);if(prog.length)progHTML=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${C.grijsBorder}"><div style="font-size:12px;color:${C.muted};margin-bottom:4px">Progressie</div>${prog.map(h=>`<div style="font-size:13px;margin-top:2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span style="color:${C.muted}">${h.l}:</span>${h.hist.map(e=>`${lsiBadge(e.w,h.type,e.f)} <span style="font-size:12px;color:${C.muted}">${e.d}</span>`).join(" ")}${h.huidig?`${lsiBadge(h.huidig,h.type,m.fase)} <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`:""}</div>`).join("")}</div>`;}if(t.isPlank&&eerder.length){const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.plank_sec})).filter(e=>e.w);const huidig=r.waarden?.plank_sec;if(hist.length||huidig)progHTML+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${C.grijsBorder}"><div style="font-size:12px;color:${C.muted};margin-bottom:4px">Progressie plank</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px">${hist.map(e=>{const k=plankKleur(e.w);return`${badge(k.bg,k.col,e.w+" sec")} <span style="font-size:12px;color:${C.muted}">${e.d}</span>`;}).join(" ")}${huidig?(()=>{const k=plankKleur(huidig);return`${badge(k.bg,k.col,huidig+" sec")} <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`;})():""}</div></div>`;}if(t.isRoeien&&eerder.length){const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.roei_tijd})).filter(e=>e.w);const huidig=r.waarden?.roei_tijd;if(hist.length||huidig)progHTML+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${C.grijsBorder}"><div style="font-size:12px;color:${C.muted};margin-bottom:4px">Progressie 500m roeien</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px">${hist.map(e=>{const k=roeiKleur(e.w);return k?`${badge(k.bg,k.col,e.w)} <span style="font-size:12px;color:${C.muted}">${e.d}</span>`:`<strong>${e.w}</strong> <span style="font-size:12px;color:${C.muted}">${e.d}</span>`;}).join(" ")}${huidig?(()=>{const k=roeiKleur(huidig);return k?`${badge(k.bg,k.col,huidig)} <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`:`<strong>${huidig}</strong> <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`;})():""}</div></div>`;}return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div>${rijHTML}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}${progHTML}</div>`;}).join("");
   return`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='meetmoment';render()">← Terug</button>
-      <div><div style="font-size:16px;font-weight:500;color:${C.groen}">Rapport</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr} · ${m.datum}</div></div>
+      <div style="flex:1"><div style="font-size:16px;font-weight:500;color:${C.groen}">Rapport</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr} · ${m.datum}</div></div>
+      <button class="ft-btn-sm" id="btn-pdf" onclick="downloadRapportPDF()" ${S.pdfBezig?"disabled":""}>${S.pdfBezig?"Bezig...":"PDF opslaan"}</button>
     </div>
     <div style="background:${C.groen};border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px;color:#fff">
       <div style="font-size:13px;opacity:.75">Fyzio Totaal · UMOOOVE Knie Testen & Meten</div>
@@ -266,6 +271,192 @@ function renderRapport(){
     <div class="ft-card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="font-size:15px;font-weight:500;color:${C.groen}">Fase-criteria</div><span style="font-size:13px;color:${C.muted}">${jaC}/${criteria.length} behaald</span></div>${critHTML}</div>
     ${galnHTML}${testenHTML}
     <div style="margin-top:16px;padding:10px 0;border-top:1px solid ${C.grijsBorder};font-size:12px;color:${C.muted}">Gegenereerd op ${new Date().toLocaleDateString("nl-NL")} · Fyzio Totaal Wierden · UMOOOVE Knie Testen & Meten</div>`;
+}
+
+// ─── PDF GENERATIE + DRIVE UPLOAD ─────────────────────────────────
+function uploadNaarDrive(doc, bestandsnaam) {
+  try {
+    const base64 = doc.output('datauristring').split(',')[1];
+    fetch(DRIVE_UPLOAD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ bestandsnaam, pdfBase64: base64 })
+    }).catch(()=>{});
+  } catch(e) {
+    // upload is 'nice to have', geen harde afhankelijkheid
+  }
+}
+
+function pdfKleurVanBadgeKleur(hex){
+  // eenvoudige hex→rgb helper voor jsPDF setTextColor
+  const h=hex.replace('#','');
+  return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];
+}
+
+function downloadRapportPDF(){
+  const m=S.rapMm;if(!m)return;
+  S.pdfBezig=true;render();
+  try{
+    const eerder=(S.patData?.meetmomenten||[]).filter(x=>x.datum<m.datum);
+    const criteria=FASE_CRITERIA[m.fase]||[];
+    const faseTesten=TESTEN_PER_FASE[m.fase]||[];
+    const rapTesten=TESTEN.filter(t=>faseTesten.includes(t.id)&&t.id!=="galn");
+
+    const { jsPDF }=window.jspdf;
+    const doc=new jsPDF({unit:'mm',format:'a4'});
+    const marginX=18,pageWidth=210,pageHeight=297,contentWidth=pageWidth-marginX*2,marginBottom=22;
+    let y=20;
+
+    function ruimteNodig(hoogte){
+      if(y+hoogte>pageHeight-marginBottom){doc.addPage();y=20;}
+    }
+    function schrijfRegel(tekst,opts){
+      opts=opts||{};
+      doc.setFont('helvetica',opts.bold?'bold':'normal');
+      doc.setFontSize(opts.size||10.5);
+      const kleur=opts.kleur||[26,26,24];
+      doc.setTextColor(kleur[0],kleur[1],kleur[2]);
+      const lines=doc.splitTextToSize(tekst,contentWidth-(opts.inspring||0));
+      lines.forEach(line=>{
+        ruimteNodig(opts.regelhoogte||5.4);
+        doc.text(line,marginX+(opts.inspring||0),y);
+        y+=opts.regelhoogte||5;
+      });
+    }
+    function sectieKop(tekst){
+      ruimteNodig(13);
+      y+=4;
+      doc.setDrawColor(0,182,232);doc.setLineWidth(1.1);
+      doc.line(marginX,y-3.7,marginX,y+1.3);
+      doc.setFont('helvetica','bold');doc.setFontSize(11.5);
+      doc.setTextColor(26,74,58);
+      doc.text(tekst,marginX+3,y);
+      y+=6.5;
+    }
+
+    // Kop
+    doc.setFont('helvetica','bold');doc.setFontSize(17);
+    doc.setTextColor(26,74,58);
+    doc.text('Fyzio',marginX,y);
+    const fyzioBreedte=doc.getTextWidth('Fyzio');
+    doc.setTextColor(74,155,127);
+    doc.text('Totaal',marginX+fyzioBreedte,y);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);
+    doc.setTextColor(107,114,128);
+    doc.text('Knie Testen & Meten - '+m.datum,pageWidth-marginX,y,{align:'right'});
+    y+=4;
+    doc.setDrawColor(26,74,58);doc.setLineWidth(0.8);
+    doc.line(marginX,y,pageWidth-marginX,y);
+    y+=9;
+
+    doc.setFont('helvetica','bold');doc.setFontSize(14);
+    doc.setTextColor(26,74,58);
+    doc.text(m.faseNaam,marginX,y);
+    y+=6;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);
+    doc.setTextColor(90,90,86);
+    doc.text('Patient '+S.patNr+' - Aangedaan been: '+(S.patData?.been||S.been),marginX,y);
+    y+=10;
+
+    // Fase-criteria
+    sectieKop('Fase-criteria');
+    criteria.forEach(c=>{
+      const antwoord=m.criteria?.[c]==='ja'?'Ja':m.criteria?.[c]==='nee'?'Nee':'-';
+      const kleur=m.criteria?.[c]==='ja'?[22,101,52]:m.criteria?.[c]==='nee'?[192,57,43]:[90,90,86];
+      ruimteNodig(5.6);
+      const lines=doc.splitTextToSize(c,contentWidth-22);
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(26,26,24);
+      doc.text(lines,marginX,y);
+      doc.setFont('helvetica','bold');doc.setTextColor(kleur[0],kleur[1],kleur[2]);
+      doc.text(antwoord,pageWidth-marginX,y,{align:'right'});
+      y+=lines.length*5+1;
+    });
+
+    // GALN
+    if(m.testen?.galn){
+      const r=m.testen.galn,w=r.waarden||{};
+      const jaI=GALN_ITEMS.filter(i=>w[i.id]==='ja').length;
+      sectieKop('Verkorte GALN - Looppatroon');
+      schrijfRegel('Aanwezig: '+jaI+'/'+GALN_ITEMS.length+(w.galn_normaal?' | Genormaliseerd: '+(w.galn_normaal==='ja'?'Ja':'Nee'):''));
+      GALN_CATS.forEach(cat=>{
+        const items=GALN_ITEMS.filter(i=>i.cat===cat&&(w[i.id]==='ja'||w[i.id]==='nee'));
+        if(!items.length)return;
+        schrijfRegel(cat+':',{bold:true,size:9.5});
+        items.forEach(item=>{
+          schrijfRegel('- '+item.label+': '+(w[item.id]==='ja'?'Ja':'Nee'),{size:9.5,inspring:3});
+        });
+      });
+      if(r.notitie)schrijfRegel('Notitie: '+r.notitie,{size:9.5});
+    }
+
+    // Testen
+    rapTesten.forEach(t=>{
+      const r=m.testen?.[t.id];if(!r)return;
+      sectieKop(t.naam);
+      const groepen=RAPPORT_GROEPEN[t.id]||[];
+      groepen.forEach(rij=>{
+        rij.forEach(v=>{
+          const val=r.waarden?.[v.id];
+          if(!val&&val!==0)return;
+          let tekst;
+          if(v.lsi)tekst=v.l+': '+Number(val).toFixed(1)+'%';
+          else if(v.isPlank)tekst=v.l+': '+val+' sec ('+plankKleur(val).label+')';
+          else if(v.isRoeien){const k=roeiKleur(val);tekst=v.l+': '+val+(k?' ('+k.label+')':'');}
+          else tekst=v.l+': '+val+(v.e&&!v.lsi?v.e:'');
+          schrijfRegel(tekst);
+        });
+      });
+      if(r.notitie)schrijfRegel('Notitie: '+r.notitie,{size:9.5});
+
+      // Progressie (LSI-velden)
+      const lsiVelden=t.velden.filter(v=>v.ber&&v.lsiType);
+      if(eerder.length&&lsiVelden.length){
+        lsiVelden.forEach(v=>{
+          const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.[v.id]})).filter(e=>e.w);
+          const huidig=r.waarden?.[v.id];
+          if(!hist.length&&!huidig)return;
+          const delen=hist.map(e=>e.d+': '+Number(e.w).toFixed(1)+'%');
+          if(huidig)delen.push(m.datum+': '+Number(huidig).toFixed(1)+'%');
+          schrijfRegel('Progressie '+v.label+': '+delen.join(' -> '),{size:9,kleur:[90,90,86]});
+        });
+      }
+      if(t.isPlank&&eerder.length){
+        const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.plank_sec})).filter(e=>e.w);
+        const huidig=r.waarden?.plank_sec;
+        if(hist.length||huidig){
+          const delen=hist.map(e=>e.d+': '+e.w+'s');
+          if(huidig)delen.push(m.datum+': '+huidig+'s');
+          schrijfRegel('Progressie plank: '+delen.join(' -> '),{size:9,kleur:[90,90,86]});
+        }
+      }
+      if(t.isRoeien&&eerder.length){
+        const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.roei_tijd})).filter(e=>e.w);
+        const huidig=r.waarden?.roei_tijd;
+        if(hist.length||huidig){
+          const delen=hist.map(e=>e.d+': '+e.w);
+          if(huidig)delen.push(m.datum+': '+huidig);
+          schrijfRegel('Progressie 500m roeien: '+delen.join(' -> '),{size:9,kleur:[90,90,86]});
+        }
+      }
+    });
+
+    // Voettekst
+    const paginas=doc.internal.getNumberOfPages();
+    for(let p=1;p<=paginas;p++){
+      doc.setPage(p);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);
+      doc.setTextColor(156,163,175);
+      doc.text('Fyzio Totaal   \u00b7   Nijverheidsstraat 7, Wierden   \u00b7   www.fyziototaal.nl',pageWidth/2,pageHeight-10,{align:'center'});
+    }
+
+    const bestandsnaam='VKB_Rapport_'+S.patNr+'_'+m.datum+'.pdf';
+    doc.save(bestandsnaam);
+    uploadNaarDrive(doc,bestandsnaam);
+  }catch(e){
+    alert('PDF genereren mislukt: '+e.message);
+  }finally{
+    S.pdfBezig=false;render();
+  }
 }
 
 // ─── ACTIES ───────────────────────────────────────────────────────
