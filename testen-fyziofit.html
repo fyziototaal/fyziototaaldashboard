@@ -1216,7 +1216,7 @@ function mailRapport(){
   const d=verzamelData();
   const platteTekst=tekst.replace(/\*\*(.*?)\*\*/g,'$1');
   const herstelcheckRegel='Herstelcheck ingevuld: '+(d.herstelcheck?'ja':'nee');
-  const tool_link='https://lonnekevv.github.io/fyziototaaldashboard/testen-fyziofit.html?pnr='+encodeURIComponent(d.pnr);
+  const tool_link='https://fyziototaal.github.io/fyziototaaldashboard/testen-fyziofit.html?pnr='+encodeURIComponent(d.pnr);
   const bewerkRegel='Wil je de tekst nog aanpassen en er zelf een PDF van maken? Open de tool via onderstaande link, vul bij patientnummer '+d.pnr+' in en de voornaam '+d.naam+', en klik op Starten. Het rapport staat dan al klaar om te bewerken en te downloaden als PDF.\n'+tool_link;
   const body=herstelcheckRegel+'\n\n'+bewerkRegel+'\n\n---\n\n'+platteTekst;
   const onderwerp='Testverslag '+d.naam+' - '+d.datum;
