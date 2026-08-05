@@ -1030,7 +1030,11 @@ Maximaal 650 woorden. Schrijf in het Nederlands. Zorg dat elke sectie volledig i
     if(!rapportTekst)throw new Error('Geen tekst ontvangen in API-antwoord');
     document.getElementById('melding-globaal').classList.remove('zichtbaar');
     toonRapport(rapportTekst);
-    await slaOp(true);
+    try{
+      await supaFetch(TABEL,'POST',{id:huidigPNR,data:verzamelData(),updated_at:new Date().toISOString()});
+    }catch(saveErr){
+      toonMelding('melding-globaal','Let op: het rapport is wel gegenereerd, maar kon niet worden opgeslagen ('+saveErr.message+'). Mayke kan dit rapport dus nog niet via de link laden - probeer het opnieuw op te slaan met de "Opslaan"-knop.','fout');
+    }
   }catch(e){
     rapportTekst='Testverslag '+data.naam+' - '+data.datum+'\n\n'+scores+'\n\nNoot: rapport kon niet automatisch worden gegenereerd.\nFoutmelding: '+e.message+'\n\nGebruik de bewerkfunctie om het handmatig op te stellen.';
     document.getElementById('melding-globaal').classList.remove('zichtbaar');
