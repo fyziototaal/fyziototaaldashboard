@@ -525,7 +525,8 @@ async function startSessie(){
   document.getElementById('header-badge').style.display='block';
   document.getElementById('rapport-naam').textContent=naam;
   document.getElementById('rapport-meta').textContent='Patientnummer '+pnr+' - '+document.getElementById('input-datum').value;
-  await laadData(pnr);
+  const geladen=await laadData(pnr);
+  if(!geladen)return;
   document.getElementById('startscherm').style.display='none';
   document.getElementById('app').style.display='block';
   document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',updateProgress));
@@ -567,8 +568,17 @@ async function slaOp(stil=false){
 async function laadData(pnr){
   try{
     const rows=await supaFetch(TABEL+'?id=eq.'+encodeURIComponent(pnr)+'&select=data','GET');
-    if(rows&&rows.length>0){vulFormulierIn(rows[0].data);toonMelding('start-melding','Eerder opgeslagen gegevens geladen.','succes');}
-  }catch(e){}
+    if(rows&&rows.length>0){
+      vulFormulierIn(rows[0].data);
+      toonMelding('start-melding','Eerder opgeslagen gegevens geladen.','succes');
+    }else{
+      toonMelding('start-melding','Geen eerder opgeslagen gegevens gevonden voor patientnummer '+pnr+'. Er wordt met een leeg formulier gestart.','succes');
+    }
+    return true;
+  }catch(e){
+    toonMelding('start-melding','Laden van eerdere gegevens mislukt: '+e.message,'fout');
+    return false;
+  }
 }
 
 function verzamelData(){
