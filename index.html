@@ -61,6 +61,7 @@
     @media (max-width: 380px) { .tools-grid { grid-template-columns: 1fr; } }
 
     .tool-card {
+      position: relative;
       background: #fff; border-radius: 16px; padding: 20px;
       text-decoration: none; color: inherit;
       box-shadow: 0 2px 14px rgba(130,23,109,0.08);
@@ -93,6 +94,30 @@
 
     footer { background: #4a0f42; color: rgba(255,255,255,0.5); text-align: center; padding: 18px 1rem; font-size: 12px; }
     footer strong { color: rgba(255,255,255,0.85); }
+
+    /* Disabled / "binnenkort beschikbaar" tool card */
+    .tool-card.disabled {
+      cursor: default;
+      opacity: 0.6;
+      border: 1.5px dashed #d8c7d4;
+      box-shadow: none;
+      pointer-events: none; /* blokkeert klikken en hover-effect */
+    }
+    .tool-card.disabled .open-link { color: #aaa; }
+    .soon-ribbon {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #f3eef2;
+      color: #82176D;
+      border: 1px solid #e2d5df;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 4px 9px;
+      border-radius: 20px;
+    }
   </style>
 </head>
 <body>
@@ -152,13 +177,14 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="fyzio-verlof-app.html" target="_blank" style="--accent: #82176D;">
+      <div class="tool-card disabled" style="--accent: #82176D;" aria-disabled="true">
+        <span class="soon-ribbon">Binnenkort</span>
         <span class="tool-icon">🗓️</span>
         <div class="tool-name">Verlof & Uren</div>
-        <div class="tool-desc">Verlof aanvragen en gewerkte uren bijhouden voor het hele team.</div>
+        <div class="tool-desc">Verlof aanvragen en gewerkte uren bijhouden voor het hele team. Deze tool wordt nog afgerond.</div>
         <div class="tool-tags"><span class="tag purple">Personeel</span><span class="tag blue">Uren</span></div>
-        <span class="open-link">Openen →</span>
-      </a>
+        <span class="open-link">Binnenkort beschikbaar</span>
+      </div>
 
     </div>
 
@@ -178,7 +204,7 @@
 
     <div class="info-bar">
       <span>💡</span>
-      <div>Sla op als bladwijzer: <code>lonnekevv.github.io/fyziototaaldashboard</code></div>
+      <div>Sla op als bladwijzer: <code>fyziototaal.github.io/fyziototaaldashboard</code></div>
     </div>
   </div>
 
