@@ -6,8 +6,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<!-- build: 2026-08-07 v4 - redeploy trigger 2 -->
-<title>Fitheidstest - Fyzio Totaal v4</title>
+<!-- build: 2026-08-08 v5 -->
+<title>Fitheidstest - Fyzio Totaal v5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -125,7 +125,7 @@
 <body>
 
 <header>
-  <div><h1>Fitheidstest</h1><span>Fyzio Totaal &middot; v4</span></div>
+  <div><h1>Fitheidstest</h1><span>Fyzio Totaal &middot; v5</span></div>
   <div class="header-badge" id="header-badge"></div>
 </header>
 
@@ -154,6 +154,7 @@
       <div><div style="font-size:.75rem;opacity:.7">Deelnemer</div><strong id="balk-naam">-</strong><span style="opacity:.6;margin-left:8px;font-size:.8rem" id="balk-pnr"></span></div>
       <button onclick="nieuweDeelnemer()">Wissel</button>
     </div>
+    <div id="melding-top" class="melding"></div>
     <div class="progress-label"><span id="progress-tekst">Voortgang</span><span id="progress-pct">0%</span></div>
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <div id="melding-opslaan" class="melding"></div>
@@ -616,7 +617,7 @@ async function laadData(pnr){
       vulFormulierIn(rows[0].data);
       const waarschuwing='Let op: dit zijn de gegevens van de vorige meting (testdatum '+oudeDatum+'). Is dit een nieuwe meting? Werk dan de testdatum en de resultaten bij en genereer daarna een nieuw rapport - dat vervangt automatisch de oude gegevens en het oude rapport.';
       toonMelding('start-melding',waarschuwing,'laden');
-      toonMelding('melding-globaal',waarschuwing,'laden');
+      toonMelding('melding-top',waarschuwing,'laden');
     }else{
       toonMelding('start-melding','Geen eerder opgeslagen gegevens gevonden voor patientnummer '+pnr+'. Er wordt met een leeg formulier gestart.','succes');
     }
@@ -1066,7 +1067,7 @@ Maximaal 650 woorden. Schrijf in het Nederlands. Zorg dat elke sectie volledig i
   try{
     const apiKey = await zorgVoorApiKey();
     const response=await Promise.race([
-      fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:prompt}]})}),
+      fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:3000,messages:[{role:'user',content:prompt}]})}),
       new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout - het duurde langer dan 3 minuten')),180000))
     ]);
     const json=await response.json();
@@ -1075,6 +1076,9 @@ Maximaal 650 woorden. Schrijf in het Nederlands. Zorg dat elke sectie volledig i
     }
     rapportTekst=json.content?.[0]?.text||'';
     if(!rapportTekst)throw new Error('Geen tekst ontvangen in API-antwoord');
+    if(json.stop_reason==='max_tokens'){
+      rapportTekst+='\n\n[LET OP: dit rapport is afgekapt omdat het te lang werd. Vraag Claude om de lengte-limiet verder te verhogen, of genereer het opnieuw.]';
+    }
     document.getElementById('melding-globaal').classList.remove('zichtbaar');
     toonRapport(rapportTekst);
     try{
@@ -1144,7 +1148,7 @@ function opmaakRapport(tekst){
       const inhoud=regel.replace(/\*\*(.*?)\*\*/g,'$1');
       return '<p style="margin:0 0 20px"><strong style="font-size:1.1rem;color:var(--groen);display:block;border-bottom:2px solid var(--oranje);padding-bottom:8px">'+inhoud+'</strong></p>';
     }
-    if(/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijk om mee te nemen|Overzicht mogelijke vervolgafspraken)/.test(kaal)){
+    if(/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijkste punten|Aan de slag)/.test(kaal)){
       const inhoud=regel.replace(/\*\*(.*?)\*\*/g,'$1');
       return '<p><strong style="font-size:.95rem;color:var(--groen);display:block;margin-top:18px;margin-bottom:3px;border-left:3px solid var(--oranje);padding-left:8px">'+inhoud+'</strong></p>';
     }
@@ -1185,7 +1189,7 @@ function downloadPDF(){
   try{
     const tekst=bewerkModus?document.getElementById('rapport-edit').value:rapportTekst;
     const d=verzamelData();
-    const sectieRe=/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijk om mee te nemen|Overzicht mogelijke vervolgafspraken)/;
+    const sectieRe=/^(Conditie|Mobiliteit|Kracht benen|Kracht schouders|Core|Lichaamssamenstelling|Belangrijkste punten|Aan de slag)/;
 
     const { jsPDF }=window.jspdf;
     const doc=new jsPDF({unit:'mm',format:'a4'});
@@ -1222,35 +1226,64 @@ function downloadPDF(){
     doc.setFont('helvetica','normal');doc.setFontSize(10.5);
     doc.setTextColor(26,26,26);
 
+    // Eerst de tekst opdelen in onderdelen (kopje + bijbehorende regels), zodat we per onderdeel
+    // vooraf de benodigde hoogte kunnen berekenen en het geheel naar de volgende pagina kunnen
+    // sturen als het niet meer past, in plaats van er middenin te knippen.
+    const secties=[];
+    let huidige=null;
     tekst.split('\n').forEach((r,i)=>{
       const kaal=r.replace(/\*\*/g,'').trim();
       if(!kaal)return;
       if(i===0||/^Testverslag\s/.test(kaal))return;
-
       if(sectieRe.test(kaal)){
+        huidige={header:kaal,regels:[]};
+        secties.push(huidige);
+        return;
+      }
+      const isBullet=/^\*\s/.test(r);
+      const inhoud=(isBullet?r.replace(/^\*\s/,''):r).replace(/\*\*/g,'');
+      if(!huidige){huidige={header:null,regels:[]};secties.push(huidige);}
+      huidige.regels.push({isBullet,inhoud});
+    });
+
+    function sectieHoogte(sectie){
+      let h=sectie.header?10.5:0;
+      sectie.regels.forEach(r=>{
+        const inspringen=r.isBullet?4:0;
+        const lines=doc.splitTextToSize((r.isBullet?'\u2022  ':'')+r.inhoud,contentWidth-inspringen);
+        h+=lines.length*5+1.5;
+      });
+      return h;
+    }
+
+    secties.forEach(sectie=>{
+      const hoogte=sectieHoogte(sectie);
+      const paginaRuimte=pageHeight-marginBottom-20;
+      if(y+hoogte>pageHeight-marginBottom&&hoogte<=paginaRuimte){
+        doc.addPage();y=20;
+      }
+      if(sectie.header){
         ruimteNodig(13);
         y+=4;
         doc.setDrawColor(0,182,232);doc.setLineWidth(1.1);
         doc.line(marginX,y-3.7,marginX,y+1.3);
         doc.setFont('helvetica','bold');doc.setFontSize(11.5);
         doc.setTextColor(130,23,109);
-        doc.text(kaal,marginX+3,y);
+        doc.text(sectie.header,marginX+3,y);
         y+=6.5;
         doc.setFont('helvetica','normal');doc.setFontSize(10.5);
         doc.setTextColor(26,26,26);
-        return;
       }
-
-      const isBullet=/^\*\s/.test(r);
-      const inhoud=(isBullet?r.replace(/^\*\s/,''):r).replace(/\*\*/g,'');
-      const inspringen=isBullet?4:0;
-      const lines=doc.splitTextToSize((isBullet?'\u2022  ':'')+inhoud,contentWidth-inspringen);
-      lines.forEach(line=>{
-        ruimteNodig(5.6);
-        doc.text(line,marginX+inspringen,y);
-        y+=5;
+      sectie.regels.forEach(r=>{
+        const inspringen=r.isBullet?4:0;
+        const lines=doc.splitTextToSize((r.isBullet?'\u2022  ':'')+r.inhoud,contentWidth-inspringen);
+        lines.forEach(line=>{
+          ruimteNodig(5.6);
+          doc.text(line,marginX+inspringen,y);
+          y+=5;
+        });
+        y+=1.5;
       });
-      y+=1.5;
     });
 
     const paginas=doc.internal.getNumberOfPages();
