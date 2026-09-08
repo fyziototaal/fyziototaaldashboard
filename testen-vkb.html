@@ -4,11 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Knie App"/>
 <meta name="theme-color" content="#1a4a3a"/>
-<title>Fyzio Totaal – Knie Testen</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<title>Fyzio Totaal – VKB Tool</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh;}
@@ -30,13 +27,13 @@ select.ft-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 .ft-test-row:last-child{border-bottom:none;}
 .ft-crit-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e0e0da;gap:8px;}
 .ft-crit-row:last-child{border-bottom:none;}
+.ft-check-row{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e0e0da;gap:12px;}
+.ft-check-row:last-child{border-bottom:none;}
 .ft-ja{background:#dcfce7;color:#166534;border:2px solid #166534;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
 .ft-nee{background:#fdecea;color:#c0392b;border:2px solid #c0392b;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
 .ft-neutral{background:#f5f5f3;color:#5a5a56;border:1.5px solid #e0e0da;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;}
 .ft-tab{background:#f5f5f3;color:#5a5a56;border:none;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;}
 .ft-tab-act{background:#1a4a3a;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-weight:500;}
-.ft-check-row{display:flex;align-items:flex-start;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e0e0da;gap:12px;}
-.ft-check-row:last-child{border-bottom:none;}
 .badge{border-radius:6px;padding:2px 9px;font-size:13px;font-weight:500;display:inline-block;}
 .norm-info{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 12px;font-size:13px;color:#0369a1;margin-bottom:12px;}
 .save-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;}
@@ -45,78 +42,171 @@ select.ft-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 .vlag-blok{border-radius:10px;padding:10px 12px;margin-bottom:6px;}
 textarea.ft-input{resize:vertical;min-height:70px;}
 .screen{max-width:620px;margin:0 auto;padding:16px 14px 80px;}
+.ft-tab-bar{display:flex;gap:4px;background:#fff;border-bottom:1px solid #e0e0da;padding:8px 14px 0;position:sticky;top:0;z-index:100;}
+.ft-tab-main{flex:1;padding:10px 8px;font-size:14px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#5a5a56;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.ft-tab-main.act{color:#1a4a3a;border-bottom:2px solid #1a4a3a;}
+.pl-moment{border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1.5px solid transparent;}
+.pl-moment.groen{background:#f0faf5;border-color:#4a9b7f;}
+.pl-moment.oranje{background:#fffbeb;border-color:#f59e0b;}
+.pl-moment.rood{background:#fff5f5;border-color:#ef4444;}
+.pl-moment.grijs{background:#f9f9f7;border-color:#e0e0da;}
+.pl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.pl-dot.groen{background:#4a9b7f;}
+.pl-dot.oranje{background:#f59e0b;}
+.pl-dot.rood{background:#ef4444;}
+.pl-dot.grijs{background:#c0bfba;}
+.urgent-banner{background:#1a4a3a;color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.pat-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #e0e0da;cursor:pointer;gap:8px;}
+.pat-row:last-child{border-bottom:none;}
+.sectie-label{font-size:13px;font-weight:500;color:#4a9b7f;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 6px;}
+.aclrsi-schaal{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+.aclrsi-opt{border:1.5px solid #e0e0da;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer;background:#f5f5f3;min-width:36px;text-align:center;}
+.aclrsi-opt-sel{border-color:#1a4a3a;background:#e8f2ee;font-weight:500;}
 </style>
 </head>
 <body>
-<div id="app" class="screen"></div>
+
+<div class="ft-tab-bar">
+  <button class="ft-tab-main act" id="tab-testen" onclick="switchTab('testen')">🦵 Testen</button>
+  <button class="ft-tab-main" id="tab-planning" onclick="switchTab('planning')">📅 Planning</button>
+</div>
+<div id="pane-testen" class="screen"></div>
+<div id="pane-planning" class="screen" style="display:none"></div>
+
 <script>
 // ─── SUPABASE ─────────────────────────────────────────────────────
-const SUPABASE_URL="https://szunargvsmtzbbnmnghc.supabase.co";
-const SUPABASE_KEY="sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
-
-// ── Drive-upload endpoint (VKB Rapport Ontvanger, Apps Script Web App) ──
-const DRIVE_UPLOAD_URL = 'https://script.google.com/a/macros/fyziototaal.nl/s/AKfycbyyig4h1KMi4uZjKy1pj7HZ6d1BL7lFXroGeGvTPzGsmG0pqmbDHa31Nx82bMm2elPm/exec';
-
-async function dbGet(key){
-  try{
-    var r=await fetch(SUPABASE_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(key)+"&select=value",{headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY}});
-    var d=await r.json();
-    return d&&d.length>0?d[0].value:null;
-  }catch(e){return null;}
-}
-async function dbSet(key,value){
-  try{
-    await fetch(SUPABASE_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(key),{method:"DELETE",headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY}});
-    await fetch(SUPABASE_URL+"/rest/v1/storage",{method:"POST",headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({key:key,value:value})});
-    return true;
-  }catch(e){return false;}
-}
-
-async function saveData(nr,d){
-  await dbSet("vkb_"+nr,JSON.stringify(d));
-}
-async function loadData(nr){
-  var v=await dbGet("vkb_"+nr);
-  return v?JSON.parse(v):null;
-}
+const SB_URL="https://szunargvsmtzbbnmnghc.supabase.co";
+const SB_KEY="sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
+async function dbGet(k){try{const r=await fetch(SB_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(k)+"&select=value",{headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}});const d=await r.json();return d&&d.length>0?d[0].value:null;}catch(e){return null;}}
+async function dbSet(k,v){try{await fetch(SB_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(k),{method:"DELETE",headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}});await fetch(SB_URL+"/rest/v1/storage",{method:"POST",headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({key:k,value:v})});return true;}catch(e){return false;}}
+async function dbList(){try{const r=await fetch(SB_URL+"/rest/v1/storage?key=like.vkb_*&select=key,value",{headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}});const d=await r.json();return Array.isArray(d)?d:[];}catch(e){return[];}}
+async function saveData(nr,d){await dbSet("vkb_"+nr,JSON.stringify(d));}
+async function loadData(nr){const v=await dbGet("vkb_"+nr);return v?JSON.parse(v):null;}
 
 // ─── KLEUREN ─────────────────────────────────────────────────────
 const C={groen:"#1a4a3a",groenMid:"#2d6b56",groenLight:"#e8f2ee",groenAccent:"#4a9b7f",mint:"#d4ede4",grijs:"#f5f5f3",grijsBorder:"#e0e0da",tekst:"#1a1a18",muted:"#5a5a56",rood:"#c0392b",roodLight:"#fdecea",oranje:"#d97706",oranjeLight:"#fef9c7",geelLight:"#fef3c7",geel:"#854d0b",ok:"#166534",okLight:"#dcfce7"};
 
 // ─── DATA ─────────────────────────────────────────────────────────
 const FASEN=[{id:1,naam:"Fase 1 – Pre-op Rehabilitatie",kort:"Pre-op"},{id:2,naam:"Fase 2 – Return to ADL",kort:"Return to ADL"},{id:3,naam:"Fase 3 – Klinische Revalidatie",kort:"Klinisch"},{id:4,naam:"Fase 4 – On Field Rehabilitation",kort:"OFR"},{id:5,naam:"Fase 5 – RTS Continuum",kort:"RTS"}];
-const TESTEN_PER_FASE={1:["quadriceps_lag","stroke_test","galn","hhd"],2:["quadriceps_lag","stroke_test","galn","beenomtrek","rom_flexie"],3:["galn","hhd","een_rm","slh","thd","sh","vj","plank","roeien"],4:["hhd","een_rm","slh","thd","sh","vj","plank","roeien"],5:["hhd","een_rm","slh","thd","sh","vj","plank","roeien"]};
-const FASE_CRITERIA={1:["Passieve extensie 0 graden?","Actieve extensie 0 graden?","Active straight leg raise?","Goede neuromusculaire controle / spierkracht (bewuste contractie QF)?","Genormaliseerd looppatroon zonder krukken?","Geoptimaliseerde kracht QF/HAM: LSI ≥ 80%?"],2:["Passieve extensie 0 graden?","Actieve extensie 0 graden?","Active straight leg raise?","Goede neuromusculaire controle / spierkracht (bewuste contractie QF)?","Genormaliseerd looppatroon zonder krukken?"],3:["Symmetrisch kwalitatief looppatroon?","Geen reactieve knie?","Genormaliseerd hardlopen (RTR)?","Krachtmeting – LSI ≥ 80%?","Krachtmeting – H:Q ratio genormaliseerd?","Krachtmeting – EPiC: aangedaan ≥ 80% van niet-aangedaan pre-op?","Hoptesten – kwalitatief goed bewegen?","Hoptesten – LSI ≥ 80%?"],4:["Voorbereiden op terugkeer naar RTT / RTS?","Fysiek minimale sportspecifieke trainingsbelasting van 80% voor RTT?","Psychologisch klaar voor terugkeer naar de sport?","Krachtmeting – LSI ≥ 90%?","Krachtmeting – H:Q ratio genormaliseerd?","Hoptesten – kwalitatief goed bewegen?","Hoptesten – LSI ≥ 90%?"],5:["Voorbereiden op terugkeer naar RTC / RTP?","Fysiek minimale sportspecifieke trainingsbelasting van 100% voor RTC?","Psychologisch klaar voor terugkeer naar de sport?","Krachtmeting – LSI ≥ 95–100%?","Krachtmeting – H:Q ratio genormaliseerd?","Hoptesten – kwalitatief goed bewegen?","Hoptesten – LSI ≥ 95–100% en referentiewaarden?"]};
+const MIJLPALEN_DEF=[{id:"m_hardlopen",naam:"Mijlpaal – Hardlopen",kort:"Hardlopen",timing:"~wk 10",richtlijnWeek:10},{id:"m_springen",naam:"Mijlpaal – 1-benig springen",kort:"1-benig springen",timing:"~wk 15",richtlijnWeek:15},{id:"m_rts",naam:"Mijlpaal – RTS",kort:"RTS",timing:"~wk 22",richtlijnWeek:22},{id:"m_rtt",naam:"Mijlpaal – RTT",kort:"RTT",timing:"~wk 40",richtlijnWeek:40},{id:"m_rtc",naam:"Mijlpaal – RTC",kort:"RTC",timing:"na 8 teamsessies",richtlijnWeek:null}];
+const PERIODIEK_DEF=[{id:"w6",label:"Week 6",week:6},{id:"w12",label:"Week 12",week:12},{id:"w24",label:"Week 24",week:24},{id:"w38",label:"Week 38",week:38},{id:"w50",label:"Week 50",week:50}];
+
+const TESTEN_PER_FASE={1:["quadriceps_lag","stroke_test","galn","hhd"],2:["quadriceps_lag","stroke_test","galn","beenomtrek","rom_flexie"],3:["galn","beenomtrek","rom_flexie","hhd","een_rm","slh","thd","sh","vj","plank","roeien"],4:["hhd","een_rm","slh","thd","sh","vj","plank","roeien","aclrsi"],5:["hhd","een_rm","slh","thd","sh","vj","plank","roeien","aclrsi"]};
+const TESTEN_PER_MIJLPAAL={m_hardlopen:["hardlopen_criteria","hopping_spot"],m_springen:["springen_accel","springen_2benig"],m_rts:["slh","thd","crossover_hop","sls","aclrsi"],m_rtt:["slh","thd","aclrsi"],m_rtc:["slh","thd","aclrsi"]};
+
+const FASE_CRITERIA={1:["Passieve extensie 0 graden?","Actieve extensie 0 graden?","Active straight leg raise?","Goede neuromusculaire controle / spierkracht (bewuste contractie QF)?","Genormaliseerd looppatroon zonder krukken?","Geoptimaliseerde kracht QF/HAM: LSI ≥ 80%?"],2:["Passieve extensie 0 graden?","Actieve extensie 0 graden?","Active straight leg raise?","Goede neuromusculaire controle / spierkracht (bewuste contractie QF)?","Genormaliseerd looppatroon zonder krukken?"],3:["Symmetrisch kwalitatief looppatroon?","Geen reactieve knie?","Genormaliseerd hardlopen (RTR)?","Krachtmeting – LSI ≥ 80%?","Krachtmeting – H:Q ratio genormaliseerd?","Krachtmeting – EPiC: aangedaan ≥ 80% van niet-aangedaan pre-op?","Hoptesten – kwalitatief goed bewegen?","Hoptesten – LSI ≥ 80%?"],4:["Voorbereiden op terugkeer naar RTT / RTS?","Fysiek minimale sportspecifieke trainingsbelasting van 80% voor RTT?","Psychologisch klaar voor terugkeer naar de sport? (ACL-RSI ≥ 72)","Krachtmeting – LSI ≥ 90%?","Krachtmeting – H:Q ratio genormaliseerd?","Hoptesten – kwalitatief goed bewegen?","Hoptesten – LSI ≥ 90%?"],5:["Voorbereiden op terugkeer naar RTC / RTP?","Fysiek minimale sportspecifieke trainingsbelasting van 100% voor RTC?","Psychologisch klaar voor terugkeer naar de sport? (ACL-RSI ≥ 72)","Krachtmeting – LSI ≥ 95–100%?","Krachtmeting – H:Q ratio genormaliseerd?","Hoptesten – kwalitatief goed bewegen?","Hoptesten – LSI ≥ 95–100% en referentiewaarden?"]};
 const FASE_VLAGGEN={1:{geel:[],rood:["Uitblijven passieve 0 graden extensie na 1 week starten behandeling"]},2:{geel:["Na 6–8 weken: geen genormaliseerd looppatroon","Na 6–8 weken: geen goede neuromusculaire controle","Na 6–8 weken: geen passieve volledige extensie"],rood:["Infectie"]},3:{geel:["Tendomyogene-/patellofemorale klachten","Onvermogen maximale kracht leveren","Onverklaarbare hydrops"],rood:["Onrustige knie","Hydrops langer dan 6 maanden","Afname ROM","Niet genormaliseerde ROM na 4,5 maand"]},4:{geel:["Angst voor RTT","Reactiviteit in de knie","Ervaren instabiliteit"],rood:["Onrustige knie","Hydrops","Stijfheid","Afname ROM"]},5:{geel:["Angst voor RTS","Reactiviteit in de knie","Ervaren instabiliteit"],rood:["Onrustige knie","Hydrops","Stijfheid","Afname ROM"]}};
 const LSI_DREMPEL={kracht:{1:80,2:null,3:80,4:90,5:95},hop:{1:null,2:null,3:80,4:90,5:95}};
-const GALN_ITEMS=[{id:"g1",cat:"Romp",label:"Romp stabiel en rechtop (geen overmatige zijdelingse beweging)"},{id:"g2",cat:"Romp",label:"Geen compensatoire rotatiebeweging van de romp"},{id:"g3",cat:"Bekken",label:"Bekken stabiel in het frontale vlak (geen Trendelenburg)"},{id:"g4",cat:"Bekken",label:"Geen overmatige bekkenkanteling"},{id:"g5",cat:"Heup",label:"Voldoende heupextensie in de afzetfase"},{id:"g6",cat:"Heup",label:"Symmetrische heupflexie in de zwaaifase"},{id:"g7",cat:"Knie",label:"Voldoende knieflexie in de zwaaifase"},{id:"g8",cat:"Knie",label:"Gecontroleerde knieflexie bij hielcontact"},{id:"g9",cat:"Knie",label:"Symmetrische kniestrekking in de standfase"},{id:"g10",cat:"Enkel/voet",label:"Hielcontact aanwezig aan begin standfase"},{id:"g11",cat:"Enkel/voet",label:"Voldoende afzet over de voorvoet"},{id:"g12",cat:"Stappatroon",label:"Symmetrische staplengte links en rechts"},{id:"g13",cat:"Stappatroon",label:"Regelmatig en vloeiend loopritme"},{id:"g14",cat:"Stappatroon",label:"Normale loopsnelheid"},{id:"g15",cat:"Armzwaai",label:"Symmetrische armzwaai"}];
+
+const GALN_ITEMS=[{id:"g1",cat:"Romp",label:"Romp stabiel en rechtop"},{id:"g2",cat:"Romp",label:"Geen compensatoire rotatiebeweging"},{id:"g3",cat:"Bekken",label:"Bekken stabiel frontaal (geen Trendelenburg)"},{id:"g4",cat:"Bekken",label:"Geen overmatige bekkenkanteling"},{id:"g5",cat:"Heup",label:"Voldoende heupextensie afzetfase"},{id:"g6",cat:"Heup",label:"Symmetrische heupflexie zwaaifase"},{id:"g7",cat:"Knie",label:"Voldoende knieflexie zwaaifase"},{id:"g8",cat:"Knie",label:"Gecontroleerde knieflexie bij hielcontact"},{id:"g9",cat:"Knie",label:"Symmetrische kniestrekking standfase"},{id:"g10",cat:"Enkel/voet",label:"Hielcontact aanwezig"},{id:"g11",cat:"Enkel/voet",label:"Voldoende afzet voorvoet"},{id:"g12",cat:"Stappatroon",label:"Symmetrische staplengte"},{id:"g13",cat:"Stappatroon",label:"Regelmatig vloeiend loopritme"},{id:"g14",cat:"Stappatroon",label:"Normale loopsnelheid"},{id:"g15",cat:"Armzwaai",label:"Symmetrische armzwaai"}];
 const GALN_CATS=[...new Set(GALN_ITEMS.map(i=>i.cat))];
-const HHD_STAPPEN=[{type:"inst",label:"Ham – Algemeen",spier:"Hamstrings",stappen:["Warming-up: 5 minuten op hometrainer of loopband (5 km/u). Leg de testprocedure uit en benadruk het belang van maximale kracht.","Testvolgorde: eerst niet-geopereerd been, dan geopereerd been. Hamstrings altijd vóór quadriceps."]},{type:"inst",label:"Ham – Uitvoering",spier:"Hamstrings",stappen:["Positie: buiklig op behandeltafel. Patiënt mag zich vasthouden.","Gewrichtshoek: 30° gebogen in de knie.","Dynamometer: 2 cm proximaal van laterale malleolus, over achillespees. Fixeer met stabilisatieband.","3 submaximale oefencontracties → 3 maximale contracties van 3 sec met 30 sec rust. Hoogste waarde gebruiken."]},{type:"invoer",label:"Ham – Invoer",spier:"Hamstrings",velden:[{id:"hhd_ham_niet",label:"Hamstrings niet-aangedaan",een:"kg"},{id:"hhd_ham_aan",label:"Hamstrings aangedaan",een:"kg"},{id:"hhd_ham_lsi",label:"Hamstrings LSI",een:"%",ber:true,lsiType:"kracht"}]},{type:"inst",label:"Quad – Uitvoering",spier:"Quadriceps",stappen:["Positie: zittend op uiteinde behandeltafel. Patiënt mag zich vasthouden.","Gewrichtshoek: 60° gebogen in de knie.","Dynamometer: net proximaal van de enkel, voorzijde tibia. Fixeer met stabilisatieband.","3 submaximale oefencontracties → 3 maximale contracties van 3 sec met 30 sec rust. Hoogste waarde gebruiken."]},{type:"invoer",label:"Quad – Invoer",spier:"Quadriceps",velden:[{id:"hhd_quad_niet",label:"Quadriceps niet-aangedaan",een:"kg"},{id:"hhd_quad_aan",label:"Quadriceps aangedaan",een:"kg"},{id:"hhd_quad_lsi",label:"Quadriceps LSI",een:"%",ber:true,lsiType:"kracht"},{id:"hhd_hq",label:"H:Q ratio aangedaan",een:"%",ber:true}]}];
-const TESTEN=[{id:"quadriceps_lag",naam:"Quadriceps lag test",cat:"Functieonderzoek",stappen:["Zittend met gestrekte benen op behandelbank.","Actieve test: patiënt strekt aangedane been maximaal actief, houdt 5 seconden vast.","Passieve test: onderzoeker tilt hiel op totdat knie volledig in extensie komt zonder spierspanning.","Meet verschil in graden met goniometer."],velden:[{id:"actieve_extensie",label:"Actieve extensie",een:"°"},{id:"passieve_extensie",label:"Passieve extensie",een:"°"},{id:"quad_lag",label:"Quadriceps lag (verschil)",een:"°",ber:true}]},{id:"stroke_test",naam:"Stroke test – Hydrops",cat:"Functieonderzoek",stappen:["Start aan mediale zijde van de knie.","Veeg vanaf mediale kniepees naar boven langs femurcondylus richting bovenbeen.","Veeg van boven naar beneden aan laterale zijde richting gewricht.","Observeer golf van vocht aan mediale zijde en score."],velden:[{id:"stroke_graad",label:"Score",sel:true,opties:[["","— kies graad —"],["0","Graad 0 – Geen golf"],["1","Graad 1 – Kleine golf mediaal"],["2","Graad 2 – Grotere golf mediaal"],["3","Graad 3 – Effusie keert spontaan terug"],["4","Graad 4 – Effusie beweegt niet"]]}]},{id:"galn",naam:"Verkorte GALN – Looppatroon",cat:"Functieonderzoek",isGALN:true,velden:[]},{id:"beenomtrek",naam:"Beenomtrek quadriceps",cat:"Functieonderzoek",stappen:["Patiënt ligt ontspannen in rugligging, benen gestrekt.","Meet het meetpunt: 15 cm proximaal van de bovenpool van de patella. Markeer dit punt op beide benen voor consistentie.","Meet omtrek niet-aangedaan been met meetlint. Lint horizontaal, niet te strak.","Meet omtrek aangedaan been op hetzelfde punt op dezelfde wijze.","Noteer beide waarden in cm. De verhouding wordt automatisch berekend."],velden:[{id:"been_niet",label:"Niet-aangedaan been",een:"cm"},{id:"been_aangedaan",label:"Aangedaan been",een:"cm"},{id:"been_verschil",label:"Aangedaan als % van niet-aangedaan",een:"%",ber:true}]},{id:"rom_flexie",naam:"ROM knieflexie",cat:"Functieonderzoek",stappen:["Patiënt ligt in buikligging op de behandeltafel. Het aangedane been wordt getest.","Actieve flexie: vraag de patiënt de knie zo ver mogelijk te buigen. Meet de hoek met de goniometer: schanier op de laterale gewrichtsspleet, vaste arm langs het femur richting de trochanter major, beweegbare arm langs de fibula richting de laterale malleolus.","Passieve flexie: beweeg het been voorzichtig in maximale flexie. Meet opnieuw met de goniometer op dezelfde wijze.","Noteer beide waarden in graden."],velden:[{id:"rom_act",label:"Actieve flexie aangedaan",een:"°"},{id:"rom_pas",label:"Passieve flexie aangedaan",een:"°"}]},{id:"hhd",naam:"Handheld Dynamometer (HHD)",cat:"Krachttesten",isHHD:true,velden:[{id:"hhd_ham_niet",label:"Ham niet-aangedaan",een:"kg"},{id:"hhd_ham_aan",label:"Ham aangedaan",een:"kg"},{id:"hhd_ham_lsi",label:"Ham LSI",een:"%",ber:true,lsiType:"kracht"},{id:"hhd_quad_niet",label:"Quad niet-aangedaan",een:"kg"},{id:"hhd_quad_aan",label:"Quad aangedaan",een:"kg"},{id:"hhd_quad_lsi",label:"Quad LSI",een:"%",ber:true,lsiType:"kracht"},{id:"hhd_hq",label:"H:Q ratio",een:"%",ber:true}]},{id:"een_rm",naam:"1RM bepaling (Brzycki)",cat:"Krachttesten",stappen:["Indicatie: geen zwelling of acute pijn, goede mobiliteit.","Warming-up: 8–10 reps ~50% 1RM, daarna 3–5 reps ~70% 1RM.","Testvolgorde: eerst niet-geopereerd been, dan geopereerd been.","Leg extension (quad): kies gewicht voor 2–6 reps, uitvoeren tot spierfalen.","Leg curl (ham): zelfde procedure.","Formule Brzycki: 1RM = gewicht / (1.0278 − 0.0278 × herhalingen).","Noteer pijnscore NPRS 0–10."],velden:[{id:"rm_qn_g",label:"Quad niet-aangedaan – gewicht",een:"kg"},{id:"rm_qn_r",label:"Quad niet-aangedaan – herhalingen"},{id:"rm_qn_1rm",label:"Quad niet-aangedaan 1RM",een:"kg",ber:true},{id:"rm_qa_g",label:"Quad aangedaan – gewicht",een:"kg"},{id:"rm_qa_r",label:"Quad aangedaan – herhalingen"},{id:"rm_qa_1rm",label:"Quad aangedaan 1RM",een:"kg",ber:true},{id:"rm_q_lsi",label:"Quad LSI",een:"%",ber:true,lsiType:"kracht"},{id:"rm_hn_g",label:"Ham niet-aangedaan – gewicht",een:"kg"},{id:"rm_hn_r",label:"Ham niet-aangedaan – herhalingen"},{id:"rm_hn_1rm",label:"Ham niet-aangedaan 1RM",een:"kg",ber:true},{id:"rm_ha_g",label:"Ham aangedaan – gewicht",een:"kg"},{id:"rm_ha_r",label:"Ham aangedaan – herhalingen"},{id:"rm_ha_1rm",label:"Ham aangedaan 1RM",een:"kg",ber:true},{id:"rm_h_lsi",label:"Ham LSI",een:"%",ber:true,lsiType:"kracht"},{id:"rm_hq",label:"H:Q ratio aangedaan",een:"%",ber:true},{id:"rm_nprs",label:"Pijnscore NPRS (0–10)"}]},{id:"slh",naam:"Single Leg Hop for Distance",cat:"Hoptesten",stappen:["Deelnemer staat op één been achter markeringslijn. Arm inzet toegestaan.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","Spring zo ver mogelijk voorwaarts, landen op hetzelfde been.","Gecontroleerde landing: geen tweede stap, geen handen op grond.","3 geldige pogingen. Noteer beste afstand in cm."],velden:[{id:"slh_niet",label:"Niet-aangedaan",een:"cm"},{id:"slh_aan",label:"Aangedaan",een:"cm"},{id:"slh_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},{id:"thd",naam:"Triple Hop for Distance",cat:"Hoptesten",stappen:["Deelnemer staat op één been achter startlijn. Arm inzet toegestaan.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","3 opeenvolgende sprongen op hetzelfde been, zo ver mogelijk voorwaarts.","Gecontroleerde landing na derde sprong.","3 geldige pogingen. Meet afstand startlijn tot hiel na derde sprong."],velden:[{id:"thd_niet",label:"Niet-aangedaan",een:"cm"},{id:"thd_aan",label:"Aangedaan",een:"cm"},{id:"thd_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},{id:"sh",naam:"Side Hop Test",cat:"Hoptesten",stappen:["Twee parallelle tape-lijnen, 40 cm uit elkaar.","Deelnemer staat op één been naast de lijnen.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","30 seconden zijwaartse sprongen heen en weer over de lijnen.","Tel geldige keer. Bij >25% ongeldig: 3 min rust en herhalen."],velden:[{id:"sh_niet",label:"Niet-aangedaan",een:"keer"},{id:"sh_aan",label:"Aangedaan",een:"keer"},{id:"sh_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},{id:"vj",naam:"Vertical Jump Test (CMJ)",cat:"Hoptesten",stappen:["Benodigdheden: smartphone met My Jump 2 app, statief op ~1,5 m.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","Deelnemer staat op 1 been, snelle neerwaartse beweging → maximale sprong.","Video importeren in My Jump 2. Selecteer take-off en landingsframe.","3 sprongen met 30–60 sec rust. Beste spronghoogte noteren."],velden:[{id:"vj_niet",label:"Niet-aangedaan",een:"cm"},{id:"vj_aan",label:"Aangedaan",een:"cm"},{id:"vj_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},{id:"plank",naam:"Plank test",cat:"Conditietesten",isPlank:true,stappen:["Patiënt neemt een voorwaartse plankpositie aan: steun op onderarmen en tenen. Ellebogen direct onder de schouders, onderarmen parallel.","Het lichaam vormt een rechte lijn van hoofd tot hielen: geen heupzakking, geen geheven heupen, hoofd in neutrale positie.","Start de stopwatch op het moment dat de juiste positie is ingenomen.","De test eindigt bij: heupzakking >5 cm, patiënt geeft aan te stoppen, of duidelijke compensaties.","Noteer de tijd in seconden. Normwaarden: <60 sec = onvoldoende · 60–119 sec = matig · ≥120 sec = goed."],velden:[{id:"plank_sec",label:"Tijd",een:"sec",isPlank:true}]},{id:"roeien",naam:"500m roeien (Concept2)",cat:"Conditietesten",isRoeien:true,stappen:["Warming-up: 5 minuten rustig roeien op lage intensiteit.","Stel de Concept2 in op de standaard 500m training. Damperstand: aanbevolen stand 3–5 voor ongetrainde roeiers. Noteer de gekozen damperstand voor consistentie bij herhaalmeting.","Instrueer de patiënt: zo snel mogelijk 500 meter roeien. Techniek: duw met de benen (60% van het vermogen), trek daarna met romp en armen.","Start de test. De tijd stopt automatisch bij het bereiken van 500 meter.","Noteer de eindtijd in mm:ss (bijv. 2:15). Referentie: <2:30 = goed · ≥2:30 = ruimte voor verbetering (indicatief voor sportieve recreatieve populatie zonder roei-ervaring)."],velden:[{id:"roei_tijd",label:"Tijd (mm:ss)",isRoeien:true},{id:"roei_damper",label:"Damperstand"}]}];
-const RAPPORT_GROEPEN={quadriceps_lag:[[{id:"actieve_extensie",l:"Actieve extensie",e:"°"},{id:"passieve_extensie",l:"Passieve extensie",e:"°"}],[{id:"quad_lag",l:"Quadriceps lag",e:"°"}]],stroke_test:[[{id:"stroke_graad",l:"Graad"}]],beenomtrek:[[{id:"been_niet",l:"Niet-aangedaan",e:"cm"},{id:"been_aangedaan",l:"Aangedaan",e:"cm"}],[{id:"been_verschil",l:"Verhouding",e:"%"}]],rom_flexie:[[{id:"rom_act",l:"Actieve flexie",e:"°"},{id:"rom_pas",l:"Passieve flexie",e:"°"}]],hhd:[[{id:"hhd_ham_niet",l:"Ham niet-aangedaan",e:"kg"},{id:"hhd_ham_aan",l:"Ham aangedaan",e:"kg"}],[{id:"hhd_ham_lsi",l:"Ham LSI",e:"%",lsi:"kracht"}],[{id:"hhd_quad_niet",l:"Quad niet-aangedaan",e:"kg"},{id:"hhd_quad_aan",l:"Quad aangedaan",e:"kg"}],[{id:"hhd_quad_lsi",l:"Quad LSI",e:"%",lsi:"kracht"},{id:"hhd_hq",l:"H:Q ratio",e:"%"}]],een_rm:[[{id:"rm_qn_1rm",l:"Quad niet-aangedaan 1RM",e:"kg"},{id:"rm_qa_1rm",l:"Quad aangedaan 1RM",e:"kg"}],[{id:"rm_q_lsi",l:"Quad LSI",e:"%",lsi:"kracht"}],[{id:"rm_hn_1rm",l:"Ham niet-aangedaan 1RM",e:"kg"},{id:"rm_ha_1rm",l:"Ham aangedaan 1RM",e:"kg"}],[{id:"rm_h_lsi",l:"Ham LSI",e:"%",lsi:"kracht"},{id:"rm_hq",l:"H:Q ratio",e:"%"}],[{id:"rm_nprs",l:"Pijnscore NPRS"}]],slh:[[{id:"slh_niet",l:"Niet-aangedaan",e:"cm"},{id:"slh_aan",l:"Aangedaan",e:"cm"}],[{id:"slh_lsi",l:"LSI",e:"%",lsi:"hop"}]],thd:[[{id:"thd_niet",l:"Niet-aangedaan",e:"cm"},{id:"thd_aan",l:"Aangedaan",e:"cm"}],[{id:"thd_lsi",l:"LSI",e:"%",lsi:"hop"}]],sh:[[{id:"sh_niet",l:"Niet-aangedaan",e:"keer"},{id:"sh_aan",l:"Aangedaan",e:"keer"}],[{id:"sh_lsi",l:"LSI",e:"%",lsi:"hop"}]],vj:[[{id:"vj_niet",l:"Niet-aangedaan",e:"cm"},{id:"vj_aan",l:"Aangedaan",e:"cm"}],[{id:"vj_lsi",l:"LSI",e:"%",lsi:"hop"}]],plank:[[{id:"plank_sec",l:"Tijd",e:"sec",isPlank:true}]],roeien:[[{id:"roei_tijd",l:"Tijd",isRoeien:true}],[{id:"roei_damper",l:"Damperstand"}]]};
+const ACCEL_ITEMS=[{id:"a1",cat:"Accelereren",label:"Explosieve eerste stap zonder compensatie"},{id:"a2",cat:"Accelereren",label:"Symmetrische afzet beide benen"},{id:"a3",cat:"Accelereren",label:"Geen heupzakking bij afzet aangedaan been"},{id:"a4",cat:"Accelereren",label:"Romp stabiel tijdens acceleratie"},{id:"a5",cat:"Decelereren",label:"Gecontroleerde vertraging zonder compensatie"},{id:"a6",cat:"Decelereren",label:"Voldoende knieflexie bij decelereerstap aangedaan been"},{id:"a7",cat:"Decelereren",label:"Geen valgusbeweging knie bij landing aangedaan been"},{id:"a8",cat:"Decelereren",label:"Symmetrische belasting beide benen bij stoppen"}];
+const ACCEL_CATS=[...new Set(ACCEL_ITEMS.map(i=>i.cat))];
+const SPRING2B_ITEMS=[{id:"s1",cat:"Aanloop & afzet",label:"Symmetrische afzet beide benen"},{id:"s2",cat:"Aanloop & afzet",label:"Geen compensatoire beweging bij afzet"},{id:"s3",cat:"Landing",label:"Zachte gecontroleerde landing op beide benen"},{id:"s4",cat:"Landing",label:"Voldoende knieflexie bij landing"},{id:"s5",cat:"Landing",label:"Geen valgusbeweging knie bij landing"},{id:"s6",cat:"Landing",label:"Symmetrische kniepositie bij landing"},{id:"s7",cat:"Romp & balans",label:"Romp stabiel na landing"},{id:"s8",cat:"Romp & balans",label:"Balans behouden na landing"}];
+const SPRING2B_CATS=[...new Set(SPRING2B_ITEMS.map(i=>i.cat))];
+const SLS_ITEMS=[{id:"sl1",cat:"Romp & bekken",label:"Romp stabiel (geen overmatige zijdelingse buiging)"},{id:"sl2",cat:"Romp & bekken",label:"Geen heupzakking vrije been (Trendelenburg)"},{id:"sl3",cat:"Knie",label:"Knie in verlengde van de voet"},{id:"sl4",cat:"Knie",label:"Knie bereikt minimaal 60° flexie"},{id:"sl5",cat:"Knie",label:"Geen valgus collapse in de knie"},{id:"sl6",cat:"Enkel & voet",label:"Hiel blijft contact houden"},{id:"sl7",cat:"Enkel & voet",label:"Geen overmatige pronatie/supinatie"},{id:"sl8",cat:"Tempo & controle",label:"Regelmatig tempo"},{id:"sl9",cat:"Tempo & controle",label:"Gecontroleerde neerwaartse en opwaartse beweging"}];
+const SLS_CATS=[...new Set(SLS_ITEMS.map(i=>i.cat))];
+const ACLRSI_VRAGEN=["Bent u bang dat u uw knie opnieuw zult blesseren als u terugkeert naar uw sport?","Bent u gefrustreerd over het feit dat u uw sport niet op het gewenste niveau kunt beoefenen?","Bent u bang dat u zich opnieuw zult blesseren door uw sport te beoefenen?","Bent u angstig over het beoefenen van uw sport?","Denkt u dat uw knie sterk genoeg is om uw sport te beoefenen?","Bent u teleurgesteld over uw atletische prestaties?","Bent u nerveus over het beoefenen van uw sport?","Voelt u zich ontspannen bij het beoefenen van uw sport?","Bent u zeker dat u uw sport veilig kunt beoefenen?","Bent u bang dat u uw knie opnieuw zult blesseren door uw sport te beoefenen?","Voelt u zich zeker over uw vermogen om uw sport te beoefenen?","Bent u bezorgd over het beoefenen van uw sport?"];
+const HHD_STAPPEN=[{type:"inst",label:"Ham – Algemeen",spier:"Hamstrings",stappen:["Warming-up: 5 minuten op hometrainer of loopband (5 km/u).","Testvolgorde: eerst niet-geopereerd been, dan geopereerd been. Hamstrings vóór quadriceps."]},{type:"inst",label:"Ham – Uitvoering",spier:"Hamstrings",stappen:["Positie: buiklig op behandeltafel.","Gewrichtshoek: 30° flexie van de knie.","Dynamometer: 2 cm proximaal van laterale malleolus. Fixeer met band.","3 submaximale → 3 maximale contracties van 3 sec met 30 sec rust."]},{type:"invoer",label:"Ham – Invoer",spier:"Hamstrings",velden:[{id:"hhd_ham_niet",label:"Hamstrings niet-aangedaan",een:"kg"},{id:"hhd_ham_aan",label:"Hamstrings aangedaan",een:"kg"},{id:"hhd_ham_lsi",label:"Hamstrings LSI",een:"%",ber:true,lsiType:"kracht"}]},{type:"inst",label:"Quad – Uitvoering",spier:"Quadriceps",stappen:["Positie: zittend op uiteinde behandeltafel.","Gewrichtshoek: 60° flexie van de knie.","Dynamometer: net proximaal van de enkel, voorzijde tibia. Fixeer met band.","3 submaximale → 3 maximale contracties van 3 sec met 30 sec rust."]},{type:"invoer",label:"Quad – Invoer",spier:"Quadriceps",velden:[{id:"hhd_quad_niet",label:"Quadriceps niet-aangedaan",een:"kg"},{id:"hhd_quad_aan",label:"Quadriceps aangedaan",een:"kg"},{id:"hhd_quad_lsi",label:"Quadriceps LSI",een:"%",ber:true,lsiType:"kracht"},{id:"hhd_hq",label:"H:Q ratio aangedaan",een:"%",ber:true}]}];
+
+const ALLE_TESTEN=[
+  {id:"quadriceps_lag",naam:"Quadriceps lag test",cat:"Functieonderzoek",stappen:["Zittend met gestrekte benen op behandelbank.","Actieve test: patiënt strekt aangedane been maximaal actief, houdt 5 seconden vast.","Passieve test: onderzoeker tilt hiel op totdat knie volledig in extensie komt.","Meet verschil in graden met goniometer."],velden:[{id:"actieve_extensie",label:"Actieve extensie",een:"°"},{id:"passieve_extensie",label:"Passieve extensie",een:"°"},{id:"quad_lag",label:"Quadriceps lag (verschil)",een:"°",ber:true}]},
+  {id:"stroke_test",naam:"Stroke test – Hydrops",cat:"Functieonderzoek",stappen:["Start aan mediale zijde van de knie.","Veeg vanaf mediale kniepees naar boven langs femurcondylus.","Veeg van boven naar beneden aan laterale zijde richting gewricht.","Observeer golf van vocht aan mediale zijde en score."],velden:[{id:"stroke_graad",label:"Score",sel:true,opties:[["","— kies graad —"],["0","Graad 0 – Geen golf"],["1","Graad 1 – Kleine golf mediaal"],["2","Graad 2 – Grotere golf mediaal"],["3","Graad 3 – Effusie keert spontaan terug"],["4","Graad 4 – Effusie beweegt niet"]]}]},
+  {id:"galn",naam:"Verkorte GALN – Looppatroon",cat:"Functieonderzoek",isGALN:true,velden:[]},
+  {id:"beenomtrek",naam:"Beenomtrek quadriceps",cat:"Functieonderzoek",stappen:["Patiënt rugligging, benen gestrekt.","Meetpunt: 15 cm proximaal van bovenpool patella. Markeer beide benen.","Meet omtrek niet-aangedaan been.","Meet omtrek aangedaan been op hetzelfde punt."],velden:[{id:"been_niet",label:"Niet-aangedaan been",een:"cm"},{id:"been_aangedaan",label:"Aangedaan been",een:"cm"},{id:"been_verschil",label:"Aangedaan als % van niet-aangedaan",een:"%",ber:true}]},
+  {id:"rom_flexie",naam:"ROM knieflexie",cat:"Functieonderzoek",stappen:["Patiënt buikligging. Aangedane been testen.","Actieve flexie: patiënt buigt knie zo ver mogelijk. Meet met goniometer.","Passieve flexie: beweeg been in maximale flexie. Meet op dezelfde wijze."],velden:[{id:"rom_act",label:"Actieve flexie aangedaan",een:"°"},{id:"rom_pas",label:"Passieve flexie aangedaan",een:"°"}]},
+  {id:"hhd",naam:"Handheld Dynamometer (HHD)",cat:"Krachttesten",isHHD:true,velden:[{id:"hhd_ham_niet",label:"Ham niet-aangedaan",een:"kg"},{id:"hhd_ham_aan",label:"Ham aangedaan",een:"kg"},{id:"hhd_ham_lsi",label:"Ham LSI",een:"%",ber:true,lsiType:"kracht"},{id:"hhd_quad_niet",label:"Quad niet-aangedaan",een:"kg"},{id:"hhd_quad_aan",label:"Quad aangedaan",een:"kg"},{id:"hhd_quad_lsi",label:"Quad LSI",een:"%",ber:true,lsiType:"kracht"},{id:"hhd_hq",label:"H:Q ratio",een:"%",ber:true}]},
+  {id:"een_rm",naam:"1RM bepaling (Brzycki)",cat:"Krachttesten",stappen:["Indicatie: geen zwelling of acute pijn, goede mobiliteit.","Warming-up: 8–10 reps ~50% 1RM, daarna 3–5 reps ~70% 1RM.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","Leg extension (quad): gewicht voor 2–6 reps, tot spierfalen.","Leg curl (ham): zelfde procedure.","Formule Brzycki: 1RM = gewicht / (1.0278 − 0.0278 × herhalingen).","Noteer pijnscore NPRS 0–10."],velden:[{id:"rm_qn_g",label:"Quad niet-aangedaan – gewicht",een:"kg"},{id:"rm_qn_r",label:"Quad niet-aangedaan – herhalingen"},{id:"rm_qn_1rm",label:"Quad niet-aangedaan 1RM",een:"kg",ber:true},{id:"rm_qa_g",label:"Quad aangedaan – gewicht",een:"kg"},{id:"rm_qa_r",label:"Quad aangedaan – herhalingen"},{id:"rm_qa_1rm",label:"Quad aangedaan 1RM",een:"kg",ber:true},{id:"rm_q_lsi",label:"Quad LSI",een:"%",ber:true,lsiType:"kracht"},{id:"rm_hn_g",label:"Ham niet-aangedaan – gewicht",een:"kg"},{id:"rm_hn_r",label:"Ham niet-aangedaan – herhalingen"},{id:"rm_hn_1rm",label:"Ham niet-aangedaan 1RM",een:"kg",ber:true},{id:"rm_ha_g",label:"Ham aangedaan – gewicht",een:"kg"},{id:"rm_ha_r",label:"Ham aangedaan – herhalingen"},{id:"rm_ha_1rm",label:"Ham aangedaan 1RM",een:"kg",ber:true},{id:"rm_h_lsi",label:"Ham LSI",een:"%",ber:true,lsiType:"kracht"},{id:"rm_hq",label:"H:Q ratio aangedaan",een:"%",ber:true},{id:"rm_nprs",label:"Pijnscore NPRS (0–10)"}]},
+  {id:"sls",naam:"Single Leg Squat (1 minuut)",cat:"Krachttesten",isSLS:true,stappen:["Patiënt staat op één been, handen op de heupen.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","Zo snel mogelijk kwalitatief goede squats gedurende 1 minuut. Knie ≥ 60°.","Tel correcte herhalingen en beoordeel kwaliteit.","Normwaarde: >22 herhalingen in 1 minuut."],velden:[{id:"sls_niet",label:"Niet-aangedaan (herhalingen)"},{id:"sls_aan",label:"Aangedaan (herhalingen)"}]},
+  {id:"slh",naam:"Single Leg Hop for Distance",cat:"Hoptesten",stappen:["Deelnemer staat op één been achter markeringslijn.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","Spring zo ver mogelijk voorwaarts, landen op hetzelfde been.","Gecontroleerde landing: geen tweede stap, geen handen op grond.","3 geldige pogingen. Noteer beste afstand in cm."],velden:[{id:"slh_niet",label:"Niet-aangedaan",een:"cm"},{id:"slh_aan",label:"Aangedaan",een:"cm"},{id:"slh_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},
+  {id:"thd",naam:"Triple Hop for Distance",cat:"Hoptesten",stappen:["Deelnemer staat op één been achter startlijn.","3 opeenvolgende sprongen op hetzelfde been zo ver mogelijk.","Gecontroleerde landing na derde sprong.","3 geldige pogingen. Meet afstand startlijn tot hiel."],velden:[{id:"thd_niet",label:"Niet-aangedaan",een:"cm"},{id:"thd_aan",label:"Aangedaan",een:"cm"},{id:"thd_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},
+  {id:"crossover_hop",naam:"Crossover Hop for Distance",cat:"Hoptesten",stappen:["Leg een tape-lijn als middellijn op de vloer.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","3 opeenvolgende sprongen, steeds over de lijn naar de andere kant.","Gecontroleerde landing na derde sprong op hetzelfde been.","3 geldige pogingen. Meet totale afstand."],velden:[{id:"ch_niet",label:"Niet-aangedaan",een:"cm"},{id:"ch_aan",label:"Aangedaan",een:"cm"},{id:"ch_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},
+  {id:"sh",naam:"Side Hop Test",cat:"Hoptesten",stappen:["Twee parallelle tape-lijnen, 40 cm uit elkaar.","Deelnemer staat op één been naast de lijnen.","30 seconden zijwaartse sprongen heen en weer.","Tel geldige sprongen. Bij >25% ongeldig: 3 min rust en herhalen."],velden:[{id:"sh_niet",label:"Niet-aangedaan",een:"keer"},{id:"sh_aan",label:"Aangedaan",een:"keer"},{id:"sh_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},
+  {id:"vj",naam:"Vertical Jump Test (CMJ)",cat:"Hoptesten",stappen:["Smartphone met My Jump 2 app, statief op ~1,5 m.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","1 been, snelle neerwaartse beweging → maximale sprong.","Video importeren in My Jump 2. Selecteer take-off en landingsframe.","3 sprongen met 30–60 sec rust. Beste spronghoogte noteren."],velden:[{id:"vj_niet",label:"Niet-aangedaan",een:"cm"},{id:"vj_aan",label:"Aangedaan",een:"cm"},{id:"vj_lsi",label:"LSI",een:"%",ber:true,lsiType:"hop"}]},
+  {id:"hopping_spot",naam:"Hopping on the Spot",cat:"Hoptesten",stappen:["Deelnemer staat op één been op vlakke ondergrond.","Testvolgorde: eerst niet-geopereerd, dan geopereerd been.","Zo veel mogelijk sprongen ter plaatse op één been.","Noteer totaal aantal sprongen per been."],velden:[{id:"hs_niet",label:"Niet-aangedaan (aantal sprongen)"},{id:"hs_aan",label:"Aangedaan (aantal sprongen)"},{id:"hs_lsi",label:"LSI",een:"%",ber:true,isHopSpot:true}]},
+  {id:"plank",naam:"Plank test",cat:"Conditietesten",isPlank:true,stappen:["Voorwaartse plankpositie: steun op onderarmen en tenen.","Lichaam vormt rechte lijn van hoofd tot hielen.","Start stopwatch bij correcte positie.","Test eindigt bij heupzakking >5 cm of patiënt stopt.","Noteer tijd in seconden."],velden:[{id:"plank_sec",label:"Tijd",een:"sec",isPlank:true}]},
+  {id:"roeien",naam:"500m roeien (Concept2)",cat:"Conditietesten",isRoeien:true,stappen:["Warming-up: 5 minuten rustig roeien.","Concept2 instellen op 500m. Damperstand 3–5.","Zo snel mogelijk 500 meter roeien.","Noteer eindtijd in mm:ss."],velden:[{id:"roei_tijd",label:"Tijd (mm:ss)",isRoeien:true},{id:"roei_damper",label:"Damperstand"}]},
+  {id:"aclrsi",naam:"ACL-RSI Vragenlijst",cat:"Psychologisch",isACLRSI:true,velden:[]},
+  {id:"hardlopen_criteria",naam:"Criteria hardlopen",cat:"Criteria",isCriteria:true,velden:[],criteriaItems:["Geen tot minimale hydrops (Stroke test Graad 0–1)?","Volledige extensie aanwezig?","Trippeloefeningen gaan kwalitatief goed?","4x10 1-benige squats kwalitatief goed uitgevoerd?","30 sec 1-benig hoppen kwalitatief goed uitgevoerd?","2-benige pogo-hops kwalitatief goed uitgevoerd?"]},
+  {id:"springen_accel",naam:"Kwalitatief: Accelereren & Decelereren",cat:"Kwalitatief",isKwal:true,items:ACCEL_ITEMS,cats:ACCEL_CATS,velden:[]},
+  {id:"springen_2benig",naam:"Kwalitatief: 2-benig springen",cat:"Kwalitatief",isKwal:true,items:SPRING2B_ITEMS,cats:SPRING2B_CATS,velden:[]}
+];
+
+// ─── PLANNING HELPERS ─────────────────────────────────────────────
+function addWeeks(d,w){const dt=new Date(d);dt.setDate(dt.getDate()+w*7);return dt.toISOString().split("T")[0];}
+function today(){return new Date().toISOString().split("T")[0];}
+function dagenverschil(a,b){return Math.round((new Date(b)-new Date(a))/(1000*60*60*24));}
+function nlDatum(s){if(!s)return"—";const[y,m,d]=s.split("-");return`${d}-${m}-${y}`;}
+function weeksSinceOp(d){return Math.floor(dagenverschil(d,today())/7);}
+function getMomentStatus(gepland,gedaan){if(gedaan)return"groen";const diff=dagenverschil(today(),gepland);if(diff<0)return"rood";if(diff<=14)return"oranje";return"grijs";}
+
+// Kijk of een mijlpaal al een meetmoment heeft in testdata
+function mijlpaalGedaanViaTest(patData,mijlpaalId){
+  const mml=patData?.meetmomenten||[];
+  return mml.find(m=>m.type==="mijlpaal"&&m.refId===mijlpaalId)||null;
+}
 
 // ─── HULPFUNCTIES ─────────────────────────────────────────────────
 function lsi(a,b){if(!a||!b||Number(b)===0)return"";return((Number(a)/Number(b))*100).toFixed(1);}
 function rm1(g,r){if(!g||!r)return"";const rn=Number(r);if(rn<1)return"";return(Number(g)/(1.0278-0.0278*rn)).toFixed(1);}
-function calcW(id,w){const n={...w};if(id==="quadriceps_lag"&&n.actieve_extensie!==""&&n.passieve_extensie!=="")n.quad_lag=Math.abs(Number(n.passieve_extensie)-Number(n.actieve_extensie)).toFixed(1);if(id==="beenomtrek")n.been_verschil=lsi(n.been_aangedaan,n.been_niet);if(id==="een_rm"){n.rm_qn_1rm=rm1(n.rm_qn_g,n.rm_qn_r);n.rm_qa_1rm=rm1(n.rm_qa_g,n.rm_qa_r);n.rm_hn_1rm=rm1(n.rm_hn_g,n.rm_hn_r);n.rm_ha_1rm=rm1(n.rm_ha_g,n.rm_ha_r);n.rm_q_lsi=lsi(n.rm_qa_1rm,n.rm_qn_1rm);n.rm_h_lsi=lsi(n.rm_ha_1rm,n.rm_hn_1rm);const ha=Number(n.rm_ha_1rm),qa=Number(n.rm_qa_1rm);if(ha&&qa)n.rm_hq=((ha/qa)*100).toFixed(1);}if(id==="slh")n.slh_lsi=lsi(n.slh_aan,n.slh_niet);if(id==="thd")n.thd_lsi=lsi(n.thd_aan,n.thd_niet);if(id==="sh")n.sh_lsi=lsi(n.sh_aan,n.sh_niet);if(id==="vj")n.vj_lsi=lsi(n.vj_aan,n.vj_niet);return n;}
+function berekenACLRSI(w){let tot=0,cnt=0;ACLRSI_VRAGEN.forEach((_,i)=>{const v=w["aclrsi_"+i];if(v===undefined||v==="")return;cnt++;tot+=Number(v);});if(cnt===0)return null;return Math.round(tot/cnt);}
+
+function calcW(id,w){
+  const n={...w};
+  if(id==="quadriceps_lag"&&n.actieve_extensie!==undefined&&n.passieve_extensie!==undefined)n.quad_lag=Math.abs(Number(n.passieve_extensie)-Number(n.actieve_extensie)).toFixed(1);
+  if(id==="beenomtrek")n.been_verschil=lsi(n.been_aangedaan,n.been_niet);
+  if(id==="een_rm"){n.rm_qn_1rm=rm1(n.rm_qn_g,n.rm_qn_r);n.rm_qa_1rm=rm1(n.rm_qa_g,n.rm_qa_r);n.rm_hn_1rm=rm1(n.rm_hn_g,n.rm_hn_r);n.rm_ha_1rm=rm1(n.rm_ha_g,n.rm_ha_r);n.rm_q_lsi=lsi(n.rm_qa_1rm,n.rm_qn_1rm);n.rm_h_lsi=lsi(n.rm_ha_1rm,n.rm_hn_1rm);const ha=Number(n.rm_ha_1rm),qa=Number(n.rm_qa_1rm);if(ha&&qa)n.rm_hq=((ha/qa)*100).toFixed(1);}
+  if(id==="slh")n.slh_lsi=lsi(n.slh_aan,n.slh_niet);
+  if(id==="thd")n.thd_lsi=lsi(n.thd_aan,n.thd_niet);
+  if(id==="crossover_hop")n.ch_lsi=lsi(n.ch_aan,n.ch_niet);
+  if(id==="sh")n.sh_lsi=lsi(n.sh_aan,n.sh_niet);
+  if(id==="vj")n.vj_lsi=lsi(n.vj_aan,n.vj_niet);
+  if(id==="hopping_spot")n.hs_lsi=lsi(n.hs_aan,n.hs_niet);
+  return n;
+}
 function calcHHD(w){const n={...w};n.hhd_ham_lsi=lsi(n.hhd_ham_aan,n.hhd_ham_niet);n.hhd_quad_lsi=lsi(n.hhd_quad_aan,n.hhd_quad_niet);const ha=Number(n.hhd_ham_aan),qa=Number(n.hhd_quad_aan);if(ha&&qa)n.hhd_hq=((ha/qa)*100).toFixed(1);return n;}
-function lsiKleur(v,type,fase){if(v===""||v===undefined)return null;const n=Number(v),d=LSI_DREMPEL[type]?.[fase];if(d===null)return{bg:C.groenLight,col:C.groen};if(n>=d)return{bg:C.okLight,col:C.ok};if(n>=d-10)return{bg:C.oranjeLight,col:C.oranje};return{bg:C.roodLight,col:C.rood};}
-function plankKleur(sec){const n=Number(sec);if(n>=120)return{bg:C.okLight,col:C.ok,label:"Goed (≥120 sec)"};if(n>=60)return{bg:C.oranjeLight,col:C.oranje,label:"Matig (60–119 sec)"};return{bg:C.roodLight,col:C.rood,label:"Onvoldoende (<60 sec)"};}
-function tijdNaarSec(str){if(!str)return null;const p=str.split(":");if(p.length===2){const m=parseInt(p[0]),s=parseFloat(p[1]);if(!isNaN(m)&&!isNaN(s))return m*60+s;}return null;}
-function roeiKleur(str){const sec=tijdNaarSec(str);if(sec===null)return null;if(sec<150)return{bg:C.okLight,col:C.ok,label:"Goed (<2:30)"};return{bg:C.oranjeLight,col:C.oranje,label:"Ruimte voor verbetering (≥2:30)"};}
+
+function lsiKleur(v,type,fase){if(v===""||v===undefined||v===null)return null;const n=Number(v),d=LSI_DREMPEL[type]?.[fase];if(d===null)return{bg:C.groenLight,col:C.groen};if(n>=d)return{bg:C.okLight,col:C.ok};if(n>=d-10)return{bg:C.oranjeLight,col:C.oranje};return{bg:C.roodLight,col:C.rood};}
+function hopSpotKleur(v){const n=Number(v);if(n>95)return{bg:C.okLight,col:C.ok,label:"Zeer goed (>95%)"};if(n>=90)return{bg:"#d1fae5",col:"#065f46",label:"Goed (90–95%)"};if(n>=70)return{bg:C.oranjeLight,col:C.oranje,label:"Matig (70–90%)"};return{bg:C.roodLight,col:C.rood,label:"Slecht (<70%)"};}
+function plankKleur(v){const n=Number(v);if(n>=120)return{bg:C.okLight,col:C.ok,label:"Goed (≥120 sec)"};if(n>=60)return{bg:C.oranjeLight,col:C.oranje,label:"Matig (60–119 sec)"};return{bg:C.roodLight,col:C.rood,label:"Onvoldoende (<60 sec)"};}
+function tijdNaarSec(s){if(!s)return null;const p=s.split(":");if(p.length===2){const m=parseInt(p[0]),sec=parseFloat(p[1]);if(!isNaN(m)&&!isNaN(sec))return m*60+sec;}return null;}
+function roeiKleur(s){const sec=tijdNaarSec(s);if(sec===null)return null;if(sec<150)return{bg:C.okLight,col:C.ok,label:"Goed (<2:30)"};return{bg:C.oranjeLight,col:C.oranje,label:"Ruimte voor verbetering (≥2:30)"};}
+function aclrsiKleur(sc){if(sc===null||sc===undefined)return null;if(sc>72)return{bg:C.okLight,col:C.ok,label:"Psychologisch klaar (>72)"};if(sc>=56)return{bg:C.oranjeLight,col:C.oranje,label:"Twijfelachtig (56–72)"};return{bg:C.roodLight,col:C.rood,label:"Niet klaar (<56)"};}
 function badge(bg,col,tekst){return`<span class="badge" style="background:${bg};color:${col}">${tekst}</span>`;}
 function lsiBadge(v,type,fase){const k=lsiKleur(v,type,fase);return k?badge(k.bg,k.col,Number(v).toFixed(1)+"%"):"";}
 
 // ─── STATE ────────────────────────────────────────────────────────
-let S={sc:"start",patNr:"",been:"Links",patData:null,laden:false,fout:"",fase:null,mm:null,test:null,stap:0,hhdStap:0,waarden:{},galnW:{},crit:{},toonVlaggen:false,rapMm:null,ok:false,opslaan:false,pdfBezig:false};
+let S={
+  // testen
+  sc:"start",patNr:"",been:"Links",opDatum:"",patData:null,laden:false,fout:"",
+  fase:null,mm:null,test:null,stap:0,hhdStap:0,waarden:{},checkW:{},crit:{},
+  toonVlaggen:false,rapMm:null,ok:false,dashTab:"fasen",
+  // planning
+  plSc:"overzicht",plPatienten:[],plPatData:null,plPatNr:"",plLaden:false,
+  plUitstellenId:null,plNieuwDatum:"",plFout:""
+};
 
+let activeTab="testen";
+
+function switchTab(tab){
+  activeTab=tab;
+  document.getElementById("tab-testen").className="ft-tab-main"+(tab==="testen"?" act":"");
+  document.getElementById("tab-planning").className="ft-tab-main"+(tab==="planning"?" act":"");
+  document.getElementById("pane-testen").style.display=tab==="testen"?"block":"none";
+  document.getElementById("pane-planning").style.display=tab==="planning"?"block":"none";
+  if(tab==="planning"&&S.plSc==="overzicht")laadOverzicht();
+}
+
+// ─── TESTEN RENDER ────────────────────────────────────────────────
 function render(){
-  const app=document.getElementById("app");
+  const app=document.getElementById("pane-testen");
   if(S.sc==="start")app.innerHTML=renderStart();
   else if(S.sc==="dashboard")app.innerHTML=renderDashboard();
   else if(S.sc==="meetmoment")app.innerHTML=renderMeetmoment();
-  else if(S.sc==="galn")app.innerHTML=renderGALN();
+  else if(S.sc==="checklist")app.innerHTML=renderChecklist();
+  else if(S.sc==="aclrsi")app.innerHTML=renderACLRSI();
   else if(S.sc==="hhd")app.innerHTML=renderHHD();
+  else if(S.sc==="sls")app.innerHTML=renderSLS();
   else if(S.sc==="test")app.innerHTML=renderTest();
   else if(S.sc==="rapport")app.innerHTML=renderRapport();
 }
@@ -131,77 +221,148 @@ function renderStart(){return`
     <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Patiëntnummer (SpotOnMedics)</div>
     <input id="inp-nr" class="ft-input" placeholder="bijv. 12345" value="${S.patNr}" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')openPat()"/>
     <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Aangedaan been</div>
-    <select id="inp-been" class="ft-input" style="margin-bottom:16px">
+    <select id="inp-been" class="ft-input" style="margin-bottom:12px">
       <option ${S.been==="Links"?"selected":""}>Links</option>
       <option ${S.been==="Rechts"?"selected":""}>Rechts</option>
     </select>
+    <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Operatiedatum</div>
+    <input id="inp-opdat" class="ft-input" type="date" value="${S.opDatum}" style="margin-bottom:16px"/>
     ${S.fout?`<div style="color:${C.rood};font-size:14px;margin-bottom:8px">${S.fout}</div>`:""}
     <button class="ft-btn-p" style="width:100%" onclick="openPat()" ${S.laden?"disabled":""}>
       ${S.laden?"Laden...":"Patiënt openen →"}
     </button>
   </div>
-  <div style="font-size:12px;color:${C.muted};text-align:center;margin-top:12px">AVG-proof · Alleen patiëntnummer opgeslagen · Gedeeld via Supabase</div>`;}
+  <div style="font-size:12px;color:${C.muted};text-align:center;margin-top:12px">AVG-proof · Alleen patiëntnummer opgeslagen</div>`;}
 
 function renderDashboard(){
   const mml=S.patData?.meetmomenten||[];
-  const fasenGrid=FASEN.map(f=>`<button class="ft-fase-btn" onclick="nieuwMm(${f.id})"><div style="font-size:11px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">FASE ${f.id}</div><div style="font-size:14px;color:${C.groen};font-weight:500">${f.kort}</div></button>`).join("");
-  const hist=[...mml].reverse().map((m,i)=>`<div class="ft-card" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="openMm(${mml.length-1-i})"><div><div style="font-weight:500;font-size:14px;color:${C.groen}">${m.faseNaam}</div><div style="font-size:13px;color:${C.muted}">${m.datum}</div></div><div style="display:flex;gap:8px;align-items:center"><button class="ft-btn-sm" onclick="event.stopPropagation();openRap(${mml.length-1-i})">Rapport</button><span style="color:${C.groenAccent};font-size:20px">›</span></div></div>`).join("");
+  const weken=S.patData?.operatiedatum?weeksSinceOp(S.patData.operatiedatum):null;
+  const gefilterd=[...mml].reverse().filter(m=>S.dashTab==="fasen"?m.type==="fase":m.type==="mijlpaal");
+  const fasenGrid=FASEN.map(f=>`<button class="ft-fase-btn" onclick="nieuwMm('fase',${f.id},'${f.naam}',null)"><div style="font-size:11px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">FASE ${f.id}</div><div style="font-size:14px;color:${C.groen};font-weight:500">${f.kort}</div></button>`).join("");
+  const mijlGrid=MIJLPALEN_DEF.map(m=>`<button class="ft-fase-btn" onclick="nieuwMm('mijlpaal','${m.id}',${JSON.stringify(m.naam)},'${m.timing}')"><div style="font-size:11px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">${m.timing}</div><div style="font-size:14px;color:${C.groen};font-weight:500">${m.kort}</div></button>`).join("");
+  const hist=gefilterd.map((m,i)=>`<div class="ft-card" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="openMm(${JSON.stringify(m).replace(/"/g,'&quot;')})"><div><div style="font-weight:500;font-size:14px;color:${C.groen}">${m.naam}</div><div style="font-size:13px;color:${C.muted}">${m.datum}${m.timing?" · "+m.timing:""}</div></div><div style="display:flex;gap:8px;align-items:center"><button class="ft-btn-sm" onclick="event.stopPropagation();openRap(${JSON.stringify(m).replace(/"/g,'&quot;')})">Rapport</button><span style="color:${C.groenAccent};font-size:20px">›</span></div></div>`).join("");
   return`
     <div style="background:${C.groen};border-radius:12px;padding:1rem 1.25rem;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;color:#fff">Fyzio Totaal · UMOOOVE</div><div style="font-size:18px;font-weight:500;color:#fff">Patiënt ${S.patNr}</div><div style="font-size:13px;color:${C.mint}">Aangedaan been: ${S.patData?.been||S.been}</div></div>
+      <div>
+        <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;color:#fff">Fyzio Totaal · UMOOOVE</div>
+        <div style="font-size:18px;font-weight:500;color:#fff">Patiënt ${S.patNr}</div>
+        <div style="font-size:13px;color:${C.mint}">Aangedaan been: ${S.patData?.been||S.been}${weken!==null?" · Wk "+weken+" post-op":""}</div>
+      </div>
       <button style="background:transparent;color:${C.mint};border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer" onclick="S.sc='start';render()">← Wissel</button>
     </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="${S.dashTab==="fasen"?"ft-tab-act":"ft-tab"}" onclick="S.dashTab='fasen';render()">Periodieke testen</button>
+      <button class="${S.dashTab==="mijlpalen"?"ft-tab-act":"ft-tab"}" onclick="S.dashTab='mijlpalen';render()">Mijlpalen</button>
+    </div>
     <div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px">Nieuw meetmoment starten</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">${fasenGrid}</div>
-    ${mml.length?`<div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px">Meethistorie</div>${hist}`:""}
-    ${S.opslaan?`<div style="font-size:13px;color:${C.ok};text-align:center;margin-top:8px">✓ Opgeslagen in gedeelde database</div>`:""}`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">${S.dashTab==="fasen"?fasenGrid:mijlGrid}</div>
+    ${gefilterd.length?`<div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px">Meethistorie</div>${hist}`:""}`;
 }
 
 function renderMeetmoment(){
-  const mm=S.mm,fase=S.fase;if(!mm||!fase)return"";
-  const criteria=FASE_CRITERIA[mm.fase]||[];
-  const allJa=criteria.every(c=>S.crit[c]==="ja");
-  const faseTesten=TESTEN_PER_FASE[mm.fase]||[];
-  const testen=TESTEN.filter(t=>faseTesten.includes(t.id));
+  const mm=S.mm; if(!mm)return"";
+  const isFase=mm.type==="fase";
+  const criteria=isFase?(FASE_CRITERIA[mm.refId]||[]):[];
+  const allJa=criteria.length>0&&criteria.every(c=>S.crit[c]==="ja");
+  const testenIds=isFase?(TESTEN_PER_FASE[mm.refId]||[]):(TESTEN_PER_MIJLPAAL[mm.refId]||[]);
+  const testen=ALLE_TESTEN.filter(t=>testenIds.includes(t.id));
   const cats=[...new Set(testen.map(t=>t.cat))];
-  const vl=FASE_VLAGGEN[mm.fase];
+  const vl=isFase?FASE_VLAGGEN[mm.refId]:null;
   const heeftVl=(vl?.geel?.length||0)+(vl?.rood?.length||0)>0;
-  const critRijen=criteria.map((c,i)=>`<div class="ft-crit-row"><span style="font-size:14px;flex:1;padding-right:8px">${c}</span><div style="display:flex;gap:6px;flex-shrink:0"><button class="${S.crit[c]==="ja"?"ft-ja":"ft-neutral"}" onclick="setCrit(${JSON.stringify(c)},'ja')">Ja</button><button class="${S.crit[c]==="nee"?"ft-nee":"ft-neutral"}" onclick="setCrit(${JSON.stringify(c)},'nee')">Nee</button></div></div>`).join("");
-  const vlagHTML=S.toonVlaggen&&vl?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">${vl.geel.length?`<div class="vlag-blok" style="background:${C.geelLight};border:1px solid #fcd34d"><div style="font-size:12px;font-weight:500;color:${C.geel};margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">🟡 Gele vlaggen</div>${vl.geel.map(g=>`<div style="font-size:13px;color:#78350f;margin-bottom:2px">· ${g}</div>`).join("")}</div>`:""}${vl.rood.length?`<div class="vlag-blok" style="background:${C.roodLight};border:1px solid #fca5a5"><div style="font-size:12px;font-weight:500;color:${C.rood};margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">🔴 Rode vlaggen</div>${vl.rood.map(r=>`<div style="font-size:13px;color:#7f1d1d;margin-bottom:2px">· ${r}</div>`).join("")}</div>`:""}</div>`:"";
-  const testenHTML=cats.map(cat=>{const rijen=testen.filter(t=>t.cat===cat).map(t=>{const ged=!!mm.testen?.[t.id];const lsiV=t.velden.find(v=>v.ber&&v.lsiType);const lsiVal=ged&&lsiV?mm.testen[t.id]?.waarden?.[lsiV.id]:"";const plankVal=ged&&t.isPlank?mm.testen[t.id]?.waarden?.plank_sec:null;const roeiVal=ged&&t.isRoeien?mm.testen[t.id]?.waarden?.roei_tijd:null;let extra="";if(lsiVal)extra=` ${lsiBadge(lsiVal,lsiV.lsiType,mm.fase)}`;else if(plankVal){const k=plankKleur(plankVal);extra=` ${badge(k.bg,k.col,k.label)}`;}else if(roeiVal){const k=roeiKleur(roeiVal);if(k)extra=` ${badge(k.bg,k.col,roeiVal)}`;}else if(ged)extra=` <span style="font-size:12px;color:${C.ok};font-weight:500">✓</span>`;return`<div class="ft-test-row"><div style="flex:1;margin-right:8px"><span style="font-size:14px;font-weight:500">${t.naam}</span>${extra}</div><button class="ft-btn-sm" onclick="startTest('${t.id}')">${ged?"Bewerken":"Starten"}</button></div>`;}).join("");return`<div style="font-size:13px;font-weight:500;color:${C.groenAccent};text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 6px">${cat}</div><div class="ft-card" style="padding:.25rem 1rem">${rijen}</div>`;}).join("");
+  const vlagHTML=S.toonVlaggen&&vl?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+    ${vl.geel.length?`<div class="vlag-blok" style="background:${C.geelLight};border:1px solid #fcd34d"><div style="font-size:12px;font-weight:500;color:${C.geel};margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">🟡 Gele vlaggen</div>${vl.geel.map(g=>`<div style="font-size:13px;color:#78350f;margin-bottom:2px">· ${g}</div>`).join("")}</div>`:""}
+    ${vl.rood.length?`<div class="vlag-blok" style="background:${C.roodLight};border:1px solid #fca5a5"><div style="font-size:12px;font-weight:500;color:${C.rood};margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">🔴 Rode vlaggen</div>${vl.rood.map(r=>`<div style="font-size:13px;color:#7f1d1d;margin-bottom:2px">· ${r}</div>`).join("")}</div>`:""}</div>`:"";
+  const critHTML=criteria.length?`<div class="ft-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:15px;font-weight:500;color:${C.groen}">Fase-criteria checklist</div>
+      ${allJa?`<span class="badge" style="background:${C.okLight};color:${C.ok}">Alle criteria behaald ✓</span>`:""}
+    </div>
+    ${criteria.map((c,i)=>`<div class="ft-crit-row"><span style="font-size:14px;flex:1;padding-right:8px">${c}</span><div style="display:flex;gap:6px;flex-shrink:0"><button class="${S.crit[c]==="ja"?"ft-ja":"ft-neutral"}" onclick="setCrit(${JSON.stringify(c)},'ja')">Ja</button><button class="${S.crit[c]==="nee"?"ft-nee":"ft-neutral"}" onclick="setCrit(${JSON.stringify(c)},'nee')">Nee</button></div></div>`).join("")}
+    <div style="margin-top:12px;display:flex;align-items:center;gap:10px"><button class="ft-btn-p" onclick="saveCrit()">Opslaan</button>${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}</div>
+  </div>`:"";
+  const testenHTML=cats.map(cat=>{
+    const rijen=testen.filter(t=>t.cat===cat).map(t=>{
+      const ged=!!mm.testen?.[t.id];
+      const lsiV=t.velden.find(v=>v.ber&&v.lsiType);
+      const lsiVal=ged&&lsiV?mm.testen[t.id]?.waarden?.[lsiV.id]:"";
+      const plankVal=ged&&t.isPlank?mm.testen[t.id]?.waarden?.plank_sec:null;
+      const roeiVal=ged&&t.isRoeien?mm.testen[t.id]?.waarden?.roei_tijd:null;
+      const aclVal=ged&&t.isACLRSI?berekenACLRSI(mm.testen[t.id]?.waarden||{}):null;
+      const hsVal=ged&&t.velden.find(v=>v.isHopSpot)?mm.testen[t.id]?.waarden?.hs_lsi:null;
+      let extra="";
+      if(lsiVal)extra=` ${lsiBadge(lsiVal,lsiV.lsiType,mm.refId)}`;
+      else if(hsVal){const k=hopSpotKleur(hsVal);extra=` ${badge(k.bg,k.col,"LSI "+Number(hsVal).toFixed(1)+"%")}`;}
+      else if(plankVal){const k=plankKleur(plankVal);extra=` ${badge(k.bg,k.col,k.label)}`;}
+      else if(roeiVal){const k=roeiKleur(roeiVal);if(k)extra=` ${badge(k.bg,k.col,roeiVal)}`;}
+      else if(aclVal!==null&&aclVal!==undefined){const k=aclrsiKleur(aclVal);if(k)extra=` ${badge(k.bg,k.col,aclVal+" – "+k.label)}`;}
+      else if(ged)extra=` <span style="font-size:12px;color:${C.ok};font-weight:500">✓</span>`;
+      return`<div class="ft-test-row"><div style="flex:1;margin-right:8px"><span style="font-size:14px;font-weight:500">${t.naam}</span>${extra}</div><button class="ft-btn-sm" onclick="startTest('${t.id}')">${ged?"Bewerken":"Starten"}</button></div>`;
+    }).join("");
+    return`<div class="sectie-label">${cat}</div><div class="ft-card" style="padding:.25rem 1rem">${rijen}</div>`;
+  }).join("");
   return`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
       <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='dashboard';render()">← Dashboard</button>
-      <div style="flex:1"><div style="font-size:16px;font-weight:500;color:${C.groen}">${mm.faseNaam}</div><div style="font-size:13px;color:${C.muted}">${mm.datum} · Patiënt ${S.patNr}</div></div>
+      <div style="flex:1"><div style="font-size:16px;font-weight:500;color:${C.groen}">${mm.naam}</div><div style="font-size:13px;color:${C.muted}">${mm.datum}${mm.timing?" · "+mm.timing:""} · Patiënt ${S.patNr}</div></div>
       ${heeftVl?`<button class="ft-btn-sm" style="${S.toonVlaggen?`background:${C.roodLight};border-color:${C.rood}`:""}" onclick="S.toonVlaggen=!S.toonVlaggen;render()">⚑ Vlaggen</button>`:""}
     </div>
-    ${vlagHTML}
-    <div class="ft-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:15px;font-weight:500;color:${C.groen}">Fase-criteria checklist</div>${allJa?`<span class="badge" style="background:${C.okLight};color:${C.ok}">Alle criteria behaald ✓</span>`:""}</div>${critRijen}<div style="margin-top:12px;display:flex;align-items:center;gap:10px"><button class="ft-btn-p" onclick="saveCrit()">Opslaan</button>${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}</div></div>
-    ${testenHTML}
+    ${vlagHTML}${critHTML}${testenHTML}
     <div style="margin-top:20px"><button class="ft-btn-p" onclick="S.rapMm=S.mm;S.sc='rapport';render()">Rapport genereren →</button></div>`;
 }
 
-function renderGALN(){
-  const aangevinkt=GALN_ITEMS.filter(i=>S.galnW[i.id]==="ja").length;
-  const cats=GALN_CATS.map(cat=>{const rijen=GALN_ITEMS.filter(i=>i.cat===cat).map(item=>`<div class="ft-check-row"><span style="font-size:14px;flex:1;line-height:1.5">${item.label}</span><div style="display:flex;gap:6px;flex-shrink:0"><button class="${S.galnW[item.id]==="ja"?"ft-ja":"ft-neutral"}" onclick="S.galnW['${item.id}']='ja';render()">Ja</button><button class="${S.galnW[item.id]==="nee"?"ft-nee":"ft-neutral"}" onclick="S.galnW['${item.id}']='nee';render()">Nee</button></div></div>`).join("");return`<div class="ft-card" style="margin-bottom:10px"><div style="font-size:12px;font-weight:500;color:${C.groenAccent};text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">${cat}</div>${rijen}</div>`;}).join("");
+function renderChecklist(){
+  const t=S.test; if(!t)return"";
+  const isGALN=t.isGALN;
+  const isCrit=t.isCriteria;
+  const items=isGALN?GALN_ITEMS:(t.items||[]);
+  const cats=isGALN?GALN_CATS:(t.cats||[]);
+  const critItems=isCrit?(t.criteriaItems||[]):[];
+  const aangevinkt=isGALN?items.filter(i=>S.checkW[i.id]==="ja").length:0;
+  const critHTML=isCrit?`<div class="ft-card">${critItems.map((c,i)=>`<div class="ft-check-row"><span style="font-size:14px;flex:1;line-height:1.5">${c}</span><div style="display:flex;gap:6px;flex-shrink:0"><button class="${S.checkW["crit_"+i]==="ja"?"ft-ja":"ft-neutral"}" onclick="S.checkW['crit_${i}']='ja';render()">Ja</button><button class="${S.checkW["crit_"+i]==="nee"?"ft-nee":"ft-neutral"}" onclick="S.checkW['crit_${i}']='nee';render()">Nee</button></div></div>`).join("")}</div>`:"";
+  const lijstHTML=!isCrit?cats.map(cat=>`<div class="ft-card" style="margin-bottom:10px"><div style="font-size:12px;font-weight:500;color:${C.groenAccent};text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">${cat}</div>${items.filter(i=>i.cat===cat).map(item=>`<div class="ft-check-row"><span style="font-size:14px;flex:1;line-height:1.5">${item.label}</span><div style="display:flex;gap:6px;flex-shrink:0"><button class="${S.checkW[item.id]==="ja"?"ft-ja":"ft-neutral"}" onclick="S.checkW['${item.id}']='ja';render()">Ja</button><button class="${S.checkW[item.id]==="nee"?"ft-nee":"ft-neutral"}" onclick="S.checkW['${item.id}']='nee';render()">Nee</button></div></div>`).join("")}</div>`).join(""):"";
   return`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='meetmoment';render()">← Terug</button>
-      <div><div style="font-size:16px;font-weight:500;color:${C.groen}">Verkorte GALN – Looppatroon</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr}</div></div>
+      <div><div style="font-size:16px;font-weight:500;color:${C.groen}">${t.naam}</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr}</div></div>
     </div>
-    <div style="font-size:13px;color:${C.muted};margin-bottom:12px">Beoordeel looppatroon zonder krukken. <span class="badge" style="background:${C.groenLight};color:${C.groen};margin-left:8px">${aangevinkt}/${GALN_ITEMS.length} aanwezig</span></div>
-    ${cats}
+    ${isGALN?`<div style="font-size:13px;color:${C.muted};margin-bottom:12px">Beoordeel looppatroon zonder krukken. <span class="badge" style="background:${C.groenLight};color:${C.groen};margin-left:8px">${aangevinkt}/${items.length} aanwezig</span></div>`:""}
+    ${critHTML}${lijstHTML}
     <div class="ft-card">
+      ${isGALN?`<div style="font-size:13px;color:${C.muted};margin-bottom:8px">Genormaliseerd looppatroon?</div><div style="display:flex;gap:8px;margin-bottom:12px"><button class="${S.checkW.galn_normaal==="ja"?"ft-ja":"ft-neutral"}" onclick="S.checkW.galn_normaal='ja';render()">Ja</button><button class="${S.checkW.galn_normaal==="nee"?"ft-nee":"ft-neutral"}" onclick="S.checkW.galn_normaal='nee';render()">Nee</button></div>`:""}
       <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Notities</div>
-      <textarea id="galn-not" class="ft-input" style="margin-bottom:12px">${S.galnW._notitie||""}</textarea>
-      <div style="font-size:13px;color:${C.muted};margin-bottom:8px">Genormaliseerd looppatroon?</div>
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="${S.galnW.galn_normaal==="ja"?"ft-ja":"ft-neutral"}" onclick="S.galnW.galn_normaal='ja';render()">Ja</button>
-        <button class="${S.galnW.galn_normaal==="nee"?"ft-nee":"ft-neutral"}" onclick="S.galnW.galn_normaal='nee';render()">Nee</button>
-      </div>
+      <textarea id="check-not" class="ft-input" style="margin-bottom:12px">${S.checkW._notitie||""}</textarea>
       <div class="save-row">
-        <button class="ft-btn-s" onclick="saveGALN(false)">Opslaan</button>
-        <button class="ft-btn-p" onclick="saveGALN(true)">Opslaan & afronden →</button>
+        <button class="ft-btn-s" onclick="saveChecklist(false)">Opslaan</button>
+        <button class="ft-btn-p" onclick="saveChecklist(true)">Opslaan & afronden →</button>
+        ${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}
+      </div>
+    </div>`;
+}
+
+function renderACLRSI(){
+  const w=S.waarden;
+  const score=berekenACLRSI(w);
+  const k=aclrsiKleur(score);
+  const vragen=ACLRSI_VRAGEN.map((v,i)=>`
+    <div class="ft-card" style="margin-bottom:8px">
+      <div style="font-size:14px;margin-bottom:8px;line-height:1.5"><strong>${i+1}.</strong> ${v}</div>
+      <div style="font-size:12px;color:${C.muted};margin-bottom:6px">0 = Helemaal niet &nbsp;·&nbsp; 100 = Helemaal</div>
+      <div class="aclrsi-schaal">${[0,10,20,30,40,50,60,70,80,90,100].map(n=>`<button class="aclrsi-opt${w["aclrsi_"+i]===n?" aclrsi-opt-sel":""}" onclick="S.waarden={...S.waarden,['aclrsi_${i}']:${n}};render()">${n}</button>`).join("")}</div>
+    </div>`).join("");
+  return`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='meetmoment';render()">← Terug</button>
+      <div><div style="font-size:16px;font-weight:500;color:${C.groen}">ACL-RSI Vragenlijst</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr}</div></div>
+    </div>
+    <div class="norm-info">Score 0–100 · &lt;56 = niet klaar · 56–72 = twijfelachtig · &gt;72 = klaar</div>
+    ${vragen}
+    <div class="ft-card">
+      ${score!==null&&k?`<div style="margin-bottom:12px"><span style="font-size:13px;color:${C.muted}">Totaalscore: </span>${badge(k.bg,k.col,score+" – "+k.label)}</div>`:""}
+      <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Notities</div>
+      <textarea id="aclrsi-not" class="ft-input" style="margin-bottom:12px">${w._notitie||""}</textarea>
+      <div class="save-row">
+        <button class="ft-btn-s" onclick="saveACLRSI(false)">Opslaan</button>
+        <button class="ft-btn-p" onclick="saveACLRSI(true)">Opslaan & afronden →</button>
         ${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}
       </div>
     </div>`;
@@ -214,285 +375,254 @@ function renderHHD(){
   let content="";
   if(sub.type==="inst"){
     const stappen=sub.stappen.map((s,i)=>`<div style="display:flex;gap:10px;margin-bottom:10px"><div style="min-width:22px;height:22px;border-radius:50%;background:${C.groenLight};color:${C.groen};font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div><div style="font-size:14px;line-height:1.6">${s}</div></div>`).join("");
-    content=`<div class="ft-card"><div style="font-size:13px;font-weight:500;color:${C.groenAccent};text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">${sub.spier} – ${sub.label.split(" – ")[1]}</div>${stappen}<div style="display:flex;gap:8px;margin-top:4px">${S.hhdStap>0?`<button class="ft-btn-s" onclick="S.hhdStap--;render()">← Vorige</button>`:""}<button class="ft-btn-p" onclick="S.hhdStap++;render()">Volgende →</button></div></div>`;
-  } else {
-    const velden=sub.velden.map(v=>{const val=S.waarden[v.id]||"";if(v.ber){const k=v.lsiType?lsiKleur(val,v.lsiType,S.mm?.fase):null;const disp=val!==""?(k?badge(k.bg,k.col,Number(val).toFixed(1)+"%"):`<strong style="color:${C.groen}">${val}${v.een||""}</strong>`):`<span style="color:${C.muted}">—</span>`;return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><div style="padding:9px 12px;background:${C.grijs};border-radius:8px;display:flex;align-items:center;gap:8px">${disp}<span style="font-size:12px;color:${C.muted}">automatisch</span></div></div>`;}return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><input class="ft-input" type="number" value="${val}" oninput="S.waarden=calcHHD({...S.waarden,[this.dataset.id]:this.value});render()" data-id="${v.id}"/></div>`;}).join("");
-    content=`<div class="ft-card"><div style="font-size:13px;font-weight:500;color:${C.groenAccent};text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">${sub.spier} – Resultaten</div>${velden}<div class="save-row"><button class="ft-btn-s" onclick="S.hhdStap--;render()">← Terug</button>${isLaatste?`<button class="ft-btn-s" onclick="saveHHD(false)">Opslaan</button><button class="ft-btn-p" onclick="saveHHD(true)">Opslaan & afronden →</button>`:`<button class="ft-btn-p" onclick="S.hhdStap++;render()">Volgende: Quadriceps →</button>`}${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}</div></div>`;
+    content=`<div class="ft-card">${stappen}<div style="display:flex;gap:8px;margin-top:4px">${S.hhdStap>0?`<button class="ft-btn-s" onclick="S.hhdStap--;render()">← Vorige</button>`:""}<button class="ft-btn-p" onclick="S.hhdStap++;render()">Volgende →</button></div></div>`;
+  }else{
+    const velden=sub.velden.map(v=>{const val=S.waarden[v.id]||"";if(v.ber){const k=v.lsiType?lsiKleur(val,v.lsiType,S.mm?.refId):null;const disp=val!==""?(k?badge(k.bg,k.col,Number(val).toFixed(1)+"%"):`<strong style="color:${C.groen}">${val}${v.een||""}</strong>`):`<span style="color:${C.muted}">—</span>`;return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><div style="padding:9px 12px;background:${C.grijs};border-radius:8px;display:flex;align-items:center;gap:8px">${disp}<span style="font-size:12px;color:${C.muted}">automatisch</span></div></div>`;}    return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><input class="ft-input" type="text" inputmode="decimal" value="${val}" onchange="S.waarden=calcHHD({...S.waarden,[this.dataset.id]:this.value.replace(',','.')});renderHHDResult()" data-id="${v.id}"/></div>`;}).join("");
+    content=`<div class="ft-card">${velden}<div class="save-row"><button class="ft-btn-s" onclick="S.hhdStap--;render()">← Terug</button>${isLaatste?`<button class="ft-btn-s" onclick="saveHHD(false)">Opslaan</button><button class="ft-btn-p" onclick="saveHHD(true)">Opslaan & afronden →</button>`:`<button class="ft-btn-p" onclick="S.hhdStap++;render()">Volgende: Quadriceps →</button>`}${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}</div></div>`;
   }
   return`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='meetmoment';render()">← Terug</button>
-      <div><div style="font-size:16px;font-weight:500;color:${C.groen}">Handheld Dynamometer (HHD)</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr}</div></div>
+      <div><div style="font-size:16px;font-weight:500;color:${C.groen}">HHD – Krachttesten</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr}</div></div>
     </div>
-    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">${tabs}</div>
-    ${content}`;
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">${tabs}</div>${content}`;
+}
+
+function renderSLS(){
+  const t=S.test; if(!t)return"";
+  const voorbij=S.stap>=t.stappen.length;
+  const stapHTML=!voorbij?`<div class="ft-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:13px;color:${C.muted}">Stap ${S.stap+1} van ${t.stappen.length}</span><div style="display:flex;gap:5px">${t.stappen.map((_,i)=>`<div class="stap-dot" style="background:${i<=S.stap?C.groenAccent:C.grijsBorder}" onclick="S.stap=${i};render()"></div>`).join("")}</div></div>
+    <div style="font-size:15px;line-height:1.7;margin-bottom:16px">${t.stappen[S.stap]}</div>
+    <div style="display:flex;gap:8px">${S.stap>0?`<button class="ft-btn-s" onclick="S.stap--;render()">← Vorige</button>`:""}<button class="ft-btn-p" onclick="S.stap++;render()">${S.stap===t.stappen.length-1?"Registreren →":"Volgende →"}</button></div>
+  </div>`:"";
+  const invoerHTML=voorbij?`<div class="ft-card">
+    <div class="norm-info">Normwaarde: &gt;22 herhalingen in 1 minuut</div>
+    ${t.velden.map(v=>`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}</div><input class="ft-input" type="text" inputmode="numeric" value="${S.waarden[v.id]||""}" oninput="S.waarden={...S.waarden,[this.dataset.id]:this.value}" data-id="${v.id}"/></div>`).join("")}
+    <div style="font-size:14px;font-weight:500;color:${C.groen};margin:12px 0 8px">Kwalitatieve beoordeling</div>
+    ${SLS_CATS.map(cat=>`<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:500;color:${C.groenAccent};text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px">${cat}</div>${SLS_ITEMS.filter(i=>i.cat===cat).map(item=>`<div class="ft-check-row"><span style="font-size:14px;flex:1;line-height:1.5">${item.label}</span><div style="display:flex;gap:6px;flex-shrink:0"><button class="${S.checkW[item.id]==="ja"?"ft-ja":"ft-neutral"}" onclick="S.checkW['${item.id}']='ja';render()">Ja</button><button class="${S.checkW[item.id]==="nee"?"ft-nee":"ft-neutral"}" onclick="S.checkW['${item.id}']='nee';render()">Nee</button></div></div>`).join("")}</div>`).join("")}
+    <div style="margin-bottom:12px;margin-top:8px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">Notities</div><textarea id="sls-not" class="ft-input">${S.waarden._notitie||""}</textarea></div>
+    <div class="save-row"><button class="ft-btn-s" onclick="saveSLS(false)">Opslaan</button><button class="ft-btn-p" onclick="saveSLS(true)">Opslaan & afronden →</button>${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}</div>
+  </div>`:"";
+  return`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='meetmoment';render()">← Terug</button>
+      <div><div style="font-size:15px;font-weight:500;color:${C.groen}">Single Leg Squat</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr}</div></div>
+    </div>${stapHTML}${invoerHTML}`;
 }
 
 function renderTest(){
-  const t=S.test;const voorbij=S.stap>=t.stappen.length;
-  let content="";
-  if(!voorbij){
-    const dots=t.stappen.map((_,i)=>`<div class="stap-dot" style="background:${i<=S.stap?C.groenAccent:C.grijsBorder}" onclick="S.stap=${i};render()"></div>`).join("");
-    content=`<div class="ft-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:13px;color:${C.muted}">Stap ${S.stap+1} van ${t.stappen.length}</span><div style="display:flex;gap:5px">${dots}</div></div><div style="font-size:15px;line-height:1.7;margin-bottom:16px;min-height:60px">${t.stappen[S.stap]}</div><div style="display:flex;gap:8px">${S.stap>0?`<button class="ft-btn-s" onclick="S.stap--;render()">← Vorige</button>`:""}<button class="ft-btn-p" onclick="S.stap++;render()">${S.stap===t.stappen.length-1?"Registreren →":"Volgende →"}</button></div></div>`;
-  } else {
-    const normInfo=t.isPlank?`<div class="norm-info">Normwaarden: &lt;60 sec = onvoldoende · 60–119 sec = matig · ≥120 sec = goed</div>`:t.isRoeien?`<div class="norm-info">Referentie: &lt;2:30 = goed · ≥2:30 = ruimte voor verbetering (indicatief, recreatieve sportieve populatie)</div>`:"";
-    const velden=t.velden.map(v=>{const val=S.waarden[v.id]||"";if(v.ber){const k=v.lsiType?lsiKleur(val,v.lsiType,S.mm?.fase):null;const disp=val!==""?(k?badge(k.bg,k.col,Number(val).toFixed(1)+"%"):`<strong style="color:${C.groen}">${val}${v.een||""}</strong>`):`<span style="color:${C.muted}">—</span>`;return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><div style="padding:9px 12px;background:${C.grijs};border-radius:8px;display:flex;align-items:center;gap:8px">${disp}<span style="font-size:12px;color:${C.muted}">automatisch</span></div></div>`;}if(v.isRoeien){const k=roeiKleur(val);return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}</div><input class="ft-input" type="text" placeholder="bijv. 2:15" value="${val}" oninput="S.waarden={...S.waarden,[this.dataset.id]:this.value};render()" data-id="${v.id}"/>${val&&k?`<div style="margin-top:6px">${badge(k.bg,k.col,k.label)}</div>`:""}</div>`;}if(v.isPlank){const k=val?plankKleur(val):null;return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label} (${v.een})</div><input class="ft-input" type="number" placeholder="seconden" value="${val}" oninput="S.waarden={...S.waarden,[this.dataset.id]:this.value};render()" data-id="${v.id}"/>${val&&k?`<div style="margin-top:6px">${badge(k.bg,k.col,k.label)}</div>`:""}</div>`;}if(v.sel){const opts=v.opties.map(([w,l])=>`<option value="${w}" ${val===w?"selected":""}>${l}</option>`).join("");return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}</div><select class="ft-input" onchange="S.waarden=calcW(S.test.id,{...S.waarden,[this.dataset.id]:this.value});render()" data-id="${v.id}">${opts}</select></div>`;}return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><input class="ft-input" type="number" value="${val}" oninput="S.waarden=calcW(S.test.id,{...S.waarden,[this.dataset.id]:this.value});render()" data-id="${v.id}"/></div>`;}).join("");
-    content=`<div class="ft-card"><div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:14px">Resultaten invoeren</div>${normInfo}${velden}<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">Notities</div><textarea id="test-not" class="ft-input">${S.waarden._notitie||""}</textarea></div><div class="save-row"><button class="ft-btn-s" onclick="saveTest(false)">Opslaan</button><button class="ft-btn-p" onclick="saveTest(true)">Opslaan & afronden →</button>${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}</div></div>`;
-  }
+  const t=S.test; if(!t)return"";
+  const voorbij=S.stap>=t.stappen.length;
+  const stapHTML=!voorbij?`<div class="ft-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:13px;color:${C.muted}">Stap ${S.stap+1} van ${t.stappen.length}</span><div style="display:flex;gap:5px">${t.stappen.map((_,i)=>`<div class="stap-dot" style="background:${i<=S.stap?C.groenAccent:C.grijsBorder}" onclick="S.stap=${i};render()"></div>`).join("")}</div></div>
+    <div style="font-size:15px;line-height:1.7;margin-bottom:16px;min-height:60px">${t.stappen[S.stap]}</div>
+    <div style="display:flex;gap:8px">${S.stap>0?`<button class="ft-btn-s" onclick="S.stap--;render()">← Vorige</button>`:""}<button class="ft-btn-p" onclick="S.stap++;render()">${S.stap===t.stappen.length-1?"Registreren →":"Volgende →"}</button></div>
+  </div>`:"";
+  const invoerHTML=voorbij?`<div class="ft-card">
+    ${t.isPlank?`<div class="norm-info">Normwaarden: &lt;60 sec = onvoldoende · 60–119 sec = matig · ≥120 sec = goed</div>`:""}
+    ${t.isRoeien?`<div class="norm-info">Referentie: &lt;2:30 = goed · ≥2:30 = ruimte voor verbetering</div>`:""}
+    ${t.velden.map(v=>{const val=S.waarden[v.id]||"";
+      if(v.ber){const k=v.lsiType?lsiKleur(val,v.lsiType,S.mm?.refId):null;let disp;if(val==="")disp=`<span style="color:${C.muted}">—</span>`;else if(k)disp=badge(k.bg,k.col,Number(val).toFixed(1)+"%");else if(v.isHopSpot){const hk=hopSpotKleur(val);disp=badge(hk.bg,hk.col,Number(val).toFixed(1)+"% – "+hk.label);}else disp=`<strong style="color:${C.groen}">${val}${v.een||""}</strong>`;      return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><div style="padding:9px 12px;background:${C.grijs};border-radius:8px;display:flex;align-items:center;gap:8px"><span data-computed-id="${v.id}">${disp}</span><span style="font-size:12px;color:${C.muted}">automatisch</span></div></div>`;}
+      if(v.isRoeien){const k=roeiKleur(val);return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}</div><input class="ft-input" type="text" placeholder="bijv. 2:15" value="${val}" onchange="S.waarden={...S.waarden,[this.dataset.id]:this.value};renderTestResult()" data-id="${v.id}"/>${val&&k?`<div style="margin-top:6px" id="roei-badge-${v.id}">${badge(k.bg,k.col,k.label)}</div>`:""}</div>`;}
+      if(v.isPlank){const k=val?plankKleur(val):null;return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label} (${v.een})</div><input class="ft-input" type="text" inputmode="numeric" placeholder="seconden" value="${val}" onchange="S.waarden={...S.waarden,[this.dataset.id]:this.value};renderTestResult()" data-id="${v.id}"/>${val&&k?`<div style="margin-top:6px" id="plank-badge">${badge(k.bg,k.col,k.label)}</div>`:""}</div>`;}
+      if(v.sel){const opts=v.opties.map(([w2,l])=>`<option value="${w2}" ${val===w2?"selected":""}>${l}</option>`).join("");return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}</div><select class="ft-input" onchange="S.waarden=calcW(S.test.id,{...S.waarden,[this.dataset.id]:this.value});render()" data-id="${v.id}">${opts}</select></div>`;}
+      return`<div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">${v.label}${v.een?" ("+v.een+")":""}</div><input class="ft-input" type="text" inputmode="decimal" value="${val}" onchange="S.waarden=calcW(S.test.id,{...S.waarden,[this.dataset.id]:this.value.replace(',','.')});renderTestResult()" data-id="${v.id}"/></div>`;
+    }).join("")}
+    <div style="margin-bottom:12px"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">Notities</div><textarea id="test-not" class="ft-input">${S.waarden._notitie||""}</textarea></div>
+    <div class="save-row"><button class="ft-btn-s" onclick="saveTest(false)">Opslaan</button><button class="ft-btn-p" onclick="saveTest(true)">Opslaan & afronden →</button>${S.ok?`<span class="ok-msg">Opgeslagen!</span>`:""}</div>
+  </div>`:"";
   return`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='meetmoment';render()">← Terug</button>
       <div><div style="font-size:15px;font-weight:500;color:${C.groen}">${t.naam}</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr}</div></div>
-    </div>${content}`;
+    </div>${stapHTML}${invoerHTML}`;
 }
 
 function renderRapport(){
-  const m=S.rapMm;if(!m)return"";
-  const eerder=(S.patData?.meetmomenten||[]).filter(x=>x.datum<m.datum);
-  const criteria=FASE_CRITERIA[m.fase]||[];
+  const m=S.rapMm; if(!m)return"";
+  const isFase=m.type==="fase";
+  const criteria=isFase?(FASE_CRITERIA[m.refId]||[]):[];
   const jaC=criteria.filter(c=>m.criteria?.[c]==="ja").length;
-  const faseTesten=TESTEN_PER_FASE[m.fase]||[];
-  const rapTesten=TESTEN.filter(t=>faseTesten.includes(t.id)&&t.id!=="galn");
-  const critHTML=criteria.map((c,i)=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:${i<criteria.length-1?"1px solid "+C.grijsBorder:"none"}"><span>${c}</span><span style="font-weight:500;color:${m.criteria?.[c]==="ja"?C.ok:m.criteria?.[c]==="nee"?C.rood:C.muted}">${m.criteria?.[c]==="ja"?"Ja":m.criteria?.[c]==="nee"?"Nee":"—"}</span></div>`).join("");
-  let galnHTML="";
-  if(m.testen?.galn){const r=m.testen.galn,w=r.waarden||{};const jaI=GALN_ITEMS.filter(i=>w[i.id]==="ja").length;const catRows=GALN_CATS.map(cat=>{const items=GALN_ITEMS.filter(i=>i.cat===cat&&(w[i.id]==="ja"||w[i.id]==="nee"));if(!items.length)return"";return`<div style="margin-bottom:6px"><div style="font-size:12px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">${cat}</div>${items.map(item=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${item.label}</span><span style="font-weight:500;color:${w[item.id]==="ja"?C.ok:C.rood};margin-left:8px;flex-shrink:0">${w[item.id]==="ja"?"Ja":"Nee"}</span></div>`).join("")}</div>`;}).join("");galnHTML=`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">Verkorte GALN – Looppatroon</div><div style="font-size:13px;margin-bottom:8px"><span style="color:${C.muted}">Aanwezig: </span><strong>${jaI}/${GALN_ITEMS.length}</strong>${w.galn_normaal?`<span style="margin-left:12px;color:${C.muted}">Genormaliseerd: <strong style="color:${w.galn_normaal==="ja"?C.ok:C.rood}">${w.galn_normaal==="ja"?"Ja":"Nee"}</strong></span>`:""}</div>${catRows}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
-  const testenHTML=rapTesten.map(t=>{const r=m.testen?.[t.id];if(!r)return"";const groepen=RAPPORT_GROEPEN[t.id]||[];const rijHTML=groepen.map(rij=>{const cols=rij.map(v=>{const val=r.waarden?.[v.id];if(!val&&val!==0)return`<div></div>`;let disp;if(v.lsi)disp=lsiBadge(val,v.lsi,m.fase);else if(v.isPlank){const k=plankKleur(val);disp=badge(k.bg,k.col,`${val} sec – ${k.label}`);}else if(v.isRoeien){const k=roeiKleur(val);disp=k?`<strong>${val}</strong> ${badge(k.bg,k.col,k.label)}`:`<strong>${val}</strong>`;}else disp=`<strong>${val}${v.e&&!v.lsi?v.e:""}</strong>`;return`<div style="font-size:13px;padding:3px 0"><span style="color:${C.muted}">${v.l}: </span>${disp}</div>`;}).join("");return`<div style="display:grid;grid-template-columns:${rij.length>1?"1fr 1fr":"1fr"};gap:4px 16px;margin-bottom:4px">${cols}</div>`;}).join("");const lsiVelden=t.velden.filter(v=>v.ber&&v.lsiType);let progHTML="";if(eerder.length&&lsiVelden.length){const prog=lsiVelden.map(v=>({l:v.label,id:v.id,type:v.lsiType,huidig:r.waarden?.[v.id],hist:eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.[v.id],f:em.fase})).filter(e=>e.w)})).filter(x=>x.huidig||x.hist.length);if(prog.length)progHTML=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${C.grijsBorder}"><div style="font-size:12px;color:${C.muted};margin-bottom:4px">Progressie</div>${prog.map(h=>`<div style="font-size:13px;margin-top:2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span style="color:${C.muted}">${h.l}:</span>${h.hist.map(e=>`${lsiBadge(e.w,h.type,e.f)} <span style="font-size:12px;color:${C.muted}">${e.d}</span>`).join(" ")}${h.huidig?`${lsiBadge(h.huidig,h.type,m.fase)} <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`:""}</div>`).join("")}</div>`;}if(t.isPlank&&eerder.length){const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.plank_sec})).filter(e=>e.w);const huidig=r.waarden?.plank_sec;if(hist.length||huidig)progHTML+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${C.grijsBorder}"><div style="font-size:12px;color:${C.muted};margin-bottom:4px">Progressie plank</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px">${hist.map(e=>{const k=plankKleur(e.w);return`${badge(k.bg,k.col,e.w+" sec")} <span style="font-size:12px;color:${C.muted}">${e.d}</span>`;}).join(" ")}${huidig?(()=>{const k=plankKleur(huidig);return`${badge(k.bg,k.col,huidig+" sec")} <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`;})():""}</div></div>`;}if(t.isRoeien&&eerder.length){const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.roei_tijd})).filter(e=>e.w);const huidig=r.waarden?.roei_tijd;if(hist.length||huidig)progHTML+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${C.grijsBorder}"><div style="font-size:12px;color:${C.muted};margin-bottom:4px">Progressie 500m roeien</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px">${hist.map(e=>{const k=roeiKleur(e.w);return k?`${badge(k.bg,k.col,e.w)} <span style="font-size:12px;color:${C.muted}">${e.d}</span>`:`<strong>${e.w}</strong> <span style="font-size:12px;color:${C.muted}">${e.d}</span>`;}).join(" ")}${huidig?(()=>{const k=roeiKleur(huidig);return k?`${badge(k.bg,k.col,huidig)} <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`:`<strong>${huidig}</strong> <span style="font-size:12px;color:${C.muted}">${m.datum}</span>`;})():""}</div></div>`;}return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div>${rijHTML}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}${progHTML}</div>`;}).join("");
+  const testenIds=isFase?(TESTEN_PER_FASE[m.refId]||[]):(TESTEN_PER_MIJLPAAL[m.refId]||[]);
+  const rapTesten=ALLE_TESTEN.filter(t=>testenIds.includes(t.id));
+  const critHTML=criteria.length?`<div class="ft-card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="font-size:15px;font-weight:500;color:${C.groen}">Fase-criteria</div><span style="font-size:13px;color:${C.muted}">${jaC}/${criteria.length} behaald</span></div>${criteria.map((c,i)=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:${i<criteria.length-1?"1px solid "+C.grijsBorder:"none"}"><span>${c}</span><span style="font-weight:500;color:${m.criteria?.[c]==="ja"?C.ok:m.criteria?.[c]==="nee"?C.rood:C.muted}">${m.criteria?.[c]==="ja"?"Ja":m.criteria?.[c]==="nee"?"Nee":"—"}</span></div>`).join("")}</div>`:"";
+  const testenHTML=rapTesten.map(t=>{
+    const r=m.testen?.[t.id]; if(!r)return"";
+    const w=r.waarden||{};
+    if(t.isGALN){const jaI=GALN_ITEMS.filter(i=>w[i.id]==="ja").length;return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div><div style="font-size:13px;margin-bottom:6px"><span style="color:${C.muted}">Aanwezig: </span><strong>${jaI}/${GALN_ITEMS.length}</strong>${w.galn_normaal?`<span style="margin-left:12px;color:${C.muted}">Genormaliseerd: <strong style="color:${w.galn_normaal==="ja"?C.ok:C.rood}">${w.galn_normaal==="ja"?"Ja":"Nee"}</strong></span>`:""}</div>${r.notitie?`<div style="font-size:13px;color:${C.muted}">Notitie: ${r.notitie}</div>`:""}</div>`;}
+    if(t.isKwal){const items=t.items||[];const cats=t.cats||[];return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div>${cats.map(cat=>{const ci=items.filter(i=>i.cat===cat&&(w[i.id]==="ja"||w[i.id]==="nee"));if(!ci.length)return"";return`<div style="margin-bottom:6px"><div style="font-size:12px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">${cat}</div>${ci.map(item=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${item.label}</span><span style="font-weight:500;color:${w[item.id]==="ja"?C.ok:C.rood};margin-left:8px">${w[item.id]==="ja"?"Ja":"Nee"}</span></div>`).join("")}</div>`;}).join("")}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
+    if(t.isCriteria){const ci=t.criteriaItems||[];return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div>${ci.map((c,i)=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid ${C.grijsBorder}"><span>${c}</span><span style="font-weight:500;color:${w["crit_"+i]==="ja"?C.ok:w["crit_"+i]==="nee"?C.rood:C.muted}">${w["crit_"+i]==="ja"?"Ja":w["crit_"+i]==="nee"?"Nee":"—"}</span></div>`).join("")}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
+    if(t.isACLRSI){const score=berekenACLRSI(w);const k=aclrsiKleur(score);return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">ACL-RSI Vragenlijst</div>${score!==null&&k?`<div style="margin-bottom:8px"><span style="font-size:13px;color:${C.muted}">Score: </span>${badge(k.bg,k.col,score+" – "+k.label)}</div>`:""}${ACLRSI_VRAGEN.map((v,i)=>{const val=w["aclrsi_"+i];if(val===undefined)return"";return`<div style="font-size:12px;padding:2px 0;display:flex;justify-content:space-between"><span style="color:${C.muted};flex:1;padding-right:8px">${i+1}. ${v}</span><strong>${val}</strong></div>`;}).join("")}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
+    if(t.isSLS){const cw=w.checkW||{};return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:8px">${[{id:"sls_niet",l:"Niet-aangedaan"},{id:"sls_aan",l:"Aangedaan"}].map(v=>{const val=w[v.id];if(!val)return"<div/>";const goed=Number(val)>22;return`<div style="font-size:13px;padding:3px 0"><span style="color:${C.muted}">${v.l}: </span><strong>${val}</strong><span style="color:${goed?C.ok:C.rood};margin-left:4px">${goed?"✓":"✗"}</span></div>`;}).join("")}</div>${SLS_CATS.map(cat=>{const ci=SLS_ITEMS.filter(i=>i.cat===cat&&(cw[i.id]==="ja"||cw[i.id]==="nee"));if(!ci.length)return"";return`<div style="margin-bottom:6px"><div style="font-size:12px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">${cat}</div>${ci.map(item=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${item.label}</span><span style="font-weight:500;color:${cw[item.id]==="ja"?C.ok:C.rood};margin-left:8px">${cw[item.id]==="ja"?"Ja":"Nee"}</span></div>`).join("")}</div>`;}).join("")}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
+    // Standaard test
+    const vRows=t.velden.map(v=>{const val=w[v.id];if(!val&&val!==0)return"";let disp;if(v.lsiType)disp=lsiBadge(val,v.lsiType,m.refId);else if(v.isHopSpot){const k=hopSpotKleur(val);disp=badge(k.bg,k.col,Number(val).toFixed(1)+"% – "+k.label);}else if(v.isPlank){const k=plankKleur(val);disp=badge(k.bg,k.col,val+" sec – "+k.label);}else if(v.isRoeien){const k=roeiKleur(val);disp=k?`<strong>${val}</strong> ${badge(k.bg,k.col,k.label)}`:`<strong>${val}</strong>`;}else disp=`<strong>${val}${v.een&&!v.lsiType?v.een:""}</strong>`;return`<div style="font-size:13px;padding:3px 0;margin-bottom:2px"><span style="color:${C.muted}">${v.label}: </span>${disp}</div>`;}).join("");
+    return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div>${vRows}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;
+  }).join("");
   return`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.sc='meetmoment';render()">← Terug</button>
-      <div style="flex:1"><div style="font-size:16px;font-weight:500;color:${C.groen}">Rapport</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr} · ${m.datum}</div></div>
-      <button class="ft-btn-sm" id="btn-pdf" onclick="downloadRapportPDF()" ${S.pdfBezig?"disabled":""}>${S.pdfBezig?"Bezig...":"PDF opslaan"}</button>
+      <div><div style="font-size:16px;font-weight:500;color:${C.groen}">Rapport</div><div style="font-size:13px;color:${C.muted}">Patiënt ${S.patNr} · ${m.datum}</div></div>
     </div>
     <div style="background:${C.groen};border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px;color:#fff">
-      <div style="font-size:13px;opacity:.75">Fyzio Totaal · UMOOOVE Knie Testen & Meten</div>
-      <div style="font-size:17px;font-weight:500;margin-top:2px">${m.faseNaam}</div>
-      <div style="font-size:13px;color:${C.mint};margin-top:4px">Patiënt ${S.patNr} · ${m.datum} · Aangedaan been: ${S.patData?.been||S.been}</div>
+      <div style="font-size:13px;opacity:.75">Fyzio Totaal · UMOOOVE</div>
+      <div style="font-size:17px;font-weight:500;margin-top:2px">${m.naam}</div>
+      <div style="font-size:13px;color:${C.mint};margin-top:4px">Patiënt ${S.patNr} · ${m.datum}${m.timing?" · "+m.timing:""} · Aangedaan been: ${S.patData?.been||S.been}</div>
     </div>
-    <div class="ft-card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="font-size:15px;font-weight:500;color:${C.groen}">Fase-criteria</div><span style="font-size:13px;color:${C.muted}">${jaC}/${criteria.length} behaald</span></div>${critHTML}</div>
-    ${galnHTML}${testenHTML}
-    <div style="margin-top:16px;padding:10px 0;border-top:1px solid ${C.grijsBorder};font-size:12px;color:${C.muted}">Gegenereerd op ${new Date().toLocaleDateString("nl-NL")} · Fyzio Totaal Wierden · UMOOOVE Knie Testen & Meten</div>`;
+    ${critHTML}${testenHTML}
+    <div style="margin-top:16px;padding:10px 0;border-top:1px solid ${C.grijsBorder};font-size:12px;color:${C.muted}">Gegenereerd op ${new Date().toLocaleDateString("nl-NL")} · Fyzio Totaal Wierden · UMOOOVE</div>`;
 }
 
-// ─── PDF GENERATIE + DRIVE UPLOAD ─────────────────────────────────
-function uploadNaarDrive(doc, bestandsnaam) {
-  try {
-    const base64 = doc.output('datauristring').split(',')[1];
-    fetch(DRIVE_UPLOAD_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ bestandsnaam, pdfBase64: base64 })
-    }).catch(()=>{});
-  } catch(e) {
-    // upload is 'nice to have', geen harde afhankelijkheid
-  }
+// ─── PLANNING RENDER ──────────────────────────────────────────────
+function renderPlanning(){
+  const app=document.getElementById("pane-planning");
+  if(S.plSc==="overzicht")app.innerHTML=renderPlOverzicht();
+  else if(S.plSc==="patient")app.innerHTML=renderPlPatient();
 }
 
-function pdfKleurVanBadgeKleur(hex){
-  // eenvoudige hex→rgb helper voor jsPDF setTextColor
-  const h=hex.replace('#','');
-  return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];
+function renderPlOverzicht(){
+  if(S.plLaden)return`<div style="text-align:center;padding:40px;color:${C.muted}">Laden...</div>`;
+  const pats=S.plPatienten;
+  const urgent=pats.filter(p=>p.urgentie==="rood"||p.urgentie==="oranje");
+  const bannerHTML=urgent.length?`<div class="urgent-banner"><div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8;margin-bottom:6px">⚠️ Actie nodig</div><div style="font-size:15px;font-weight:500;margin-bottom:4px">${urgent.length} patiënt${urgent.length>1?"en":""} te testen</div><div style="font-size:13px;opacity:.85">${urgent.map(p=>`#${p.nr} – ${p.volgendLabel}`).join(" · ")}</div></div>`:"";
+  const sorted=[...pats].sort((a,b)=>{const o={rood:0,oranje:1,grijs:2,groen:3};return(o[a.urgentie]||2)-(o[b.urgentie]||2);});
+  const lijstHTML=sorted.length?`<div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px">Actieve revalidanten</div><div class="ft-card" style="padding:4px 16px">${sorted.map(p=>{const urg=p.urgentie;const dot=`<div class="pl-dot ${urg}" style="margin-top:6px"></div>`;const b=urg==="rood"?badge(C.roodLight,C.rood,"Over tijd"):urg==="oranje"?badge(C.oranjeLight,"#92400e","Binnenkort"):urg==="groen"?badge(C.okLight,C.ok,"Up to date"):badge(C.grijs,C.muted,"Gepland");return`<div class="pat-row" onclick="openPlPatient('${p.nr}')"><div style="display:flex;gap:10px;align-items:flex-start;flex:1;min-width:0">${dot}<div style="min-width:0"><div style="font-size:14px;font-weight:500;color:${C.groen}">Patiënt #${p.nr}</div><div style="font-size:12px;color:${C.muted};margin-top:1px">${p.been} · op: ${nlDatum(p.opDatum)} · w${p.wekenGeleden}</div><div style="font-size:12px;color:${C.muted};margin-top:1px">${p.volgendLabel}</div></div></div><div style="display:flex;align-items:center;gap:8px;flex-shrink:0">${b}<span style="color:${C.groenAccent};font-size:20px">›</span></div></div>`;}).join("")}</div>`:"";
+  const nieuwHTML=`<div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px;margin-top:${sorted.length?16:0}px">Patiënt toevoegen</div><div class="ft-card"><div style="font-size:13px;color:${C.muted};margin-bottom:4px">Patiëntnummer</div><input id="pl-nr" class="ft-input" placeholder="bijv. 12345" style="margin-bottom:10px"/><div style="font-size:13px;color:${C.muted};margin-bottom:4px">Operatiedatum</div><input id="pl-opdat" class="ft-input" type="date" style="margin-bottom:10px"/><div style="font-size:13px;color:${C.muted};margin-bottom:4px">Aangedaan been</div><select id="pl-been" class="ft-input" style="margin-bottom:14px"><option>Links</option><option>Rechts</option></select><button class="ft-btn-p" style="width:100%" onclick="voegPatToe()">Toevoegen →</button>${S.plFout?`<div style="color:${C.rood};font-size:13px;margin-top:8px">${S.plFout}</div>`:""}</div>`;
+  return`<div style="background:${C.groen};border-radius:12px;padding:1.25rem;margin-bottom:16px;color:#fff"><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px">Fyzio Totaal · UMOOOVE</div><div style="font-size:20px;font-weight:500">Testplanning VKB</div><div style="font-size:13px;color:${C.mint};margin-top:4px">Overzicht alle revalidanten</div></div>${bannerHTML}${lijstHTML}${nieuwHTML}`;
 }
 
-function downloadRapportPDF(){
-  const m=S.rapMm;if(!m)return;
-  S.pdfBezig=true;render();
-  try{
-    const eerder=(S.patData?.meetmomenten||[]).filter(x=>x.datum<m.datum);
-    const criteria=FASE_CRITERIA[m.fase]||[];
-    const faseTesten=TESTEN_PER_FASE[m.fase]||[];
-    const rapTesten=TESTEN.filter(t=>faseTesten.includes(t.id)&&t.id!=="galn");
+function renderPlPatient(){
+  const d=S.plPatData; if(!d)return"";
+  const opDat=d.operatiedatum;
+  const wekenNu=weeksSinceOp(opDat);
+  const planning=d.planning||{};
+  const items=[];
 
-    const { jsPDF }=window.jspdf;
-    const doc=new jsPDF({unit:'mm',format:'a4'});
-    const marginX=18,pageWidth=210,pageHeight=297,contentWidth=pageWidth-marginX*2,marginBottom=22;
-    let y=20;
+  PERIODIEK_DEF.forEach(p=>{
+    const gepland=addWeeks(opDat,p.week);
+    const status=planning[p.id]||{};
+    const gedaan=status.gedaan||false;
+    const st=getMomentStatus(gepland,gedaan);
+    items.push({id:p.id,label:p.label,type:"periodiek",gepland,gedaan,gedaanDatum:status.gedaanDatum,st,richtlijnWeek:p.week});
+  });
 
-    function ruimteNodig(hoogte){
-      if(y+hoogte>pageHeight-marginBottom){doc.addPage();y=20;}
-    }
-    function schrijfRegel(tekst,opts){
-      opts=opts||{};
-      doc.setFont('helvetica',opts.bold?'bold':'normal');
-      doc.setFontSize(opts.size||10.5);
-      const kleur=opts.kleur||[26,26,24];
-      doc.setTextColor(kleur[0],kleur[1],kleur[2]);
-      const lines=doc.splitTextToSize(tekst,contentWidth-(opts.inspring||0));
-      lines.forEach(line=>{
-        ruimteNodig(opts.regelhoogte||5.4);
-        doc.text(line,marginX+(opts.inspring||0),y);
-        y+=opts.regelhoogte||5;
-      });
-    }
-    function sectieKop(tekst){
-      ruimteNodig(13);
-      y+=4;
-      doc.setDrawColor(0,182,232);doc.setLineWidth(1.1);
-      doc.line(marginX,y-3.7,marginX,y+1.3);
-      doc.setFont('helvetica','bold');doc.setFontSize(11.5);
-      doc.setTextColor(26,74,58);
-      doc.text(tekst,marginX+3,y);
-      y+=6.5;
-    }
+  MIJLPALEN_DEF.forEach(m=>{
+    const status=planning[m.id]||{};
+    // Controleer of er een meetmoment is voor deze mijlpaal in testdata
+    const mmGedaan=mijlpaalGedaanViaTest(d,m.id);
+    const gedaan=status.gedaan||!!mmGedaan;
+    const gedaanDatum=status.gedaanDatum||(mmGedaan?.datum)||null;
+    const uitgesteldDatum=status.uitgesteldDatum||null;
+    const richtlijn=m.richtlijnWeek?addWeeks(opDat,m.richtlijnWeek):null;
+    const gepland=uitgesteldDatum||richtlijn;
+    const st=gedaan?"groen":gepland?getMomentStatus(gepland,false):"grijs";
+    items.push({id:m.id,label:m.label,type:"mijlpaal",richtlijn,gepland,uitgesteldDatum,gedaan,gedaanDatum,st,richtlijnWeek:m.richtlijnWeek,viaTest:!!mmGedaan});
+  });
 
-    // Kop
-    doc.setFont('helvetica','bold');doc.setFontSize(17);
-    doc.setTextColor(26,74,58);
-    doc.text('Fyzio',marginX,y);
-    const fyzioBreedte=doc.getTextWidth('Fyzio');
-    doc.setTextColor(74,155,127);
-    doc.text('Totaal',marginX+fyzioBreedte,y);
-    doc.setFont('helvetica','normal');doc.setFontSize(9);
-    doc.setTextColor(107,114,128);
-    doc.text('Knie Testen & Meten - '+m.datum,pageWidth-marginX,y,{align:'right'});
-    y+=4;
-    doc.setDrawColor(26,74,58);doc.setLineWidth(0.8);
-    doc.line(marginX,y,pageWidth-marginX,y);
-    y+=9;
+  const rttGedaan=items.find(i=>i.id==="m_rtt")?.gedaan;
+  const rtcGedaan=items.find(i=>i.id==="m_rtc")?.gedaan;
+  const rttReminder=rttGedaan&&!rtcGedaan?`<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:12px 14px;margin-bottom:12px"><div style="font-size:13px;font-weight:500;color:#92400e;margin-bottom:2px">🏃 RTT testen voltooid</div><div style="font-size:13px;color:#78350f">RTC nog niet gepland — vergeet de 8 trainingen niet te registreren.</div></div>`:"";
 
-    doc.setFont('helvetica','bold');doc.setFontSize(14);
-    doc.setTextColor(26,74,58);
-    doc.text(m.faseNaam,marginX,y);
-    y+=6;
-    doc.setFont('helvetica','normal');doc.setFontSize(10);
-    doc.setTextColor(90,90,86);
-    doc.text('Patient '+S.patNr+' - Aangedaan been: '+(S.patData?.been||S.been),marginX,y);
-    y+=10;
+  const tijdlijnHTML=items.map(item=>{
+    const isUitgesteld=item.uitgesteldDatum;
+    const geplandTekst=item.gepland?`${nlDatum(item.gepland)}${item.richtlijnWeek?" (richtlijn: w"+item.richtlijnWeek+")":""}`:item.id==="m_rtc"?"Na 8 trainingen met eigen team":"—";
+    const statusTekst=item.gedaan?`✓ Gedaan op ${nlDatum(item.gedaanDatum)}${item.viaTest?" (via testen)":""}`:item.st==="rood"?"Over tijd":item.st==="oranje"?"Binnenkort":"Gepland";
+    const statusKleur=item.gedaan?C.ok:item.st==="rood"?C.rood:item.st==="oranje"?"#92400e":C.muted;
+    const uitstellenForm=S.plUitstellenId===item.id?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid #e0e0da"><div style="font-size:13px;color:${C.muted};margin-bottom:6px">Nieuwe datum:</div><input type="date" class="ft-input" style="margin-bottom:8px" id="uitstel-datum" value="${S.plNieuwDatum}" oninput="S.plNieuwDatum=this.value"/><div style="display:flex;gap:8px"><button class="ft-btn-p" style="font-size:13px;padding:8px 16px" onclick="slaUitstelOp('${item.id}')">Opslaan</button><button class="ft-btn-sm" onclick="S.plUitstellenId=null;renderPlanning()">Annuleren</button></div></div>`:"";
+    const actieBtns=!item.gedaan?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="ft-btn-sm" style="font-size:12px;padding:5px 12px;background:${C.okLight};border-color:${C.ok};color:${C.ok}" onclick="markeerGedaan('${item.id}')">✓ Gedaan</button>${item.type==="mijlpaal"?`<button class="ft-btn-sm" style="font-size:12px;padding:5px 12px" onclick="S.plUitstellenId='${item.id}';S.plNieuwDatum='';renderPlanning()">Uitstellen</button>`:""}</div>${uitstellenForm}`:`<div style="margin-top:6px"><button class="ft-btn-sm" style="font-size:12px;padding:4px 10px;color:${C.muted}" onclick="markeerOngedaan('${item.id}')">Ongedaan maken</button></div>`;
+    return`<div class="pl-moment ${item.gedaan?"groen":item.st}" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><div style="font-size:14px;font-weight:500;color:${C.groen}">${item.label}</div><div style="font-size:12px;color:${C.muted};margin-top:2px">${item.type==="periodiek"?"Periodiek":"Mijlpaal"}${isUitgesteld?" · <span style='color:#92400e'>Uitgesteld</span>":""}</div><div style="font-size:13px;margin-top:4px;color:${C.muted}">${geplandTekst}</div></div><div style="font-size:12px;font-weight:500;color:${statusKleur};text-align:right;flex-shrink:0;padding-top:2px">${statusTekst}</div></div>${actieBtns}</div>`;
+  }).join("");
 
-    // Fase-criteria
-    sectieKop('Fase-criteria');
-    criteria.forEach(c=>{
-      const antwoord=m.criteria?.[c]==='ja'?'Ja':m.criteria?.[c]==='nee'?'Nee':'-';
-      const kleur=m.criteria?.[c]==='ja'?[22,101,52]:m.criteria?.[c]==='nee'?[192,57,43]:[90,90,86];
-      ruimteNodig(5.6);
-      const lines=doc.splitTextToSize(c,contentWidth-22);
-      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(26,26,24);
-      doc.text(lines,marginX,y);
-      doc.setFont('helvetica','bold');doc.setTextColor(kleur[0],kleur[1],kleur[2]);
-      doc.text(antwoord,pageWidth-marginX,y,{align:'right'});
-      y+=lines.length*5+1;
-    });
-
-    // GALN
-    if(m.testen?.galn){
-      const r=m.testen.galn,w=r.waarden||{};
-      const jaI=GALN_ITEMS.filter(i=>w[i.id]==='ja').length;
-      sectieKop('Verkorte GALN - Looppatroon');
-      schrijfRegel('Aanwezig: '+jaI+'/'+GALN_ITEMS.length+(w.galn_normaal?' | Genormaliseerd: '+(w.galn_normaal==='ja'?'Ja':'Nee'):''));
-      GALN_CATS.forEach(cat=>{
-        const items=GALN_ITEMS.filter(i=>i.cat===cat&&(w[i.id]==='ja'||w[i.id]==='nee'));
-        if(!items.length)return;
-        schrijfRegel(cat+':',{bold:true,size:9.5});
-        items.forEach(item=>{
-          schrijfRegel('- '+item.label+': '+(w[item.id]==='ja'?'Ja':'Nee'),{size:9.5,inspring:3});
-        });
-      });
-      if(r.notitie)schrijfRegel('Notitie: '+r.notitie,{size:9.5});
-    }
-
-    // Testen
-    rapTesten.forEach(t=>{
-      const r=m.testen?.[t.id];if(!r)return;
-      sectieKop(t.naam);
-      const groepen=RAPPORT_GROEPEN[t.id]||[];
-      groepen.forEach(rij=>{
-        rij.forEach(v=>{
-          const val=r.waarden?.[v.id];
-          if(!val&&val!==0)return;
-          let tekst;
-          if(v.lsi)tekst=v.l+': '+Number(val).toFixed(1)+'%';
-          else if(v.isPlank)tekst=v.l+': '+val+' sec ('+plankKleur(val).label+')';
-          else if(v.isRoeien){const k=roeiKleur(val);tekst=v.l+': '+val+(k?' ('+k.label+')':'');}
-          else tekst=v.l+': '+val+(v.e&&!v.lsi?v.e:'');
-          schrijfRegel(tekst);
-        });
-      });
-      if(r.notitie)schrijfRegel('Notitie: '+r.notitie,{size:9.5});
-
-      // Progressie (LSI-velden)
-      const lsiVelden=t.velden.filter(v=>v.ber&&v.lsiType);
-      if(eerder.length&&lsiVelden.length){
-        lsiVelden.forEach(v=>{
-          const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.[v.id]})).filter(e=>e.w);
-          const huidig=r.waarden?.[v.id];
-          if(!hist.length&&!huidig)return;
-          const delen=hist.map(e=>e.d+': '+Number(e.w).toFixed(1)+'%');
-          if(huidig)delen.push(m.datum+': '+Number(huidig).toFixed(1)+'%');
-          schrijfRegel('Progressie '+v.label+': '+delen.join(' -> '),{size:9,kleur:[90,90,86]});
-        });
-      }
-      if(t.isPlank&&eerder.length){
-        const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.plank_sec})).filter(e=>e.w);
-        const huidig=r.waarden?.plank_sec;
-        if(hist.length||huidig){
-          const delen=hist.map(e=>e.d+': '+e.w+'s');
-          if(huidig)delen.push(m.datum+': '+huidig+'s');
-          schrijfRegel('Progressie plank: '+delen.join(' -> '),{size:9,kleur:[90,90,86]});
-        }
-      }
-      if(t.isRoeien&&eerder.length){
-        const hist=eerder.map(em=>({d:em.datum,w:em.testen?.[t.id]?.waarden?.roei_tijd})).filter(e=>e.w);
-        const huidig=r.waarden?.roei_tijd;
-        if(hist.length||huidig){
-          const delen=hist.map(e=>e.d+': '+e.w);
-          if(huidig)delen.push(m.datum+': '+huidig);
-          schrijfRegel('Progressie 500m roeien: '+delen.join(' -> '),{size:9,kleur:[90,90,86]});
-        }
-      }
-    });
-
-    // Voettekst
-    const paginas=doc.internal.getNumberOfPages();
-    for(let p=1;p<=paginas;p++){
-      doc.setPage(p);
-      doc.setFont('helvetica','normal');doc.setFontSize(8);
-      doc.setTextColor(156,163,175);
-      doc.text('Fyzio Totaal   \u00b7   Nijverheidsstraat 7, Wierden   \u00b7   www.fyziototaal.nl',pageWidth/2,pageHeight-10,{align:'center'});
-    }
-
-    const bestandsnaam='VKB_Rapport_'+S.patNr+'_'+m.datum+'.pdf';
-    doc.save(bestandsnaam);
-    uploadNaarDrive(doc,bestandsnaam);
-  }catch(e){
-    alert('PDF genereren mislukt: '+e.message);
-  }finally{
-    S.pdfBezig=false;render();
-  }
+  return`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.plSc='overzicht';renderPlanning()">← Overzicht</button>
+      <div style="flex:1"><div style="font-size:16px;font-weight:500;color:${C.groen}">Patiënt #${S.plPatNr}</div><div style="font-size:13px;color:${C.muted}">${d.been} · w${wekenNu} post-op</div></div>
+    </div>
+    <div style="background:${C.groen};border-radius:12px;padding:1rem 1.25rem;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:13px;color:${C.mint}">Operatiedatum</div><div style="font-size:17px;font-weight:500;color:#fff">${nlDatum(opDat)}</div><div style="font-size:13px;color:${C.mint};margin-top:2px">Week ${wekenNu} nu · ${d.been} been</div></div>
+      <div style="text-align:right"><div style="font-size:12px;color:${C.mint};margin-bottom:4px">Voortgang</div><div style="font-size:22px;font-weight:500;color:#fff">${items.filter(i=>i.gedaan).length}<span style="font-size:14px;opacity:.7">/${items.length}</span></div><div style="font-size:12px;color:${C.mint}">testen gedaan</div></div>
+    </div>
+    ${rttReminder}
+    <div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:10px">Testmomenten</div>
+    ${tijdlijnHTML}
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid ${C.grijsBorder}">
+      <button class="ft-btn-sm" style="color:${C.rood};border-color:${C.roodLight}" onclick="if(confirm('Patiënt #${S.plPatNr} verwijderen uit planning?'))verwijderPat()">Verwijderen uit planning</button>
+    </div>`;
 }
 
-// ─── ACTIES ───────────────────────────────────────────────────────
+// ─── LICHTE RENDER-HELPERS (geen volledige re-render) ─────────────
+function renderHHDResult(){
+  // Herbereken en update alleen de automatische velden in HHD
+  document.querySelectorAll('[data-id]').forEach(el=>{
+    const id=el.dataset.id;
+    if(el.tagName==="INPUT"&&!S.waarden[id]===undefined)return;
+    if(el.tagName==="INPUT")S.waarden=calcHHD({...S.waarden,[id]:el.value.replace(',','.')});
+  });
+  HHD_STAPPEN[S.hhdStap]?.velden?.filter(v=>v.ber).forEach(v=>{
+    const val=S.waarden[v.id]||"";
+    const el=document.querySelector(`[data-computed-id="${v.id}"]`);
+    if(!el)return;
+    if(val!==""){
+      const k=v.lsiType?lsiKleur(val,v.lsiType,S.mm?.refId):null;
+      el.innerHTML=k?badge(k.bg,k.col,Number(val).toFixed(1)+"%"):`<strong style="color:${C.groen}">${val}${v.een||""}</strong>`;
+    }else{el.innerHTML=`<span style="color:${C.muted}">—</span>`;}
+  });
+}
+function renderTestResult(){
+  // Herbereken automatische velden na invoer in reguliere test
+  const invoerVelden=S.test?.velden?.filter(v=>!v.ber&&!v.sel)||[];
+  invoerVelden.forEach(v=>{
+    const el=document.querySelector(`[data-id="${v.id}"]`);
+    if(el)S.waarden=calcW(S.test.id,{...S.waarden,[v.id]:el.value.replace(',','.')});
+  });
+  S.test?.velden?.filter(v=>v.ber).forEach(v=>{
+    const val=S.waarden[v.id]||"";
+    const el=document.querySelector(`[data-computed-id="${v.id}"]`);
+    if(!el)return;
+    if(val!==""){
+      const k=v.lsiType?lsiKleur(val,v.lsiType,S.mm?.refId):null;
+      if(k)el.innerHTML=badge(k.bg,k.col,Number(val).toFixed(1)+"%");
+      else if(v.isHopSpot){const hk=hopSpotKleur(val);el.innerHTML=badge(hk.bg,hk.col,Number(val).toFixed(1)+"% – "+hk.label);}
+      else el.innerHTML=`<strong style="color:${C.groen}">${val}${v.een||""}</strong>`;
+    }else{el.innerHTML=`<span style="color:${C.muted}">—</span>`;}
+  });
+}
+
+// ─── TESTEN ACTIES ────────────────────────────────────────────────
 function openPat(){
   const nr=document.getElementById("inp-nr")?.value.trim();
   const b=document.getElementById("inp-been")?.value;
+  const od=document.getElementById("inp-opdat")?.value;
   if(!nr){S.fout="Voer een patiëntnummer in.";render();return;}
-  S.patNr=nr;S.been=b||"Links";S.fout="";S.laden=true;render();
-  loadData(nr).then(function(d){
+  S.patNr=nr;S.been=b||"Links";S.opDatum=od||"";S.fout="";S.laden=true;render();
+  loadData(nr).then(d=>{
     S.patData=d||{meetmomenten:[]};
     S.been=d?.been||S.been;
+    S.opDatum=d?.operatiedatum||S.opDatum;
+    // Sla operatiedatum op als nieuw ingevoerd
+    if(od&&!d?.operatiedatum){S.patData.operatiedatum=od;S.patData.been=S.been;saveData(nr,S.patData);}
     S.laden=false;S.sc="dashboard";render();
   });
 }
 
-function nieuwMm(faseId){
-  const f=FASEN.find(x=>x.id===faseId);
-  const d=new Date().toISOString().split("T")[0];
-  S.mm={datum:d,fase:faseId,faseNaam:f.naam,testen:{},criteria:{}};
-  S.fase=f;S.crit={};S.toonVlaggen=false;S.sc="meetmoment";render();
+function nieuwMm(type,refId,naam,timing){
+  const datum=new Date().toISOString().split("T")[0];
+  const mmId=type+"_"+refId+"_"+datum+"_"+Date.now();
+  S.mm={datum,mmId,type,refId,naam,timing,testen:{},criteria:{}};
+  S.crit={};S.toonVlaggen=false;S.dashTab=type==="fase"?"fasen":"mijlpalen";
+  S.sc="meetmoment";render();
 }
 
-function openMm(idx){
-  const m=S.patData.meetmomenten[idx];
-  S.mm=m;S.fase=FASEN.find(f=>f.id===m.fase);S.crit=m.criteria||{};S.toonVlaggen=false;S.sc="meetmoment";render();
-}
-
-function openRap(idx){S.rapMm=S.patData.meetmomenten[idx];S.sc="rapport";render();}
+function openMm(m){S.mm=m;S.crit=m.criteria||{};S.toonVlaggen=false;S.sc="meetmoment";render();}
+function openRap(m){S.rapMm=m;S.sc="rapport";render();}
 function setCrit(c,v){S.crit[c]=v;render();}
-function toonOk(){S.ok=true;render();setTimeout(function(){S.ok=false;render();},2000);}
+function toonOk(){S.ok=true;render();setTimeout(()=>{S.ok=false;render();},2000);}
 
-async function persisteerMM(testId,waarden){
+async function persisteer(testId,w){
   const nm={...S.mm};if(!nm.testen)nm.testen={};
-  nm.testen[testId]={waarden,notitie:waarden._notitie||""};
-  const nd={...S.patData};nd.been=S.been;
-  const idx=nd.meetmomenten.findIndex(x=>x.datum===nm.datum&&x.fase===nm.fase);
+  nm.testen[testId]={waarden:w,notitie:w._notitie||""};
+  const nd={...S.patData};nd.been=S.been;if(S.opDatum)nd.operatiedatum=S.opDatum;
+  const idx=nd.meetmomenten.findIndex(x=>x.mmId===nm.mmId);
   if(idx>=0)nd.meetmomenten[idx]=nm;else nd.meetmomenten.push(nm);
   S.mm=nm;S.patData=nd;
   await saveData(S.patNr,nd);
@@ -500,38 +630,132 @@ async function persisteerMM(testId,waarden){
 
 async function saveCrit(){
   const nm={...S.mm,criteria:S.crit};
-  const nd={...S.patData};
-  const idx=nd.meetmomenten.findIndex(x=>x.datum===nm.datum&&x.fase===nm.fase);
+  const nd={...S.patData};nd.been=S.been;if(S.opDatum)nd.operatiedatum=S.opDatum;
+  const idx=nd.meetmomenten.findIndex(x=>x.mmId===nm.mmId);
   if(idx>=0)nd.meetmomenten[idx]=nm;else nd.meetmomenten.push(nm);
   S.mm=nm;S.patData=nd;
-  await saveData(S.patNr,nd);
-  toonOk();
+  await saveData(S.patNr,nd);toonOk();
 }
 
 function startTest(id){
-  const t=TESTEN.find(x=>x.id===id);
-  if(t.isGALN){S.galnW=S.mm?.testen?.galn?.waarden||{};S.test=t;S.sc="galn";render();return;}
-  if(t.isHHD){S.waarden=S.mm?.testen?.hhd?.waarden||{};S.test=t;S.hhdStap=0;S.sc="hhd";render();return;}
-  S.waarden=S.mm?.testen?.[id]?.waarden||{};S.test=t;S.stap=0;S.sc="test";render();
+  const t=ALLE_TESTEN.find(x=>x.id===id);
+  if(!t)return;
+  if(t.isGALN||t.isKwal||t.isCriteria){S.checkW=S.mm?.testen?.[t.id]?.waarden||{};S.test=t;S.sc="checklist";render();}
+  else if(t.isACLRSI){S.waarden=S.mm?.testen?.[t.id]?.waarden||{};S.test=t;S.sc="aclrsi";render();}
+  else if(t.isHHD){S.waarden=S.mm?.testen?.hhd?.waarden||{};S.test=t;S.hhdStap=0;S.sc="hhd";render();}
+  else if(t.isSLS){S.waarden=S.mm?.testen?.[t.id]?.waarden||{};S.checkW=S.mm?.testen?.[t.id]?.waarden?.checkW||{};S.test=t;S.stap=0;S.sc="sls";render();}
+  else{S.waarden=S.mm?.testen?.[t.id]?.waarden||{};S.test=t;S.stap=0;S.sc="test";render();}
 }
 
 async function saveTest(terug){
   const notitie=document.getElementById("test-not")?.value||"";
   S.waarden._notitie=notitie;
-  await persisteerMM(S.test.id,S.waarden);
+  await persisteer(S.test.id,S.waarden);
   if(terug){S.sc="meetmoment";render();}else toonOk();
 }
 
-async function saveGALN(terug){
-  const notitie=document.getElementById("galn-not")?.value||"";
-  S.galnW._notitie=notitie;
-  await persisteerMM("galn",S.galnW);
+async function saveChecklist(terug){
+  const notitie=document.getElementById("check-not")?.value||"";
+  S.checkW._notitie=notitie;
+  await persisteer(S.test.id,S.checkW);
+  if(terug){S.sc="meetmoment";render();}else toonOk();
+}
+
+async function saveACLRSI(terug){
+  const notitie=document.getElementById("aclrsi-not")?.value||"";
+  S.waarden._notitie=notitie;
+  await persisteer(S.test.id,S.waarden);
   if(terug){S.sc="meetmoment";render();}else toonOk();
 }
 
 async function saveHHD(terug){
-  await persisteerMM("hhd",S.waarden);
+  await persisteer("hhd",S.waarden);
   if(terug){S.sc="meetmoment";render();}else toonOk();
+}
+
+async function saveSLS(terug){
+  const notitie=document.getElementById("sls-not")?.value||"";
+  S.waarden._notitie=notitie;
+  await persisteer(S.test.id,{...S.waarden,checkW:S.checkW});
+  if(terug){S.sc="meetmoment";render();}else toonOk();
+}
+
+// ─── PLANNING ACTIES ──────────────────────────────────────────────
+async function laadOverzicht(){
+  S.plLaden=true;renderPlanning();
+  const rows=await dbList();
+  S.plPatienten=[];
+  for(const row of rows){
+    try{
+      const d=JSON.parse(row.value);
+      if(!d.operatiedatum)continue;
+      const nr=row.key.replace("vkb_","");
+      const wekenNu=weeksSinceOp(d.operatiedatum);
+      const planning=d.planning||{};
+      const allItems=[];
+      PERIODIEK_DEF.forEach(p=>{
+        const gepland=addWeeks(d.operatiedatum,p.week);
+        const gedaan=planning[p.id]?.gedaan||false;
+        if(!gedaan)allItems.push({label:p.label,gepland,st:getMomentStatus(gepland,false)});
+      });
+      MIJLPALEN_DEF.forEach(m=>{
+        const status=planning[m.id]||{};
+        const mmGedaan=mijlpaalGedaanViaTest(d,m.id);
+        const gedaan=status.gedaan||!!mmGedaan;
+        const richtlijn=m.richtlijnWeek?addWeeks(d.operatiedatum,m.richtlijnWeek):null;
+        const gepland=status.uitgesteldDatum||richtlijn;
+        if(!gedaan&&gepland)allItems.push({label:m.label,gepland,st:getMomentStatus(gepland,false)});
+      });
+      allItems.sort((a,b)=>a.gepland.localeCompare(b.gepland));
+      const volgend=allItems[0];
+      const urgentie=volgend?volgend.st:"groen";
+      S.plPatienten.push({nr,been:d.been,opDatum:d.operatiedatum,wekenGeleden:wekenNu,volgendLabel:volgend?`Volgende: ${volgend.label} (${nlDatum(volgend.gepland)})`:"Alle testen gedaan",urgentie});
+    }catch(e){}
+  }
+  S.plLaden=false;renderPlanning();
+}
+
+async function voegPatToe(){
+  const nr=document.getElementById("pl-nr")?.value.trim();
+  const opdat=document.getElementById("pl-opdat")?.value;
+  const been=document.getElementById("pl-been")?.value;
+  S.plFout="";
+  if(!nr){S.plFout="Voer een patiëntnummer in.";renderPlanning();return;}
+  if(!opdat){S.plFout="Voer een operatiedatum in.";renderPlanning();return;}
+  let d=await loadData(nr)||{meetmomenten:[]};
+  d.operatiedatum=opdat;d.been=been;
+  if(!d.planning)d.planning={};
+  await saveData(nr,d);
+  await laadOverzicht();
+}
+
+async function openPlPatient(nr){
+  S.plPatNr=nr;S.plPatData=await loadData(nr);
+  S.plUitstellenId=null;S.plSc="patient";renderPlanning();
+}
+
+async function markeerGedaan(id){
+  if(!S.plPatData.planning)S.plPatData.planning={};
+  S.plPatData.planning[id]={gedaan:true,gedaanDatum:today()};
+  await saveData(S.plPatNr,S.plPatData);S.plUitstellenId=null;renderPlanning();
+}
+
+async function markeerOngedaan(id){
+  if(!S.plPatData.planning)S.plPatData.planning={};
+  S.plPatData.planning[id]={gedaan:false};
+  await saveData(S.plPatNr,S.plPatData);renderPlanning();
+}
+
+async function slaUitstelOp(id){
+  const nd=S.plNieuwDatum;if(!nd){alert("Kies een datum.");return;}
+  if(!S.plPatData.planning)S.plPatData.planning={};
+  S.plPatData.planning[id]={...S.plPatData.planning[id],gedaan:false,uitgesteldDatum:nd};
+  await saveData(S.plPatNr,S.plPatData);S.plUitstellenId=null;renderPlanning();
+}
+
+async function verwijderPat(){
+  if(S.plPatData){delete S.plPatData.operatiedatum;delete S.plPatData.planning;await saveData(S.plPatNr,S.plPatData);}
+  S.plSc="overzicht";await laadOverzicht();
 }
 
 render();
