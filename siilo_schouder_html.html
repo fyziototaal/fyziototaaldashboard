@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Schouderrapportage – Fyzio Totaal</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #f7f5fc; min-height: 100vh; }
+    .ft-wrap { max-width: 680px; margin: 0 auto; }
+    .ft-header {
+      background: linear-gradient(135deg, #6c3fc5 0%, #c0328a 100%);
+      padding: 28px 28px 24px;
+      border-radius: 0 0 20px 20px;
+    }
+    .ft-logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .ft-logo-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.6); }
+    .ft-logo-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+    .ft-header h1 { font-size: 22px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 4px; }
+    .ft-header p { font-size: 13px; color: rgba(255,255,255,0.75); }
+    .ft-body { padding: 20px 20px 40px; }
+    .ft-section { margin-bottom: 14px; }
+    .ft-label { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8b6bcc; margin-bottom: 7px; display: block; }
+    .ft-card { background: #fff; border-radius: 14px; border: 1px solid #ede8f8; padding: 14px 16px; overflow: hidden; }
+    select, textarea { width: 100%; font-family: 'Outfit', sans-serif; font-size: 14px; color: #1a1030; background: transparent; border: none; outline: none; resize: vertical; line-height: 1.6; }
+    select { cursor: pointer; }
+    textarea { min-height: 160px; }
+    .ft-toggle { display: flex; gap: 6px; }
+    .ft-toggle-btn { flex: 1; padding: 9px 0; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500; border-radius: 10px; border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s; }
+    .ft-toggle-btn.active { background: linear-gradient(135deg, #6c3fc5, #c0328a); color: #fff; border-color: transparent; }
+    .ft-toggle-btn.inactive { background: #fff; color: #6c3fc5; border-color: #d6c8f5; }
+    .ft-btn { width: 100%; padding: 13px 0; font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; border: none; border-radius: 12px; background: linear-gradient(135deg, #6c3fc5, #c0328a); color: #fff; cursor: pointer; letter-spacing: 0.02em; transition: opacity 0.15s; }
+    .ft-btn:hover { opacity: 0.92; }
+    .ft-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .ft-btn-secondary { width: 100%; padding: 11px 0; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500; border: 1.5px solid #d6c8f5; border-radius: 12px; background: #fff; color: #6c3fc5; cursor: pointer; transition: all 0.15s; }
+    .ft-btn-secondary:hover { background: #f0eaff; }
+    .ft-result-card { background: #fff; border-radius: 14px; border: 1px solid #ede8f8; overflow: hidden; margin-bottom: 16px; }
+    .ft-result-header { background: linear-gradient(135deg, #6c3fc5 0%, #c0328a 100%); padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .ft-result-header span { font-size: 13px; font-weight: 600; color: #fff; letter-spacing: 0.03em; }
+    .ft-result-btns { display: flex; gap: 6px; }
+    .ft-copy-btn { font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; transition: background 0.15s; }
+    .ft-copy-btn:hover { background: rgba(255,255,255,0.28); }
+    .ft-copy-btn.active-edit { background: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.9); }
+    .ft-result-body { padding: 16px 18px; font-size: 13.5px; line-height: 1.75; color: #1a1030; white-space: pre-wrap; font-family: 'Outfit', sans-serif; }
+    .ft-result-edit { width: 100%; min-height: 220px; font-size: 13.5px; line-height: 1.75; color: #1a1030; font-family: 'Outfit', sans-serif; padding: 16px 18px; border: none; outline: none; resize: vertical; background: #faf8ff; display: block; }
+    .ft-divider { height: 1px; background: #ede8f8; margin: 16px 0; }
+    .ft-error { font-size: 13px; color: #c0328a; margin-bottom: 10px; padding: 10px 14px; background: #fdf0f7; border-radius: 10px; border: 1px solid #f5c8e4; }
+    .ft-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #f0eaff; color: #6c3fc5; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+    .ft-spinner { display: inline-block; width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ft-apikey-bar { background: #fff; border-bottom: 1px solid #ede8f8; padding: 10px 20px; display: flex; align-items: center; gap: 10px; }
+    .ft-apikey-bar label { font-size: 12px; font-weight: 600; color: #8b6bcc; white-space: nowrap; }
+    .ft-apikey-bar input { flex: 1; font-family: 'Outfit', sans-serif; font-size: 13px; border: 1px solid #d6c8f5; border-radius: 8px; padding: 6px 10px; color: #1a1030; outline: none; }
+    .ft-apikey-bar input:focus { border-color: #6c3fc5; }
+    .ft-apikey-bar button { font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 8px; border: none; background: linear-gradient(135deg, #6c3fc5, #c0328a); color: #fff; cursor: pointer; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const RAPPORTAGE_TYPEN = [
+      "Huisarts – vraag over mogelijke medische interventie",
+      "Huisarts – verzoek beoordeling/verwijzing orthopeed",
+      "Orthopeed – evaluatie na conservatief traject",
+      "Orthopeed – postoperatief voortgangsverslag",
+      "Tussenevaluatie langdurig traject",
+      "Spoed / afwijkend beloop",
+    ];
+
+    const SYSTEM_PROMPT = `Je bent een medische rapportage-assistent voor fysiotherapeuten. Je taak is UITSLUITEND:
+- Structureren
+- Herschrijven
+- Samenvatten
+
+OPMAAKREGELS:
+- Geen markdown, geen sterretjes, geen vetgedrukte tekst
+- Gewone platte tekst, regels beginnen met • of een woord, nooit met **
+
+ABSOLUTE REGELS:
+- Gebruik ALLEEN informatie die letterlijk in de aangeleverde tekst staat
+- Geen interpretatie, geen diagnostische aanvulling, geen herclassificatie
+- Werkdiagnose = 'Conclusie na anamnese en onderzoek'. Neem deze ALLEEN over als deze letterlijk in de tekst staat; anders: "Niet beschikbaar"
+- Onderhoudende factoren ALLEEN als letterlijk genoemd
+- Geen oorzaak-gevolg redenering
+- Geen toevoegingen buiten de tekst
+- VERBODEN woorden/frases: "past bij", "waarschijnlijk", "suggereert", "kan duiden op"
+
+OUTPUT STRUCTUUR (max 10 regels, bij hoge klinische relevantie max 12):
+Elke bullet = 1 zin. PROMs alleen bij Objectief. Aantal behandelingen bij Behandeling.`;
+
+    function buildUserPrompt(rapportageType, outputFormaat, epd) {
+      const format = outputFormaat === "opsommend"
+        ? `OUTPUT FORMAT – OPSOMMEND (Siilo):
+• Patiënt: [Naam], [leeftijd] | start traject [datum]
+• Werkdiagnose: [alleen indien letterlijk in tekst, anders: Niet beschikbaar]
+• Vraag/advies: [exact uit tekst / Niet bekend]
+• Objectief: [alleen gemelde bevindingen + PROMs indien vermeld]
+• Functie/ADL: [alleen benoemd in tekst]
+• Behandeling: [type + frequentie + duur + effect]; aantal behandelingen: [x]
+• Aanvullend: [alleen indien vermeld]`
+        : `OUTPUT FORMAT – VERHALEND:
+Vraag: [exact uit tekst of Niet bekend]
+[Naam], [leeftijd], start traject [datum], werkdiagnose: [alleen indien letterlijk in tekst].
+Objectief: [alle bevindingen in zinnen + PROMs indien vermeld].
+Functie/ADL: [beperkingen zoals vermeld in tekst].
+Behandeling: [zoals in tekst]; aantal behandelingen: [x].
+Aanvullend: [alleen indien vermeld].`;
+      return `Rapportagetype: ${rapportageType}\n\n${format}\n\nEPD-tekst:\n"""\n${epd}\n"""\n\nGenereer de rapportage. Gebruik uitsluitend informatie uit de EPD-tekst.`;
+    }
+
+    function App() {
+      const [apiKey, setApiKey] = useState(localStorage.getItem("ft_apikey") || "");
+      const [apiKeyInput, setApiKeyInput] = useState("");
+      const [rapportageType, setRapportageType] = useState(RAPPORTAGE_TYPEN[0]);
+      const [outputFormaat, setOutputFormaat] = useState("opsommend");
+      const [epdTekst, setEpdTekst] = useState("");
+      const [resultaat, setResultaat] = useState("");
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState("");
+      const [copied, setCopied] = useState(false);
+      const [fase, setFase] = useState("invoer");
+      const [invoerModus, setInvoerModus] = useState("pdf");
+      const [pdfData, setPdfData] = useState(null);
+      const [pdfNaam, setPdfNaam] = useState("");
+      const [bewerkModus, setBewerkModus] = useState(false);
+
+      function slaApiKeyOp() {
+        localStorage.setItem("ft_apikey", apiKeyInput);
+        setApiKey(apiKeyInput);
+        setApiKeyInput("");
+      }
+
+      function handlePdf(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        setPdfNaam(file.name);
+        const reader = new FileReader();
+        reader.onload = () => setPdfData(reader.result.split(",")[1]);
+        reader.readAsDataURL(file);
+      }
+
+      async function genereer() {
+        if (!apiKey) { setError("Sla eerst je API-sleutel op."); return; }
+        if (invoerModus === "tekst" && !epdTekst.trim()) { setError("Plak eerst EPD-tekst in het invoerveld."); return; }
+        if (invoerModus === "pdf" && !pdfData) { setError("Upload eerst een PDF."); return; }
+        setError(""); setResultaat(""); setLoading(true);
+        try {
+          const pdfPromptText = `Rapportagetype: ${rapportageType}\n\n${outputFormaat === "opsommend"
+            ? `OUTPUT FORMAT – OPSOMMEND (Siilo):\n• Patiënt: [Naam], [leeftijd] | start traject [datum]\n• Werkdiagnose: [alleen indien letterlijk in tekst, anders: Niet beschikbaar]\n• Vraag/advies: [exact uit tekst / Niet bekend]\n• Objectief: [alleen gemelde bevindingen + PROMs indien vermeld]\n• Functie/ADL: [alleen benoemd in tekst]\n• Behandeling: [type + frequentie + duur + effect]; aantal behandelingen: [x]\n• Aanvullend: [alleen indien vermeld]`
+            : `OUTPUT FORMAT – VERHALEND:\nVraag: [exact uit tekst of Niet bekend]\n[Naam], [leeftijd], start traject [datum], werkdiagnose: [alleen indien letterlijk in tekst].\nObjectief: [alle bevindingen in zinnen + PROMs indien vermeld].\nFunctie/ADL: [beperkingen zoals vermeld in tekst].\nBehandeling: [zoals in tekst]; aantal behandelingen: [x].\nAanvullend: [alleen indien vermeld].`
+          }\n\nGenereer de rapportage op basis van de bijgevoegde PDF. Gebruik uitsluitend informatie uit de PDF.`;
+
+          const userContent = invoerModus === "pdf"
+            ? [
+                { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdfData } },
+                { type: "text", text: pdfPromptText }
+              ]
+            : buildUserPrompt(rapportageType, outputFormaat, epdTekst);
+
+          const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-5",
+              max_tokens: 1000,
+              temperature: 0,
+              system: SYSTEM_PROMPT,
+              messages: [{ role: "user", content: userContent }],
+            }),
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message);
+          const tekst = data.content?.map(b => b.text || "").join("\n") || "";
+          if (!tekst) throw new Error("Geen resultaat ontvangen.");
+          setResultaat(`${rapportageType}\n\n${tekst}`);
+          setBewerkModus(false);
+          setFase("resultaat");
+        } catch (e) {
+          setError("Er ging iets mis: " + e.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      function kopieer() {
+        const el = document.createElement("textarea");
+        el.value = resultaat;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+
+      function nieuweRapportage() {
+        setResultaat(""); setEpdTekst(""); setError("");
+        setRapportageType(RAPPORTAGE_TYPEN[0]); setOutputFormaat("opsommend");
+        setInvoerModus("pdf"); setPdfData(null); setPdfNaam("");
+        setBewerkModus(false); setFase("invoer");
+      }
+
+      return (
+        <div className="ft-wrap">
+          {/* API-sleutel balk */}
+          {!apiKey ? (
+            <div className="ft-apikey-bar">
+              <label>API-sleutel</label>
+              <input
+                type="password"
+                placeholder="sk-ant-..."
+                value={apiKeyInput}
+                onChange={e => setApiKeyInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && slaApiKeyOp()}
+              />
+              <button onClick={slaApiKeyOp}>Opslaan</button>
+            </div>
+          ) : (
+            <div className="ft-apikey-bar" style={{justifyContent:"flex-end"}}>
+              <span style={{fontSize:12, color:"#aaa"}}>API-sleutel opgeslagen</span>
+              <button onClick={() => { localStorage.removeItem("ft_apikey"); setApiKey(""); }} style={{fontSize:11, padding:"4px 10px", borderRadius:6, border:"1px solid #d6c8f5", background:"#fff", color:"#8b6bcc", cursor:"pointer"}}>Wijzigen</button>
+            </div>
+          )}
+
+          <div className="ft-header">
+            <div className="ft-logo-row">
+              <div className="ft-logo-dot"></div>
+              <span className="ft-logo-label">Fyzio Totaal · Siilo</span>
+            </div>
+            <h1>Schouderrapportage</h1>
+            <p>Extract-only · Geen interpretatie · Klaar voor Siilo</p>
+          </div>
+
+          <div className="ft-body">
+            {fase === "invoer" ? (
+              <>
+                <div className="ft-section">
+                  <span className="ft-label">Rapportagetype</span>
+                  <div className="ft-card">
+                    <select value={rapportageType} onChange={e => setRapportageType(e.target.value)}>
+                      {RAPPORTAGE_TYPEN.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="ft-section">
+                  <span className="ft-label">Outputformaat</span>
+                  <div className="ft-toggle">
+                    <button className={`ft-toggle-btn ${outputFormaat === "opsommend" ? "active" : "inactive"}`}
+                      onClick={() => setOutputFormaat("opsommend")}>Opsommend</button>
+                    <button className={`ft-toggle-btn ${outputFormaat === "verhalend" ? "active" : "inactive"}`}
+                      onClick={() => setOutputFormaat("verhalend")}>Verhalend</button>
+                  </div>
+                </div>
+
+                <div className="ft-section">
+                  <span className="ft-label">EPD-invoer</span>
+                  <div className="ft-toggle" style={{marginBottom:10}}>
+                    <button className={`ft-toggle-btn ${invoerModus === "pdf" ? "active" : "inactive"}`}
+                      onClick={() => { setInvoerModus("pdf"); setEpdTekst(""); setError(""); }}>PDF uploaden</button>
+                    <button className={`ft-toggle-btn ${invoerModus === "tekst" ? "active" : "inactive"}`}
+                      onClick={() => { setInvoerModus("tekst"); setPdfNaam(""); setPdfData(null); setError(""); }}>Tekst typen</button>
+                  </div>
+                  {invoerModus === "tekst" ? (
+                    <div className="ft-card">
+                      <textarea value={epdTekst} onChange={e => setEpdTekst(e.target.value)}
+                        placeholder="Plak hier de EPD-notitie of gekopieerde PDF-tekst..." />
+                    </div>
+                  ) : (
+                    <div className="ft-card" style={{padding:0}}>
+                      <label style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:8, padding:"28px 16px", cursor:"pointer", textAlign:"center"}}>
+                        <input type="file" accept="application/pdf" style={{display:"none"}} onChange={handlePdf} />
+                        {pdfNaam ? (
+                          <>
+                            <span style={{fontSize:28}}>📄</span>
+                            <span style={{fontSize:14, fontWeight:600, color:"#6c3fc5"}}>{pdfNaam}</span>
+                            <span style={{fontSize:12, color:"#aaa"}}>Klik om een andere PDF te kiezen</span>
+                          </>
+                        ) : (
+                          <>
+                            <span style={{fontSize:28}}>⬆️</span>
+                            <span style={{fontSize:14, fontWeight:500, color:"#6c3fc5"}}>Klik om PDF te uploaden</span>
+                            <span style={{fontSize:12, color:"#aaa"}}>EPD-export of brief als PDF</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {error && <div className="ft-error">{error}</div>}
+
+                <button className="ft-btn" onClick={genereer} disabled={loading}>
+                  {loading ? <><span className="ft-spinner"></span>Rapportage genereren...</> : "Genereer rapportage →"}
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="ft-badge">Siilo-ready</span>
+                <div className="ft-result-card">
+                  <div className="ft-result-header">
+                    <span>{rapportageType.split("–")[0].trim()}</span>
+                    <div className="ft-result-btns">
+                      <button className={`ft-copy-btn${bewerkModus ? " active-edit" : ""}`}
+                        onClick={() => setBewerkModus(v => !v)}>
+                        {bewerkModus ? "✓ Klaar" : "Bewerken"}
+                      </button>
+                      <button className="ft-copy-btn" onClick={kopieer}>
+                        {copied ? "✓ Gekopieerd" : "Kopieer"}
+                      </button>
+                    </div>
+                  </div>
+                  {bewerkModus
+                    ? <textarea className="ft-result-edit" value={resultaat} onChange={e => setResultaat(e.target.value)} />
+                    : <div className="ft-result-body">{resultaat}</div>
+                  }
+                </div>
+
+                <div className="ft-divider"></div>
+                <button className="ft-btn-secondary" onClick={nieuweRapportage}>+ Nieuwe rapportage</button>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
+</body>
+</html>
