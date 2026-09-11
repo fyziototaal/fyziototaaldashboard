@@ -9,8 +9,10 @@
 <style>
   html, body { max-width: 100vw; overflow-x: hidden; }
   * { min-width: 0; }
+  body { font-family: 'Poppins', 'Segoe UI', sans-serif; }
 </style>
 <title>Fyzio Totaal · Verlof &amp; uren</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%230f766e%22/><text x=%2250%22 y=%2268%22 font-size=%2248%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22>FT</text></svg>">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
@@ -96,7 +98,6 @@ function parseNum(str) {
   return isNaN(n) ? 0 : n;
 }
 function fmtNum(n) {
-  // 0.5 -> "0,5", 1 -> "1", 1.5 -> "1,5"
   var rounded = Math.round(n * 100) / 100;
   return String(rounded).replace(".", ",");
 }
@@ -122,7 +123,7 @@ function fmtDatumTijd(iso) {
 
 function weekdayKeyFromISO(iso) {
   var d = new Date(iso + "T00:00:00");
-  return WEEKDAY_TO_KEY[d.getDay()] || null; // null = weekend
+  return WEEKDAY_TO_KEY[d.getDay()] || null;
 }
 
 function timeToMin(t) {
@@ -131,14 +132,11 @@ function timeToMin(t) {
   return Number(parts[0]) * 60 + Number(parts[1]);
 }
 
-// Kern van de automatische verlofberekening: elke werkdag bestaat uit
-// maximaal 3 dagdelen (ochtend tot 12:30, middag 12:30-18:00, avond vanaf
-// 18:00). Elk dagdeel waar het rooster in valt, telt als een halve dag.
 function dayCost(shift) {
   if (!shift || !shift.start || !shift.end) return 0;
   var s = timeToMin(shift.start), e = timeToMin(shift.end);
   if (e <= s) return 0;
-  var windows = [[0, 750], [750, 1080], [1080, 1440]]; // 12:30 en 18:00 grenzen
+  var windows = [[0, 750], [750, 1080], [1080, 1440]];
   var halves = 0;
   for (var i = 0; i < windows.length; i++) {
     var overlap = Math.min(e, windows[i][1]) - Math.max(s, windows[i][0]);
@@ -147,12 +145,8 @@ function dayCost(shift) {
   return halves * 0.5;
 }
 
-// Pauzes tellen niet mee als werktijd bij het berekenen van de uren.
-// 10:05-10:20, 12:25-13:00, 15:05-15:20, 17:25-18:00 (in minuten vanaf middernacht)
 var BREAKS = [[605, 620], [745, 780], [905, 920], [1045, 1080]];
 
-// Netto gewerkte uren voor één dienst, met pauzes die binnen die dienst
-// vallen eraf getrokken. Afgerond op één decimaal.
 function shiftWorkedHours(shift) {
   if (!shift || !shift.start || !shift.end) return 0;
   var s = timeToMin(shift.start), e = timeToMin(shift.end);
@@ -165,7 +159,6 @@ function shiftWorkedHours(shift) {
   return Math.round((minutes / 60) * 10) / 10;
 }
 
-// Paaszondag volgens de formule van Gauss/Meeus.
 function paasZondag(y) {
   var a = y % 19, b = Math.floor(y / 100), c = y % 100;
   var d = Math.floor(b / 4), e = b % 4;
@@ -179,28 +172,25 @@ function paasZondag(y) {
   return new Date(y, maand - 1, dag);
 }
 
-// Vrije dagen van de praktijk voor een jaar: set met 'jjjj-mm-dd'. Iedereen is
-// deze dagen sowieso vrij, dus ze kosten geen verlof. Bewust ZONDER Goede
-// Vrijdag en Bevrijdingsdag (dan wordt gewoon gewerkt), MET Oudjaarsdag.
 var _feestCache = {};
 function feestdagenSet(y) {
   if (_feestCache[y]) return _feestCache[y];
   var set = {};
   function add(dt) { set[dt.getFullYear() + "-" + pad2(dt.getMonth() + 1) + "-" + pad2(dt.getDate())] = true; }
   function plus(dt, n) { return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + n); }
-  add(new Date(y, 0, 1));          // Nieuwjaarsdag
+  add(new Date(y, 0, 1));
   var pasen = paasZondag(y);
-  add(pasen);                      // Eerste Paasdag
-  add(plus(pasen, 1));             // Tweede Paasdag
+  add(pasen);
+  add(plus(pasen, 1));
   var koningsdag = new Date(y, 3, 27);
-  if (koningsdag.getDay() === 0) koningsdag = new Date(y, 3, 26); // zondag -> 26 april
-  add(koningsdag);                 // Koningsdag
-  add(plus(pasen, 39));            // Hemelvaartsdag
-  add(plus(pasen, 49));            // Eerste Pinksterdag
-  add(plus(pasen, 50));            // Tweede Pinksterdag
-  add(new Date(y, 11, 25));        // Eerste Kerstdag
-  add(new Date(y, 11, 26));        // Tweede Kerstdag
-  add(new Date(y, 11, 31));        // Oudjaarsdag
+  if (koningsdag.getDay() === 0) koningsdag = new Date(y, 3, 26);
+  add(koningsdag);
+  add(plus(pasen, 39));
+  add(plus(pasen, 49));
+  add(plus(pasen, 50));
+  add(new Date(y, 11, 25));
+  add(new Date(y, 11, 26));
+  add(new Date(y, 11, 31));
   _feestCache[y] = set;
   return set;
 }
@@ -220,9 +210,6 @@ function eachDateISO(startISO, endISO) {
   return out;
 }
 
-// Exacte roosters zoals doorgegeven (foto van het teamrooster). Wordt gebruikt
-// om nieuwe medewerkers met een herkende naam meteen het juiste rooster te
-// geven, en als eenmalige correctie-actie in het Team-tabblad.
 var KNOWN_SCHEDULES = {
   "lars": { mon: { start: "07:35", end: "17:25" }, tue: { start: "07:35", end: "17:25" }, wed: null, thu: { start: "13:00", end: "21:00" }, fri: { start: "07:35", end: "17:00" } },
   "lonneke": { mon: { start: "07:35", end: "16:35" }, tue: { start: "07:35", end: "17:25" }, wed: { start: "13:00", end: "21:00" }, thu: null, fri: { start: "07:35", end: "17:00" } },
@@ -244,7 +231,6 @@ function schedulesEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 function isUntouchedDefault(schedule) {
-  // Ontbrekend rooster (oude data) telt ook als "nog nooit aangepast".
   return !schedule || schedulesEqual(schedule, defaultSchedule());
 }
 
@@ -258,9 +244,6 @@ function defaultSchedule() {
   };
 }
 
-// Berekent hoeveel verlofdagen (in halven) én hoeveel netto uren een periode
-// kost voor een medewerker, o.b.v. diens eigen rooster (incl. pauzeaftrek).
-// Weekend en "vrije" dagen tellen niet mee (die kosten toch al geen verlof).
 function computeLeaveCost(schedule, startISO, endISO) {
   if (!startISO || !endISO) return { days: 0, hours: 0, breakdown: [] };
   var sched = schedule || defaultSchedule();
@@ -271,7 +254,6 @@ function computeLeaveCost(schedule, startISO, endISO) {
     var iso = dates[i];
     var key = weekdayKeyFromISO(iso);
     var feest = isFeestdag(iso);
-    // Feestdag: iedereen sowieso vrij, dus geen verlof (net als weekend).
     var shift = key && !feest ? sched[key] : null;
     var cost = shift ? dayCost(shift) : 0;
     var hrs = shift ? shiftWorkedHours(shift) : 0;
@@ -285,35 +267,9 @@ function computeLeaveCost(schedule, startISO, endISO) {
 // ------------------------------------------------------------
 // Saldo helpers
 // ------------------------------------------------------------
-// Contractueel uitgangspunt: bij een voltijds dienstverband van 40 uur/week
-// heeft iemand recht op 23 vakantiedagen (excl. feestdagen), oftewel 184 uur
-// per jaar (23 x 8 uur). Dit rekenen we naar rato door op basis van iemands
-// eigen netto weekuren (rooster minus pauzes).
-var FULLTIME_WEEKHOURS = 40;
-var FULLTIME_LEAVE_HOURS_PER_YEAR = 23 * 8; // 184 uur
-
-function weeklyNetHours(schedule) {
-  var sched = schedule || defaultSchedule();
-  return DAY_KEYS.reduce(function (sum, key) { return sum + shiftWorkedHours(sched[key]); }, 0);
-}
-
-function suggestedAnnualLeaveHours(schedule) {
-  var weekly = weeklyNetHours(schedule);
-  var suggestion = (weekly / FULLTIME_WEEKHOURS) * FULLTIME_LEAVE_HOURS_PER_YEAR;
-  return Math.round(suggestion * 10) / 10;
-}
-
-// ------------------------------------------------------------
-// Voorstel verlofurenbudget per jaar, o.b.v. het rooster
-// ------------------------------------------------------------
-// Contract: bij een voltijds dienstverband van 40 uur/week heeft iemand
-// recht op 23 vakantiedagen per jaar (exclusief feestdagen). Bij een
-// werkweek van 5 dagen komt dat neer op 8 uur/dag => 184 uur/jaar voltijds.
-// Voor iedereen anders wordt dit naar rato berekend op basis van het aantal
-// uren dat diegene volgens zijn/haar eigen rooster per week werkt.
 var FULLTIME_WEEKLY_HOURS = 40;
 var FULLTIME_ANNUAL_LEAVE_DAYS = 23;
-var FULLTIME_ANNUAL_LEAVE_HOURS = FULLTIME_ANNUAL_LEAVE_DAYS * (FULLTIME_WEEKLY_HOURS / 5); // 184 uur
+var FULLTIME_ANNUAL_LEAVE_HOURS = FULLTIME_ANNUAL_LEAVE_DAYS * (FULLTIME_WEEKLY_HOURS / 5);
 
 function weeklyContractedHours(schedule) {
   var sched = schedule || defaultSchedule();
@@ -343,8 +299,6 @@ function sumHours(requests, empId, type, status) {
     .reduce(function (s, r) { return s + (Number(r.hours) || 0); }, 0);
 }
 
-// Vindt collega's die in dezelfde periode al verlof hebben (goedgekeurd of
-// in aanvraag), zodat je in één oogopslag ziet of de bezetting krap wordt.
 function findOverlappingColleagues(requests, employees, excludeEmployeeId, startISO, endISO) {
   if (!startISO || !endISO) return [];
   var nameFor = function (id) { var e = employees.find(function (x) { return x.id === id; }); return e ? e.name : "Onbekend"; };
@@ -360,12 +314,12 @@ function findOverlappingColleagues(requests, employees, excludeEmployeeId, start
 // ------------------------------------------------------------
 // Kleine UI-bouwstenen
 // ------------------------------------------------------------
-var INPUT_CLS = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm transition focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-50";
-var BTN_PRIMARY = "rounded-xl bg-gradient-to-r from-teal-700 to-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:from-teal-800 hover:to-emerald-700 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-teal-100 disabled:opacity-40 disabled:shadow-none";
+var INPUT_CLS = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm transition focus:border-[#82176D] focus:outline-none focus:ring-4 focus:ring-[#f3e3ef]";
+var BTN_PRIMARY = "rounded-xl bg-gradient-to-r from-[#82176D] to-[#a8368f] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:from-[#6b1259] hover:to-[#8f2d78] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#f3e3ef] disabled:opacity-40 disabled:shadow-none";
 var BTN_SECONDARY = "rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200";
 
 function Card(props) {
-  return h("div", { className: "rounded-3xl border border-slate-100 bg-white p-6 shadow-md " + (props.className || "") }, props.children);
+  return h("div", { className: "rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_2px_14px_rgba(130,23,109,0.08)] " + (props.className || "") }, props.children);
 }
 function OverlapWarning(props) {
   var overlaps = props.overlaps;
@@ -387,22 +341,16 @@ function OverlapWarning(props) {
 
 var WEEKDAG_KOPPEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
-// Eigen kalenderwidget voor het kiezen van een periode: de begindatum blijft
-// gemarkeerd zichtbaar terwijl je de einddatum kiest, in plaats van twee
-// losse (native) datumvelden die niets met elkaar te maken lijken te hebben.
 function DateRangePicker(props) {
   var startDate = props.startDate, endDate = props.endDate, onChange = props.onChange;
   var todayIso = todayISO();
   var initial = new Date((startDate || todayIso) + "T00:00:00");
   var _view = useState({ y: initial.getFullYear(), m: initial.getMonth() }), view = _view[0], setView = _view[1];
-  // Expliciete, ZICHTBARE modus (i.p.v. verborgen "raad maar welke datum je
-  // kiest"-logica): de twee knoppen hierboven laten precies zien - en laten
-  // je altijd zelf omzetten - of een volgende tik de begin- of einddatum zet.
   var _mode = useState("start"), mode = _mode[0], setMode = _mode[1];
 
   var year = view.y, month = view.m;
   var daysInMonth = new Date(year, month + 1, 0).getDate();
-  var leading = (new Date(year, month, 1).getDay() + 6) % 7; // maandag = 0
+  var leading = (new Date(year, month, 1).getDay() + 6) % 7;
 
   function isoOf(d) { return year + "-" + pad2(month + 1) + "-" + pad2(d); }
   function prevMonth() { if (month === 0) setView({ y: year - 1, m: 11 }); else setView({ y: year, m: month - 1 }); }
@@ -424,7 +372,7 @@ function DateRangePicker(props) {
   for (var i = 0; i < leading; i++) cells.push(null);
   for (var d = 1; d <= daysInMonth; d++) cells.push(d);
 
-  var activeCls = "rounded-lg border-2 border-teal-600 bg-teal-50 px-3 py-2 text-left text-teal-800";
+  var activeCls = "rounded-lg border-2 border-[#82176D] bg-[#f3e3ef] px-3 py-2 text-left text-[#6b1259]";
   var inactiveCls = "rounded-lg border-2 border-transparent bg-slate-50 px-3 py-2 text-left text-slate-500 hover:bg-slate-100";
 
   return h("div", { className: "rounded-xl border border-slate-200 p-3" },
@@ -438,7 +386,7 @@ function DateRangePicker(props) {
         h("div", { className: "text-sm font-semibold" }, fmtDatumKort(endDate))
       )
     ),
-    h("p", { className: "mb-2 text-xs font-medium text-teal-700" },
+    h("p", { className: "mb-2 text-xs font-medium text-[#82176D]" },
       "Tik een dag aan om de " + (mode === "start" ? "begindatum" : "einddatum") + " te zetten"
     ),
     h("div", { className: "mb-1 flex items-center justify-between" },
@@ -457,11 +405,11 @@ function DateRangePicker(props) {
         var inRange = startDate && endDate && iso > startDate && iso < endDate;
         var isToday = iso === todayIso;
         var cls = "flex h-9 items-center justify-center text-sm transition cursor-pointer select-none ";
-        if (isStart && isEnd) cls += "rounded-lg bg-teal-700 font-semibold text-white";
-        else if (isStart) cls += "rounded-l-lg bg-teal-700 font-semibold text-white";
-        else if (isEnd) cls += "rounded-r-lg bg-teal-700 font-semibold text-white";
-        else if (inRange) cls += "bg-teal-100 text-teal-800";
-        else cls += "rounded-lg text-slate-700 hover:bg-slate-100" + (isToday ? " ring-1 ring-inset ring-teal-300" : "");
+        if (isStart && isEnd) cls += "rounded-lg bg-[#82176D] font-semibold text-white";
+        else if (isStart) cls += "rounded-l-lg bg-[#82176D] font-semibold text-white";
+        else if (isEnd) cls += "rounded-r-lg bg-[#82176D] font-semibold text-white";
+        else if (inRange) cls += "bg-[#f3e3ef] text-[#6b1259]";
+        else cls += "rounded-lg text-slate-700 hover:bg-slate-100" + (isToday ? " ring-1 ring-inset ring-[#a8368f]/50" : "");
         return h("div", { key: iso, className: cls, onClick: function () { handleClick(iso); } }, d);
       })
     )
@@ -474,10 +422,6 @@ function Field(props) {
     props.children
   );
 }
-// Zelfde uiterlijk als Field, maar zonder <label>-element. Nodig voor velden
-// met eigen interactieve inhoud (zoals de kalenderwidget), omdat sommige
-// mobiele browsers de eerste tik op geneste interactieve elementen binnen
-// een <label> onderscheppen in plaats van meteen door te laten.
 function PlainField(props) {
   return h("div", { className: "block" },
     h("span", { className: "mb-1 block text-sm font-medium text-slate-700" }, props.label),
@@ -487,7 +431,7 @@ function PlainField(props) {
 function TypeBadge(props) {
   var isVerlof = props.type === "verlof";
   return h("span", {
-    className: "rounded-full px-2.5 py-0.5 text-xs font-semibold " + (isVerlof ? "bg-teal-100 text-teal-700" : "bg-sky-100 text-sky-700")
+    className: "rounded-full px-2.5 py-0.5 text-xs font-semibold " + (isVerlof ? "bg-[#f3e3ef] text-[#82176D]" : "bg-[#dcf4fb] text-[#00728e]")
   }, isVerlof ? "Verlof" : "Overuren");
 }
 function StatusBadge(props) {
@@ -507,9 +451,6 @@ function StatCard(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Rooster-editor (achterkant, alleen voor beheerders)
-// ------------------------------------------------------------
 function RoosterEditor(props) {
   var employee = props.employee, onSave = props.onSave, onCancel = props.onCancel;
   var initial = employee.schedule || defaultSchedule();
@@ -522,7 +463,7 @@ function RoosterEditor(props) {
     setSched(next);
   }
 
-  return h("div", { className: "mt-3 rounded-2xl border border-teal-100 bg-teal-50/40 p-4" },
+  return h("div", { className: "mt-3 rounded-2xl border border-[#f3e3ef] bg-[#f3e3ef]/40 p-4" },
     h("p", { className: "mb-3 text-sm font-semibold text-slate-700" }, "Standaard rooster — " + employee.name),
     h("div", { className: "space-y-2" },
       DAY_KEYS.map(function (key) {
@@ -532,7 +473,7 @@ function RoosterEditor(props) {
           h("span", { className: "w-24 shrink-0 text-sm font-medium text-slate-700" }, DAY_LABELS[key]),
           h("label", { className: "flex items-center gap-1.5 text-xs text-slate-500" },
             h("input", {
-              type: "checkbox", className: "h-4 w-4 accent-teal-700", checked: isVrij,
+              type: "checkbox", className: "h-4 w-4 accent-[#82176D]", checked: isVrij,
               onChange: function (e) { setDay(key, e.target.checked ? null : { start: "07:35", end: "17:25" }); }
             }),
             "Vrije dag"
@@ -557,9 +498,6 @@ function RoosterEditor(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Login
-// ------------------------------------------------------------
 function LoginScreen(props) {
   var employees = props.employees, onLogin = props.onLogin;
   var _e = useState(""), empId = _e[0], setEmpId = _e[1];
@@ -576,7 +514,7 @@ function LoginScreen(props) {
   return h("div", { className: "mx-auto mt-6 max-w-sm" },
     h(Card, null,
       h("div", { className: "mb-4 flex justify-center" },
-        h("div", { className: "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-700 to-emerald-500 text-base font-black text-white shadow-md" }, "FT")
+        h("div", { className: "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#82176D] to-[#a8368f] text-base font-black text-white shadow-md" }, "FT")
       ),
       h("h2", { className: "mb-1 text-center text-lg font-bold text-slate-900" }, "Welkom terug"),
       h("p", { className: "mb-5 text-center text-sm text-slate-500" }, "Kies je naam en vul je pincode in."),
@@ -602,9 +540,6 @@ function LoginScreen(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Navigatie
-// ------------------------------------------------------------
 function Nav(props) {
   var user = props.user, tab = props.tab, setTab = props.setTab, pendingCount = props.pendingCount, onRefresh = props.onRefresh;
   var main = [
@@ -623,13 +558,13 @@ function Nav(props) {
       tabs.map(function (t) {
         return h("button", {
           key: t.id, onClick: function () { setTab(t.id); },
-          className: "rounded-xl px-4 py-1.5 text-sm font-medium transition " + (tab === t.id ? "bg-gradient-to-r from-teal-700 to-emerald-600 text-white shadow-md" : "text-slate-600 hover:bg-slate-100")
+          className: "rounded-xl px-4 py-1.5 text-sm font-medium transition " + (tab === t.id ? "bg-gradient-to-r from-[#82176D] to-[#a8368f] text-white shadow-md" : "text-slate-600 hover:bg-slate-100")
         }, t.label);
       })
     ),
     h("div", { className: "ml-auto flex items-center gap-2" },
       h("button", {
-        className: "rounded-xl border px-3 py-1.5 text-sm transition " + (tab === "pin" ? "border-teal-500 bg-teal-50 font-medium text-teal-700" : "border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"),
+        className: "rounded-xl border px-3 py-1.5 text-sm transition " + (tab === "pin" ? "border-[#82176D] bg-[#f3e3ef] font-medium text-[#82176D]" : "border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"),
         onClick: function () { setTab("pin"); }, title: "Pincode wijzigen"
       }, "Pincode"),
       h("button", { className: BTN_SECONDARY, onClick: onRefresh, title: "Laatste gegevens ophalen" }, "Vernieuwen")
@@ -637,9 +572,6 @@ function Nav(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Mijn overzicht
-// ------------------------------------------------------------
 function Overzicht(props) {
   var user = props.user, data = props.data, persist = props.persist;
   var _confirmId = useState(null), confirmId = _confirmId[0], setConfirmId = _confirmId[1];
@@ -657,10 +589,10 @@ function Overzicht(props) {
 
   return h("div", { className: "space-y-6" },
     h("div", { className: "grid grid-cols-2 gap-3 sm:grid-cols-4" },
-      h(StatCard, { label: "Beschikbaar saldo", value: fmtNum(beschikbaar) + " uur", accent: "text-teal-700", bar: "from-teal-500 to-emerald-400" }),
+      h(StatCard, { label: "Beschikbaar saldo", value: fmtNum(beschikbaar) + " uur", accent: "text-[#82176D]", bar: "from-[#82176D] to-[#a8368f]" }),
       h(StatCard, { label: "In aanvraag", value: fmtNum(inAanvraag) + " uur", accent: "text-amber-600", bar: "from-amber-400 to-orange-300" }),
       h(StatCard, { label: "Opgenomen verlof", value: fmtNum(opgenomen) + " uur", accent: "text-slate-700", bar: "from-slate-300 to-slate-200" }),
-      h(StatCard, { label: "Goedgekeurde overuren", value: fmtNum(overurenGoedgekeurd) + " uur", accent: "text-sky-700", bar: "from-sky-400 to-cyan-300" })
+      h(StatCard, { label: "Goedgekeurde overuren", value: fmtNum(overurenGoedgekeurd) + " uur", accent: "text-[#00728e]", bar: "from-[#00728e] to-[#00B6E8]" })
     ),
     h(Card, null,
       h("h3", { className: "mb-3 text-base font-bold text-slate-900" }, "Mijn aanvragen"),
@@ -691,9 +623,6 @@ function Overzicht(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Verlof aanvragen (automatische dagen-/urenberekening)
-// ------------------------------------------------------------
 function LeavePreview(props) {
   var breakdown = props.breakdown;
   var werkdagen = breakdown.filter(function (b) { return b.key; });
@@ -725,9 +654,6 @@ function VerlofForm(props) {
   var autoDagen = berekening.days;
   var autoUren = berekening.hours;
 
-  // Dagen en uren staan in bewerkbare velden. Ze worden automatisch
-  // ingevuld zodra de periode verandert, maar iedereen kan de waarde
-  // daarna zelf corrigeren voordat de aanvraag wordt ingediend.
   var _dagenStr = useState(fmtNum(autoDagen)), dagenStr = _dagenStr[0], setDagenStr = _dagenStr[1];
   var _urenStr = useState(fmtNum(autoUren)), urenStr = _urenStr[0], setUrenStr = _urenStr[1];
   useEffect(function () {
@@ -790,7 +716,7 @@ function VerlofForm(props) {
         h(Field, { label: "Aantal dagen" }, h("input", { className: INPUT_CLS, type: "text", inputMode: "decimal", value: dagenStr, onChange: function (e) { setDagenStr(e.target.value); } })),
         h(Field, { label: "Aantal uren" }, h("input", { className: INPUT_CLS, type: "text", inputMode: "decimal", value: urenStr, onChange: function (e) { setUrenStr(e.target.value); } }))
       ),
-      h("div", { className: "rounded-xl bg-teal-50 p-3" },
+      h("div", { className: "rounded-xl bg-[#f3e3ef] p-3" },
         h("p", { className: "text-sm text-slate-700" },
           "Automatisch berekend op basis van jouw rooster: ", h("strong", null, fmtNum(autoDagen) + " dag(en)"), " · ", h("strong", null, fmtNum(autoUren) + " uur"), "."
         ),
@@ -819,10 +745,6 @@ function NotifyButton(props) {
     " (" + fmtNum(req.hours) + " uur" + (req.days ? ", " + fmtNum(req.days) + " dag(en)" : "") + ")." +
     (req.note ? " Toelichting: " + req.note : "");
   var subject = "Aanvraag " + typeLabel + " — " + user.name;
-  // Gmail-webcompose in plaats van mailto: dat is niet afhankelijk van een
-  // geïnstalleerde/gekoppelde mail-app op het toestel (mailto: faalt vaak
-  // stil als die ontbreekt) en werkt op precies dezelfde manier als de
-  // mailknop in de fitheidstest-tool.
   var href = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(email) +
     "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(tekst);
   var mailtoHref = "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(tekst);
@@ -845,9 +767,6 @@ function NotifyButton(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Overuren doorgeven
-// ------------------------------------------------------------
 function OverurenForm(props) {
   var user = props.user, data = props.data, persist = props.persist, done = props.done;
   var _date = useState(todayISO()), date = _date[0], setDate = _date[1];
@@ -896,9 +815,6 @@ function OverurenForm(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Pincode wijzigen
-// ------------------------------------------------------------
 function PincodeForm(props) {
   var user = props.user, data = props.data, persist = props.persist;
   var _a = useState(""), pin1 = _a[0], setPin1 = _a[1];
@@ -926,9 +842,6 @@ function PincodeForm(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Goedkeuren (admin)
-// ------------------------------------------------------------
 function AddOnBehalfForm(props) {
   var data = props.data, persist = props.persist;
   var _emp = useState(""), empId = _emp[0], setEmpId = _emp[1];
@@ -989,7 +902,7 @@ function AddOnBehalfForm(props) {
         ? h("div", { className: "sm:col-span-2" }, h(PlainField, { label: "Periode" }, h(DateRangePicker, { startDate: start, endDate: end, onChange: handlePeriodeChange })))
         : h(Field, { label: "Datum" }, h("input", { className: INPUT_CLS, type: "date", value: start, onChange: function (e) { setStart(e.target.value); } })),
       type === "verlof"
-        ? h("div", { className: "sm:col-span-2 rounded-xl bg-teal-50 p-3 text-sm text-slate-700" },
+        ? h("div", { className: "sm:col-span-2 rounded-xl bg-[#f3e3ef] p-3 text-sm text-slate-700" },
             employee
               ? h("span", null, "Kost ", h("strong", null, fmtNum(berekening.days) + " dag(en)"), " · ", h("strong", null, fmtNum(autoUren) + " uur"), " volgens het rooster van ", employee.name, ".")
               : "Kies eerst een medewerker om de automatische berekening te zien."
@@ -1001,7 +914,7 @@ function AddOnBehalfForm(props) {
       )
     ),
     h("label", { className: "mt-3 flex items-center gap-2 text-sm text-slate-700" },
-      h("input", { type: "checkbox", className: "h-4 w-4 accent-teal-700", checked: direct, onChange: function (e) { setDirect(e.target.checked); } }),
+      h("input", { type: "checkbox", className: "h-4 w-4 accent-[#82176D]", checked: direct, onChange: function (e) { setDirect(e.target.checked); } }),
       "Direct goedkeuren (telt meteen mee in het saldo en de kalender)"
     ),
     msg && h("p", { className: "mt-3 text-sm " + (msg.ok ? "text-emerald-700" : "text-rose-600") }, msg.text),
@@ -1108,9 +1021,6 @@ function Goedkeuren(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Kalender (admin)
-// ------------------------------------------------------------
 var MONTH_LABELS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
 var WEEKDAY_LABELS_SHORT = ["zo", "ma", "di", "wo", "do", "vr", "za"];
 
@@ -1144,7 +1054,7 @@ function Kalender(props) {
     var pendingLeave = reqs.find(function (r) { return r.type === "verlof" && r.status === "pending"; });
     if (pendingLeave && showPending) return { cls: "bg-amber-300", req: pendingLeave, title: "Verlof in behandeling · " + fmtNum(pendingLeave.hours) + " uur" };
     var overtime = reqs.find(function (r) { return r.type === "overuren" && r.status === "approved"; });
-    if (overtime) return { cls: "bg-sky-300", req: overtime, title: "Overuren · " + fmtNum(overtime.hours) + " uur" };
+    if (overtime) return { cls: "bg-[#00B6E8]", req: overtime, title: "Overuren · " + fmtNum(overtime.hours) + " uur" };
     return null;
   }
 
@@ -1155,7 +1065,7 @@ function Kalender(props) {
       h("button", { className: BTN_SECONDARY, onClick: nextMonth, "aria-label": "Volgende maand" }, "→"),
       h("button", { className: BTN_SECONDARY, onClick: function () { setYear(now.getFullYear()); setMonth(now.getMonth()); } }, "Vandaag"),
       h("label", { className: "ml-auto flex items-center gap-2 text-sm text-slate-600" },
-        h("input", { type: "checkbox", checked: showPending, onChange: function (e) { setShowPending(e.target.checked); }, className: "h-4 w-4 accent-teal-700" }),
+        h("input", { type: "checkbox", checked: showPending, onChange: function (e) { setShowPending(e.target.checked); }, className: "h-4 w-4 accent-[#82176D]" }),
         "Toon aanvragen in behandeling"
       )
     ),
@@ -1168,8 +1078,8 @@ function Kalender(props) {
               days.map(function (d) {
                 return h("th", {
                   key: d.iso,
-                  className: "border-b border-slate-100 py-1 text-center font-normal " + (d.iso === today ? "bg-teal-50 text-teal-600" : d.weekend ? "bg-slate-100 text-slate-400" : "text-slate-500")
-                }, h("div", null, d.wd), h("div", { className: "font-semibold " + (d.iso === today ? "text-teal-700" : "text-slate-700") }, d.nr));
+                  className: "border-b border-slate-100 py-1 text-center font-normal " + (d.iso === today ? "bg-[#f3e3ef] text-[#82176D]" : d.weekend ? "bg-slate-100 text-slate-400" : "text-slate-500")
+                }, h("div", null, d.wd), h("div", { className: "font-semibold " + (d.iso === today ? "text-[#82176D]" : "text-slate-700") }, d.nr));
               })
             )
           ),
@@ -1183,7 +1093,7 @@ function Kalender(props) {
                     key: d.iso,
                     title: cell ? emp.name + " · " + fmtDatumKort(d.iso) + " · " + cell.title : "",
                     onClick: cell ? function () { setDetail({ emp: emp, req: cell.req }); setConfirmDel(false); } : undefined,
-                    className: "h-7 min-w-6 border-b border-slate-100 transition " + (cell ? cell.cls + " cursor-pointer hover:opacity-70" : d.iso === today ? "bg-teal-50" : d.weekend ? "bg-slate-100" : "bg-white")
+                    className: "h-7 min-w-6 border-b border-slate-100 transition " + (cell ? cell.cls + " cursor-pointer hover:opacity-70" : d.iso === today ? "bg-[#f3e3ef]" : d.weekend ? "bg-slate-100" : "bg-white")
                   });
                 })
               );
@@ -1195,9 +1105,9 @@ function Kalender(props) {
     h("div", { className: "flex flex-wrap items-center gap-2 text-xs text-slate-600" },
       h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-emerald-400" }), " Verlof goedgekeurd"),
       h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-amber-300" }), " Verlof in behandeling"),
-      h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-sky-300" }), " Overuren gewerkt"),
+      h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-[#00B6E8]" }), " Overuren gewerkt"),
       h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-slate-200" }), " Weekend"),
-      h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-teal-100 ring-1 ring-teal-300" }), " Vandaag")
+      h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-[#f3e3ef] ring-1 ring-[#a8368f]/50" }), " Vandaag")
     ),
     detail && h("div", { className: "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm", onClick: function () { setDetail(null); } },
       h("div", { className: "w-full max-w-md rounded-3xl border border-slate-100 bg-white p-6 shadow-2xl", onClick: function (e) { e.stopPropagation(); } },
@@ -1242,9 +1152,6 @@ function DetailRow(props) {
   );
 }
 
-// ------------------------------------------------------------
-// Team (admin) — incl. rooster-editor per medewerker
-// ------------------------------------------------------------
 function Team(props) {
   var data = props.data, persist = props.persist;
   var _name = useState(""), newName = _name[0], setNewName = _name[1];
@@ -1315,7 +1222,7 @@ function Team(props) {
                       }),
                       baseEdits[emp.id] !== undefined && Number(baseEdits[emp.id]) !== Number(emp.baseSaldo) &&
                         h("button", {
-                          className: "text-xs font-semibold text-teal-700 hover:underline",
+                          className: "text-xs font-semibold text-[#82176D] hover:underline",
                           onClick: function () {
                             updateEmployee(emp.id, { baseSaldo: Number(baseEdits[emp.id]) || 0 });
                             var next = Object.assign({}, baseEdits); delete next[emp.id]; setBaseEdits(next);
@@ -1326,30 +1233,30 @@ function Team(props) {
                       h("p", { className: "mt-1 text-xs text-slate-400" },
                         "Voorstel o.b.v. rooster: " + fmtNum(voorstel) + " uur — ",
                         h("button", {
-                          className: "font-medium text-teal-600 hover:underline",
+                          className: "font-medium text-[#82176D] hover:underline",
                           onClick: function () { setBaseEdits(Object.assign({}, baseEdits, { [emp.id]: String(voorstel) })); }
                         }, "gebruik voorstel")
                       )
                   ),
                   h("td", { className: "px-4 py-2.5 font-semibold text-slate-800" }, fmtNum(current) + " uur"),
                   h("td", { className: "px-4 py-2.5" },
-                    h("input", { type: "checkbox", className: "h-4 w-4 accent-teal-700", checked: !!emp.isAdmin, onChange: function (e) { updateEmployee(emp.id, { isAdmin: e.target.checked }); } })
+                    h("input", { type: "checkbox", className: "h-4 w-4 accent-[#82176D]", checked: !!emp.isAdmin, onChange: function (e) { updateEmployee(emp.id, { isAdmin: e.target.checked }); } })
                   ),
                   h("td", { className: "px-4 py-2.5" },
                     resettingId === emp.id
                       ? h("div", { className: "flex items-center gap-2" },
                           h("input", { className: INPUT_CLS + " !w-24 !py-1", type: "password", inputMode: "numeric", maxLength: 6, value: newPin, onChange: function (e) { setNewPinStr(e.target.value); }, placeholder: "Nieuwe pin" }),
                           h("button", {
-                            className: "text-xs font-semibold text-teal-700 hover:underline",
+                            className: "text-xs font-semibold text-[#82176D] hover:underline",
                             onClick: function () { if (/^\d{4,6}$/.test(newPin)) { updateEmployee(emp.id, { pin: newPin }); setResettingId(null); setNewPinStr(""); } }
                           }, "Opslaan"),
                           h("button", { className: "text-xs text-slate-500 hover:underline", onClick: function () { setResettingId(null); setNewPinStr(""); } }, "Annuleren")
                         )
-                      : h("button", { className: "text-xs font-semibold text-teal-700 hover:underline", onClick: function () { setResettingId(emp.id); setNewPinStr(""); } }, "Resetten")
+                      : h("button", { className: "text-xs font-semibold text-[#82176D] hover:underline", onClick: function () { setResettingId(emp.id); setNewPinStr(""); } }, "Resetten")
                   ),
                   h("td", { className: "px-4 py-2.5" },
                     h("button", {
-                      className: "text-xs font-semibold text-teal-700 hover:underline",
+                      className: "text-xs font-semibold text-[#82176D] hover:underline",
                       onClick: function () { setSchedEditId(schedEditId === emp.id ? null : emp.id); }
                     }, schedEditId === emp.id ? "Sluiten" : "Rooster wijzigen")
                   ),
@@ -1383,7 +1290,7 @@ function Team(props) {
       h("div", { className: "flex flex-wrap items-end gap-3" },
         h(Field, { label: "Naam" }, h("input", { className: INPUT_CLS + " !w-44", value: newName, onChange: function (e) { setNewName(e.target.value); }, placeholder: "bijv. Tim" })),
         h(Field, { label: "Basissaldo (uren)" }, h("input", { className: INPUT_CLS + " !w-32", type: "number", step: "0.5", value: newBase, onChange: function (e) { setNewBase(e.target.value); }, placeholder: "auto o.b.v. rooster" })),
-        h("label", { className: "mb-2 flex items-center gap-2 text-sm text-slate-700" }, h("input", { type: "checkbox", className: "h-4 w-4 accent-teal-700", checked: newAdmin, onChange: function (e) { setNewAdmin(e.target.checked); } }), "Beheerder"),
+        h("label", { className: "mb-2 flex items-center gap-2 text-sm text-slate-700" }, h("input", { type: "checkbox", className: "h-4 w-4 accent-[#82176D]", checked: newAdmin, onChange: function (e) { setNewAdmin(e.target.checked); } }), "Beheerder"),
         h("button", { className: BTN_PRIMARY, onClick: addEmployee, disabled: !newName.trim() }, "Toevoegen")
       ),
       h("p", { className: "mt-3 text-xs text-slate-500" }, "Nieuwe medewerkers krijgen standaard pincode 0000 en een standaard rooster (ma–vr 7:35–17:25) — pas dit aan via 'Rooster wijzigen'. Laat je het basissaldo leeg, dan wordt dit automatisch berekend naar rato van het rooster (23 vakantiedagen/jaar bij een voltijds dienstverband van 40 uur).")
@@ -1401,9 +1308,6 @@ function Team(props) {
   );
 }
 
-// ------------------------------------------------------------
-// App root
-// ------------------------------------------------------------
 function seedData() {
   return {
     employees: [],
@@ -1439,9 +1343,6 @@ function App() {
     window.storage.set(STORAGE_KEY, JSON.stringify(next), true).catch(function () { setSaveErr(true); });
   }, []);
 
-  // Vult automatisch het juiste rooster in voor herkende namen (uit het
-  // teamrooster), maar alleen zolang niemand het rooster zelf al heeft
-  // aangepast — zo overschrijven we nooit een bewuste wijziging.
   useEffect(function () {
     if (!data) return;
     var changed = false;
@@ -1468,24 +1369,25 @@ function App() {
 
   var pendingCount = data.requests.filter(function (r) { return r.status === "pending"; }).length;
 
-  return h("div", { className: "min-h-screen bg-slate-50 pb-12 font-sans text-slate-800" },
-    h("header", { className: "bg-gradient-to-br from-teal-900 via-teal-800 to-emerald-900 text-white shadow-lg" },
+  return h("div", { className: "min-h-screen bg-[#f3eef2] pb-12 text-slate-800" },
+    h("header", { className: "relative bg-gradient-to-br from-[#4a0f42] via-[#82176D] to-[#a8368f] text-white shadow-lg" },
       h("div", { className: "mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:py-5 sm:px-6" },
         h("div", { className: "flex min-w-0 items-center gap-3" },
-          h("div", { className: "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-base font-black tracking-tight text-teal-900 shadow-md" }, "FT"),
+          h("div", { className: "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-[#00B6E8] bg-white text-base font-black tracking-tight text-[#82176D] shadow-md" }, "FT"),
           h("div", { className: "min-w-0" },
-            h("p", { className: "truncate text-base font-bold tracking-tight sm:text-lg" }, "Fyzio Totaal ", h("span", { className: "font-light text-teal-200" }, "· Verlof & uren")),
-            h("p", { className: "hidden text-xs italic tracking-wide text-teal-300 sm:block" }, "Jouw herstel geeft ons energie")
+            h("p", { className: "truncate text-base font-bold tracking-tight sm:text-lg" }, "Fyzio Totaal ", h("span", { className: "font-light text-[#e2d5df]" }, "· Verlof & uren")),
+            h("p", { className: "hidden text-xs italic tracking-wide text-[#a8368f]/50 sm:block" }, "Jouw herstel geeft ons energie")
           )
         ),
         user && h("div", { className: "flex shrink-0 items-center gap-3" },
-          h("span", { className: "hidden items-center gap-2 rounded-full bg-teal-700 py-1 pl-1 pr-3 text-sm text-teal-50 sm:flex" },
-            h("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-emerald-400 text-xs font-bold text-teal-900" }, user.name.slice(0, 1)),
+          h("span", { className: "hidden items-center gap-2 rounded-full bg-[#82176D] py-1 pl-1 pr-3 text-sm text-[#f3e3ef] sm:flex" },
+            h("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-[#00B6E8] text-xs font-bold text-[#4a0f42]" }, user.name.slice(0, 1)),
             user.name
           ),
-          h("button", { className: "rounded-xl border border-teal-600 px-3 py-1.5 text-sm font-medium text-teal-100 transition hover:bg-teal-700 hover:text-white", onClick: function () { setUser(null); setTab("overzicht"); } }, "Uitloggen")
+          h("button", { className: "rounded-xl border border-[#82176D] px-3 py-1.5 text-sm font-medium text-[#f3e3ef] transition hover:bg-[#82176D] hover:text-white", onClick: function () { setUser(null); setTab("overzicht"); } }, "Uitloggen")
         )
-      )
+      ),
+      h("span", { className: "absolute inset-x-0 bottom-0 h-1 bg-[#00B6E8]" })
     ),
     saveErr && h("div", { className: "mx-auto mt-4 max-w-6xl px-4 sm:px-6" },
       h("div", { className: "rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700" }, "Opslaan is niet gelukt. Controleer je verbinding en probeer de laatste actie opnieuw.")
@@ -1504,8 +1406,8 @@ function App() {
           )
         : h(LoginScreen, { employees: data.employees, onLogin: setUser })
     ),
-    h("footer", { className: "mx-auto mt-12 max-w-6xl px-4 sm:px-6" },
-      h("p", { className: "text-center text-xs tracking-wide text-slate-400" }, "Fyzio Totaal · interne tool · gegevens worden gedeeld opgeslagen voor het hele team")
+    h("footer", { className: "mt-12 bg-[#4a0f42] py-4" },
+      h("p", { className: "text-center text-xs tracking-wide text-white/50" }, h("strong", { className: "text-white/85" }, "Fyzio Totaal"), " · Verlof & uren · gegevens worden gedeeld opgeslagen voor het hele team")
     )
   );
 }
