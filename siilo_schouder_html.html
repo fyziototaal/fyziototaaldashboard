@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-09-14.4 -->
+<!-- APP_VERSION: 2026-09-14.7 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,7 +10,7 @@
   <title>Schouderrapportage – Fyzio Totaal</title>
 
   <script>
-    const APP_VERSION = "2026-09-14.4";
+    const APP_VERSION = "2026-09-14.7";
     (function () {
       if (!location.search.includes("_v=")) {
         fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
@@ -194,6 +194,13 @@
       padding: 18px 20px; font-size: 13.5px; line-height: 1.8;
       color: #1a1a1a; white-space: pre-wrap; font-family: 'Poppins', sans-serif;
     }
+    /* Kopjes in de output vetgedrukt en paars */
+    .result-body .kopje {
+      display: block; font-weight: 700; color: #82176D;
+      margin-top: 10px; margin-bottom: 2px; font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+    .result-body .kopje:first-child { margin-top: 0; }
     .result-edit {
       width: 100%; min-height: 230px; font-size: 13.5px; line-height: 1.8;
       color: #1a1a1a; font-family: 'Poppins', sans-serif;
@@ -227,7 +234,7 @@
 <body>
 <div id="root"></div>
 <footer>
-  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-14.4</span>
+  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-14.7</span>
 </footer>
 
 <script type="text/babel">
@@ -253,25 +260,56 @@ STRIKTE REGELS:
 - Informele maar professionele toon
 - Geen naam onder de afsluiting — sluit af met alleen "Groet,"
 - Geen interpretatie, geen aanvulling buiten de tekst
+- Gebruik NOOIT het woord "schermutseling" — omschrijf als bijv. "fysiek incident op het werk" of "werkongeluk"
 
 OPMAAK OPSOMMEND:
-Schrijf een scanbare rapportage met maximaal 10 regels. Elke bullet één zin, elke bullet begint met •.
-• Patiënt: [leeftijd] | start traject [datum]
-• Werkdiagnose: [alleen indien letterlijk in tekst, anders: Niet beschikbaar]
-• Vraag/advies: [exact uit tekst / Niet bekend]
-• Objectief: [gemelde bevindingen + PROMs indien vermeld]
-• Functie/ADL: [alleen indien benoemd]
-• Behandeling: [type + frequentie + duur + effect]; aantal behandelingen: [x]
-• Aanvullend: [alleen indien vermeld]
+Gebruik duidelijke kopjes per onderdeel. Elk kopje staat op een eigen regel in hoofdletters gevolgd door een dubbele punt, daarna de inhoud op de volgende regel(s). Maximaal 10 regels inhoud totaal.
+
+Vraag:
+[exact uit tekst / Niet bekend]
+
+Patiënt:
+[leeftijd] | start traject [datum]
+
+Werkdiagnose:
+[alleen indien letterlijk in tekst, anders: Niet beschikbaar]
+
+Objectief:
+[gemelde bevindingen + PROMs indien vermeld, per bevinding een nieuwe regel met •]
+
+Functie/ADL:
+[beperkingen zoals benoemd, per punt een nieuwe regel met •]
+
+Behandeling:
+[type behandelingen, per onderdeel een nieuwe regel met •]
+Aantal behandelingen: [x]
+
+Aanvullend:
+[alleen indien vermeld]
+
+Groet,
 
 OPMAAK VERHALEND:
-Schrijf een vloeiende alineatekst in maximaal 10 zinnen. Geen bullets.
-Vraag: [exact uit tekst of Niet bekend]
+Gebruik dezelfde kopjes als bij opsommend, maar schrijf onder elk kopje een of twee vloeiende zinnen in plaats van bullets.
+
+Vraag:
+[exact uit tekst of Niet bekend]
+
+Patiënt:
 [leeftijd], start traject [datum], werkdiagnose: [alleen indien letterlijk in tekst].
-Objectief: [bevindingen in zinnen + PROMs indien vermeld].
-Functie/ADL: [beperkingen zoals vermeld].
-Behandeling: [zoals in tekst]; aantal behandelingen: [x].
-Aanvullend: [alleen indien vermeld].
+
+Objectief:
+[bevindingen in zinnen + PROMs indien vermeld]
+
+Functie/ADL:
+[beperkingen zoals vermeld in zinnen]
+
+Behandeling:
+[zoals in tekst in zinnen]; aantal behandelingen: [x].
+
+Aanvullend:
+[alleen indien vermeld]
+
 Groet,`;
 
   function buildMessages(type, formaat, leeftijd, start, vraag, pdfData, klacht, onderzoek, behandeling, extra) {
@@ -370,8 +408,7 @@ Haal klacht, anamnese, lichamelijk onderzoek en behandeling uit het bijgevoegde 
             "anthropic-dangerous-direct-browser-access": "true",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-5",
-            max_tokens: 1000,
+            temperature: 0,
             temperature: 0,
             system: SYSTEM,
             messages: buildMessages(type, formaat, leeftijd, start, vraag, pdfData, klacht, onderzoek, behandeling, extra),
@@ -578,7 +615,14 @@ Haal klacht, anamnese, lichamelijk onderzoek en behandeling uit het bijgevoegde 
                 </div>
                 {bewerk
                   ? <textarea className="result-edit" value={resultaat} onChange={e => setRes(e.target.value)} />
-                  : <div className="result-body">{resultaat}</div>}
+                  : <div className="result-body">{
+                      resultaat.split("\n").map((regel, i) => {
+                        const isKopje = /^(Vraag|Patiënt|Werkdiagnose|Objectief|Functie\/ADL|Behandeling|Aanvullend):$/.test(regel.trim());
+                        return isKopje
+                          ? <span key={i} className="kopje">{regel}</span>
+                          : <span key={i}>{regel}{"\n"}</span>;
+                      })
+                    }</div>}
               </div>
               <div className="divider"></div>
               <button className="btn-secondary" onClick={reset}>+ Nieuwe rapportage</button>
