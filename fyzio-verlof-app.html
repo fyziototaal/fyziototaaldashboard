@@ -1369,7 +1369,7 @@ function App() {
 
   var pendingCount = data.requests.filter(function (r) { return r.status === "pending"; }).length;
 
-  return h("div", { className: "min-h-screen bg-[#f3eef2] pb-12 text-slate-800" },
+  return h("div", { className: "flex min-h-screen flex-col bg-[#f3eef2] text-slate-800" },
     h("header", { className: "relative bg-gradient-to-br from-[#4a0f42] via-[#82176D] to-[#a8368f] text-white shadow-lg" },
       h("div", { className: "mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:py-5 sm:px-6" },
         h("div", { className: "flex min-w-0 items-center gap-3" },
@@ -1392,7 +1392,7 @@ function App() {
     saveErr && h("div", { className: "mx-auto mt-4 max-w-6xl px-4 sm:px-6" },
       h("div", { className: "rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700" }, "Opslaan is niet gelukt. Controleer je verbinding en probeer de laatste actie opnieuw.")
     ),
-    h("main", { className: "mx-auto max-w-6xl px-4 pt-8 sm:px-6" },
+    h("main", { className: "mx-auto w-full max-w-6xl flex-1 px-4 pt-8 pb-12 sm:px-6" },
       user
         ? h(React.Fragment, null,
             h(Nav, { user: user, tab: tab, setTab: setTab, pendingCount: pendingCount, onRefresh: load }),
@@ -1406,7 +1406,7 @@ function App() {
           )
         : h(LoginScreen, { employees: data.employees, onLogin: setUser })
     ),
-    h("footer", { className: "mt-12 bg-[#4a0f42] py-4" },
+    h("footer", { className: "bg-[#4a0f42] py-4" },
       h("p", { className: "text-center text-xs tracking-wide text-white/50" }, h("strong", { className: "text-white/85" }, "Fyzio Totaal"), " · Verlof & uren · gegevens worden gedeeld opgeslagen voor het hele team")
     )
   );
