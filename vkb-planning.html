@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-09-15.4 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-09-15.5 (ophogen bij elke update — hier én in de constante hieronder) -->
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
@@ -10,7 +10,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-09-15.4";
+  const APP_VERSION = "2026-09-15.5";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -730,14 +730,12 @@ async function zoekStart(){
   if(!term){S.fout="Voer een patiëntnummer of voornaam in.";render();return;}
   S.fout="";S.startMatches=[];S.laden=true;render();
 
-  // Eerst: direct proberen als patiëntnummer
+  // Snelle weg: exacte match op patiëntnummer (hoofdlettergevoelig)
   const direct=await loadData(term);
-  if(direct){
-    openGevondenPatient(term,direct);
-    return;
-  }
+  if(direct){openGevondenPatient(term,direct);return;}
 
-  // Niet gevonden als nummer → zoek op voornaam (diakritisch- en hoofdletterongevoelig)
+  // Niet direct gevonden → doorzoek alle patiënten:
+  // op patiëntnummer (hoofdletterongevoelig) én op voornaam (hoofdletter- en diakritischongevoelig)
   const rows=await dbList();
   const termNorm=normNaam(term);
   const matches=[];
@@ -745,7 +743,9 @@ async function zoekStart(){
     try{
       const dd=JSON.parse(row.value);
       const nr=row.key.replace("vkb_","");
-      if(dd.voornaam&&normNaam(dd.voornaam)===termNorm)matches.push({nr,...dd});
+      const nrMatch=normNaam(nr)===termNorm;
+      const naamMatch=dd.voornaam&&normNaam(dd.voornaam)===termNorm;
+      if(nrMatch||naamMatch)matches.push({nr,...dd});
     }catch(e){}
   });
 
