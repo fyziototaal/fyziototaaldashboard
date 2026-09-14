@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-09-14.2 -->
+<!-- APP_VERSION: 2026-09-14.3 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,7 +10,7 @@
   <title>Schouderrapportage – Fyzio Totaal</title>
 
   <script>
-    const APP_VERSION = "2026-09-14.2";
+    const APP_VERSION = "2026-09-14.3";
     (function () {
       if (!location.search.includes("_v=")) {
         fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
@@ -230,11 +230,15 @@
 <body>
 <div id="root"></div>
 <footer>
-  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-14.2</span>
+  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-14.3</span>
 </footer>
 
 <script type="text/babel">
   const { useState } = React;
+
+  function FI({mis, children}) {
+    return <div className={"field-input" + (mis ? " missing" : "")}>{children}</div>;
+  }
 
   const TYPEN = [
     "Huisarts – vraag over mogelijke medische interventie",
@@ -389,10 +393,6 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
       setKlacht(""); setOnderz(""); setBeh(""); setExtra("");
       setBewerk(false);
     }
-
-    const FI = ({mis, children}) => (
-      <div className={"field-input" + (mis ? " missing" : "")}>{children}</div>
-    );
 
     return (
       <div className="wrap">
