@@ -1,9 +1,31 @@
+<!-- APP_VERSION: 2026-09-14.2 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Schouderrapportage – Fyzio Totaal</title>
+
+  <script>
+    const APP_VERSION = "2026-09-14.2";
+    (function () {
+      if (!location.search.includes("_v=")) {
+        fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
+          .then(r => r.text())
+          .then(html => {
+            const m = html.match(/<!--\s*APP_VERSION:\s*([^\s-]+(?:\.\d+)?)\s*-->/);
+            if (m && m[1] !== APP_VERSION) {
+              location.replace(location.pathname + "?_v=" + Date.now());
+            }
+          })
+          .catch(() => {});
+      }
+    })();
+  </script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
@@ -11,23 +33,17 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Poppins', 'Segoe UI', sans-serif; background: #f3eef2; min-height: 100vh; color: #1a1a1a; }
-
     .wrap { max-width: 680px; margin: 0 auto; }
 
-    /* ── Hero ── */
     .hero {
       position: relative;
       background: linear-gradient(120deg, #4a0f42 0%, #82176D 45%, #a8368f 100%);
-      padding: 36px 28px 40px;
-      text-align: center;
-      color: #fff;
-      overflow: hidden;
+      padding: 36px 28px 40px; text-align: center; color: #fff; overflow: hidden;
     }
     .hero::after { content:''; position:absolute; bottom:0; left:0; right:0; height:4px; background:#00B6E8; }
     .hero-badge {
       display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22);
       font-size: 10.5px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;
       padding: 7px 16px; border-radius: 20px; margin-bottom: 18px; color: #fff;
     }
@@ -41,12 +57,11 @@
     .hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 5px; letter-spacing: -0.3px; }
     .hero p { font-size: 13px; color: rgba(255,255,255,0.78); margin-bottom: 16px; }
     .hero-pill {
-      display: inline-block; background: #00B6E8;
-      color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+      display: inline-block; background: #00B6E8; color: #fff;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
       text-transform: uppercase; padding: 7px 18px; border-radius: 20px;
     }
 
-    /* ── API bar ── */
     .api-bar {
       background: #fff; border-bottom: 1px solid #e2d5df;
       padding: 10px 20px; display: flex; align-items: center; gap: 10px;
@@ -57,11 +72,10 @@
       border: 1px solid #d8c7d4; border-radius: 8px; padding: 6px 10px; color: #1a1a1a; outline: none;
     }
     .api-bar input:focus { border-color: #82176D; }
-    .api-bar .save-btn {
+    .save-btn {
       font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
       padding: 6px 14px; border-radius: 8px; border: none;
-      background: linear-gradient(120deg, #4a0f42, #82176D);
-      color: #fff; cursor: pointer; white-space: nowrap;
+      background: linear-gradient(120deg, #4a0f42, #82176D); color: #fff; cursor: pointer;
     }
     .api-saved { font-size: 12px; color: #aaa; }
     .api-change {
@@ -69,20 +83,16 @@
       border: 1px solid #d8c7d4; background: #fff; color: #82176D; cursor: pointer;
     }
 
-    /* ── Body ── */
     .body { padding: 24px 20px 48px; }
-
+    .section { margin-bottom: 18px; }
     .section-label {
       font-size: 11px; font-weight: 700; text-transform: uppercase;
       letter-spacing: 1.4px; color: #82176D; margin-bottom: 10px; display: block;
     }
-    .section { margin-bottom: 18px; }
-
-    /* ── Cards ── */
     .card {
       background: #fff; border-radius: 16px;
       box-shadow: 0 2px 14px rgba(130,23,109,0.07);
-      padding: 16px 18px; overflow: hidden;
+      padding: 16px 18px;
     }
 
     select, textarea, input[type=text] {
@@ -93,23 +103,49 @@
     select { cursor: pointer; }
     textarea { resize: vertical; }
 
-    /* ── Fields ── */
+    /* Toggle */
+    .toggle { display: flex; gap: 6px; margin-bottom: 14px; }
+    .toggle-btn {
+      flex: 1; padding: 9px 0; font-family: 'Poppins', sans-serif;
+      font-size: 13px; font-weight: 600; border-radius: 10px;
+      border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s;
+    }
+    .toggle-btn.active {
+      background: linear-gradient(120deg, #4a0f42, #82176D); color: #fff;
+    }
+    .toggle-btn.inactive {
+      background: #fff; color: #82176D; border-color: #d8c7d4;
+    }
+
+    /* PDF upload zone */
+    .pdf-zone {
+      border: 2px dashed #d8c7d4; border-radius: 12px;
+      padding: 28px 16px; text-align: center; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s; background: #faf7fb;
+    }
+    .pdf-zone:hover { border-color: #82176D; background: #f8f0f6; }
+    .pdf-zone.has-file { border-color: #82176D; border-style: solid; background: #f8f0f6; }
+    .pdf-icon { font-size: 30px; margin-bottom: 8px; }
+    .pdf-name { font-size: 14px; font-weight: 600; color: #82176D; margin-bottom: 4px; }
+    .pdf-hint { font-size: 12px; color: #aaa; }
+
+    /* Fields */
     .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
     .field-label {
       font-size: 11.5px; font-weight: 600; color: #82176D;
       margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
     }
-    .tag-req  { font-size: 10px; background: #f3e3ef; color: #82176D; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
-    .tag-mis  { font-size: 10px; background: #fde8f4; color: #c0328a; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
-    .tag-opt  { font-size: 10px; background: #f0f0f0; color: #999;    padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .field-label.opt { color: #999; }
+    .tag-req { font-size: 10px; background: #f3e3ef; color: #82176D; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .tag-mis { font-size: 10px; background: #fde8f4; color: #c0328a; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    .tag-opt { font-size: 10px; background: #f0f0f0; color: #999; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
     .field-input {
       background: #faf7fb; border-radius: 10px;
       border: 1px solid #e2d5df; padding: 9px 13px;
     }
     .field-input.missing { border-color: #f5b8d8; background: #fdf5fa; }
 
-    /* ── Warning ── */
     .warning {
       font-size: 13px; color: #7a4f00; margin-bottom: 14px;
       padding: 10px 14px; background: #fff8e6;
@@ -121,17 +157,14 @@
       border-radius: 10px; border: 1px solid #e8c2da;
     }
 
-    /* ── Buttons ── */
     .btn-primary {
       width: 100%; padding: 13px 0;
       font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
       border: none; border-radius: 12px;
       background: linear-gradient(120deg, #4a0f42 0%, #82176D 100%);
-      color: #fff; cursor: pointer; letter-spacing: 0.3px;
-      transition: opacity 0.15s, transform 0.1s;
+      color: #fff; cursor: pointer; transition: opacity 0.15s;
     }
     .btn-primary:hover { opacity: 0.91; }
-    .btn-primary:active { transform: scale(0.99); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-secondary {
       width: 100%; padding: 11px 0;
@@ -141,7 +174,6 @@
     }
     .btn-secondary:hover { background: #f8f0f6; }
 
-    /* ── Result ── */
     .result-card {
       background: #fff; border-radius: 16px;
       box-shadow: 0 2px 14px rgba(130,23,109,0.08);
@@ -163,8 +195,7 @@
     .result-btn.editing { background: rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.85); }
     .result-body {
       padding: 18px 20px; font-size: 13.5px; line-height: 1.8;
-      color: #1a1a1a; white-space: pre-wrap;
-      font-family: 'Poppins', sans-serif;
+      color: #1a1a1a; white-space: pre-wrap; font-family: 'Poppins', sans-serif;
     }
     .result-edit {
       width: 100%; min-height: 230px; font-size: 13.5px; line-height: 1.8;
@@ -172,7 +203,6 @@
       padding: 18px 20px; border: none; outline: none;
       resize: vertical; background: #faf7fb; display: block;
     }
-
     .badge-ready {
       display: inline-block; font-size: 10.5px; font-weight: 700;
       padding: 4px 12px; border-radius: 20px;
@@ -180,8 +210,6 @@
       letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 12px;
     }
     .divider { height: 1px; background: #e2d5df; margin: 18px 0; }
-
-    /* ── Spinner ── */
     .spinner {
       display: inline-block; width: 15px; height: 15px;
       border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff;
@@ -189,10 +217,22 @@
       vertical-align: middle; margin-right: 8px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      background: #4a0f42; color: rgba(255,255,255,0.45);
+      text-align: center; padding: 14px 1rem;
+      font-size: 11.5px; font-family: 'Poppins', sans-serif;
+    }
+    footer strong { color: rgba(255,255,255,0.75); }
+    .ver { color: #00B6E8; font-weight: 600; }
   </style>
 </head>
 <body>
 <div id="root"></div>
+<footer>
+  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-14.2</span>
+</footer>
+
 <script type="text/babel">
   const { useState } = React;
 
@@ -205,26 +245,6 @@
     "Tussenevaluatie langdurig traject",
     "Spoed / afwijkend beloop",
   ];
-
-  const VELDEN = [
-    { key:"leeftijd",    label:"Leeftijd" },
-    { key:"startdatum",  label:"Startdatum traject" },
-    { key:"vraag",       label:"Vraag / reden van contact" },
-    { key:"klacht",      label:"Klacht & anamnese" },
-    { key:"onderzoek",   label:"Bevindingen lichamelijk onderzoek" },
-    { key:"behandeling", label:"Behandeling tot nu toe" },
-  ];
-
-  const PLACEHOLDER = {
-    leeftijd:    "bijv. 42 jaar",
-    startdatum:  "bijv. maart 2025",
-    vraag:       "Wat is de concrete vraag aan de ontvanger?",
-    klacht:      "Ontstaanswijze, beloop, pijnscore, ADL-beperkingen, relevante voorgeschiedenis...",
-    onderzoek:   "ROM, kracht, klinische tests (geen echo/röntgen)...",
-    behandeling: "Type behandeling, frequentie, duur, effect, aantal sessies...",
-  };
-
-  const GROOT = ["vraag","klacht","onderzoek","behandeling"];
 
   const SYSTEM = `Je bent een medische rapportage-assistent voor fysiotherapeuten in Nederland. Je schrijft collegiaal, informeel en direct — zoals fysiotherapeuten met elkaar en met huisartsen/orthopeden communiceren. Denk aan de toon van een Siilo-bericht tussen collega's.
 
@@ -239,7 +259,6 @@ STRIKTE REGELS:
 
 STRUCTUUR (UMOOOVE-conform):
 Aanhef: Hallo [naam ontvanger indien bekend, anders weglaten],
-
 Openingszin met reden van contact en patiëntgegevens (leeftijd, startdatum).
 Beloop: kort de voorgeschiedenis en het klachtbeloop.
 Klinisch beeld: anamnestische bevindingen + lichamelijk onderzoek (ROM, kracht, klinische tests). Geen echo/röntgen.
@@ -249,25 +268,20 @@ Afsluiting: Groet, [therapeutnaam indien bekend]
 
 VERBODEN: echo/MSU-bevindingen, radiologie, harde diagnoses, formele taal, bullets in output.`;
 
-  function buildPrompt(type, v, extra) {
-    return `Rapportagetype: ${type}
-Leeftijd: ${v.leeftijd}
-Start traject: ${v.startdatum}
-Vraag/reden contact: ${v.vraag}
-Klacht/anamnese: ${v.klacht}
-Lichamelijk onderzoek: ${v.onderzoek}
-Behandeling: ${v.behandeling}
-${extra ? `Aanvullend: ${extra}` : ""}
-
-Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- of röntgenbevindingen. Sluit af met een concrete vraag aan de ontvanger.`;
-  }
-
   function App() {
     const [apiKey, setApiKey]     = useState(localStorage.getItem("ft_apikey") || "");
     const [apiInput, setApiInput] = useState("");
     const [fase, setFase]         = useState("invoer");
     const [type, setType]         = useState(TYPEN[0]);
-    const [v, setV]               = useState({leeftijd:"",startdatum:"",vraag:"",klacht:"",onderzoek:"",behandeling:""});
+    const [invoer, setInvoer]     = useState("pdf"); // "pdf" | "tekst"
+    const [pdfData, setPdfData]   = useState(null);
+    const [pdfNaam, setPdfNaam]   = useState("");
+    const [leeftijd, setLeeftijd] = useState("");
+    const [startdatum, setStart]  = useState("");
+    const [vraag, setVraag]       = useState("");
+    const [klacht, setKlacht]     = useState("");
+    const [onderzoek, setOnderz]  = useState("");
+    const [behandeling, setBeh]   = useState("");
     const [extra, setExtra]       = useState("");
     const [resultaat, setRes]     = useState("");
     const [loading, setLoading]   = useState(false);
@@ -276,18 +290,59 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- o
     const [bewerk, setBewerk]     = useState(false);
     const [geprobeerd, setGep]    = useState(false);
 
-    const ontbrekend = VELDEN.filter(f => !v[f.key]?.trim());
+    // Alleen leeftijd en startdatum zijn verplicht
+    const misLeeftijd  = geprobeerd && !leeftijd.trim();
+    const misStart     = geprobeerd && !startdatum.trim();
+    // Bij PDF-modus: PDF verplicht
+    const misPdf       = geprobeerd && invoer === "pdf" && !pdfData;
+    const ontbrekend   = [misLeeftijd, misStart, misPdf].some(Boolean);
 
-    function setVeld(key, val) { setV(p => ({...p, [key]: val})); }
+    function handlePdf(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      setPdfNaam(file.name);
+      const reader = new FileReader();
+      reader.onload = () => setPdfData(reader.result.split(",")[1]);
+      reader.readAsDataURL(file);
+    }
 
     function slaKeyOp() {
       localStorage.setItem("ft_apikey", apiInput);
       setApiKey(apiInput); setApiInput("");
     }
 
+    function buildMessages() {
+      const pdfPrompt = `Rapportagetype: ${type}
+Leeftijd: ${leeftijd}
+Start traject: ${startdatum}
+${vraag       ? `Vraag/reden contact: ${vraag}` : ""}
+${extra       ? `Aanvullend: ${extra}` : ""}
+
+Haal de klinische informatie (klacht, anamnese, lichamelijk onderzoek, behandeling) uit het bijgevoegde dossier. Geen echo- of röntgenbevindingen. Schrijf een informele, collegiale Siilo-rapportage. Sluit af met een concrete vraag aan de ontvanger.`;
+
+      const tekstPrompt = `Rapportagetype: ${type}
+Leeftijd: ${leeftijd}
+Start traject: ${startdatum}
+${vraag       ? `Vraag/reden contact: ${vraag}`       : ""}
+${klacht      ? `Klacht/anamnese: ${klacht}`           : ""}
+${onderzoek   ? `Lichamelijk onderzoek: ${onderzoek}`  : ""}
+${behandeling ? `Behandeling: ${behandeling}`          : ""}
+${extra       ? `Aanvullend: ${extra}`                 : ""}
+
+Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevindingen. Sluit af met een concrete vraag aan de ontvanger.`;
+
+      if (invoer === "pdf") {
+        return [{ role:"user", content:[
+          { type:"document", source:{ type:"base64", media_type:"application/pdf", data: pdfData } },
+          { type:"text", text: pdfPrompt }
+        ]}];
+      }
+      return [{ role:"user", content: tekstPrompt }];
+    }
+
     async function genereer() {
       setGep(true);
-      if (ontbrekend.length > 0) return;
+      if (ontbrekend) return;
       if (!apiKey) { setError("Sla eerst je API-sleutel op."); return; }
       setError(""); setRes(""); setLoading(true);
       try {
@@ -304,7 +359,7 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- o
             max_tokens: 1000,
             temperature: 0,
             system: SYSTEM,
-            messages: [{ role:"user", content: buildPrompt(type, v, extra) }],
+            messages: buildMessages(),
           }),
         });
         const data = await res.json();
@@ -328,13 +383,19 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- o
 
     function reset() {
       setFase("invoer"); setRes(""); setError(""); setGep(false);
-      setType(TYPEN[0]); setV({leeftijd:"",startdatum:"",vraag:"",klacht:"",onderzoek:"",behandeling:""});
-      setExtra(""); setBewerk(false);
+      setType(TYPEN[0]); setInvoer("pdf");
+      setPdfData(null); setPdfNaam("");
+      setLeeftijd(""); setStart(""); setVraag("");
+      setKlacht(""); setOnderz(""); setBeh(""); setExtra("");
+      setBewerk(false);
     }
+
+    const FI = ({mis, children}) => (
+      <div className={"field-input" + (mis ? " missing" : "")}>{children}</div>
+    );
 
     return (
       <div className="wrap">
-        {/* API balk */}
         {!apiKey ? (
           <div className="api-bar">
             <label>API-sleutel</label>
@@ -350,7 +411,6 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- o
           </div>
         )}
 
-        {/* Hero */}
         <div className="hero">
           <div className="hero-badge">📨 Siilo · Rapportage</div>
           <div className="hero-ring">🫀</div>
@@ -362,7 +422,7 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- o
         <div className="body">
           {fase === "invoer" ? (
             <>
-              {/* Type */}
+              {/* Rapportagetype */}
               <div className="section">
                 <span className="section-label">Rapportagetype</span>
                 <div className="card">
@@ -372,52 +432,100 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- o
                 </div>
               </div>
 
-              {/* Waarschuwing */}
-              {geprobeerd && ontbrekend.length > 0 && (
-                <div className="warning">
-                  Vul eerst de ontbrekende velden in (rood gemarkeerd) voordat de rapportage gegenereerd kan worden.
-                </div>
-              )}
-
-              {/* Velden */}
+              {/* Verplichte basisvelden */}
               <div className="section">
-                <span className="section-label">Klinische informatie</span>
+                <span className="section-label">Basisgegevens</span>
                 <div className="card" style={{display:"flex", flexDirection:"column", gap:14}}>
-                  {VELDEN.map(f => {
-                    const mis = geprobeerd && !v[f.key]?.trim();
-                    return (
-                      <div key={f.key} className="field">
-                        <div className="field-label">
-                          {f.label}
-                          {mis
-                            ? <span className="tag-mis">Vereist — vul in</span>
-                            : <span className="tag-req">Verplicht</span>}
-                        </div>
-                        <div className={"field-input" + (mis ? " missing" : "")}>
-                          {GROOT.includes(f.key)
-                            ? <textarea value={v[f.key]} onChange={e => setVeld(f.key, e.target.value)}
-                                placeholder={PLACEHOLDER[f.key]}
-                                style={{minHeight: ["klacht","onderzoek"].includes(f.key) ? 88 : 58}} />
-                            : <input type="text" value={v[f.key]} onChange={e => setVeld(f.key, e.target.value)}
-                                placeholder={PLACEHOLDER[f.key]} />}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {/* Optioneel */}
                   <div className="field">
-                    <div className="field-label" style={{color:"#aaa"}}>
-                      Aanvullende informatie <span className="tag-opt">Optioneel</span>
+                    <div className="field-label">
+                      Leeftijd {misLeeftijd ? <span className="tag-mis">Vereist — vul in</span> : <span className="tag-req">Verplicht</span>}
                     </div>
-                    <div className="field-input">
-                      <textarea value={extra} onChange={e => setExtra(e.target.value)}
-                        placeholder="PROMs, 3S-score, context, specifieke wensen voor de ontvanger..."
-                        style={{minHeight:56}} />
+                    <FI mis={misLeeftijd}>
+                      <input type="text" value={leeftijd} onChange={e => setLeeftijd(e.target.value)} placeholder="bijv. 42 jaar" />
+                    </FI>
+                  </div>
+                  <div className="field">
+                    <div className="field-label">
+                      Startdatum traject {misStart ? <span className="tag-mis">Vereist — vul in</span> : <span className="tag-req">Verplicht</span>}
                     </div>
+                    <FI mis={misStart}>
+                      <input type="text" value={startdatum} onChange={e => setStart(e.target.value)} placeholder="bijv. maart 2025" />
+                    </FI>
+                  </div>
+                  <div className="field">
+                    <div className="field-label opt">Vraag / reden van contact <span className="tag-opt">Optioneel</span></div>
+                    <FI>
+                      <textarea value={vraag} onChange={e => setVraag(e.target.value)}
+                        placeholder="Wat is de concrete vraag aan de ontvanger?" style={{minHeight:56}} />
+                    </FI>
                   </div>
                 </div>
               </div>
 
+              {/* Dossierbron */}
+              <div className="section">
+                <span className="section-label">Klinische informatie</span>
+                <div className="toggle">
+                  <button className={"toggle-btn " + (invoer==="pdf" ? "active" : "inactive")}
+                    onClick={() => { setInvoer("pdf"); setKlacht(""); setOnderz(""); setBeh(""); }}>
+                    📄 PDF uploaden
+                  </button>
+                  <button className={"toggle-btn " + (invoer==="tekst" ? "active" : "inactive")}
+                    onClick={() => { setInvoer("tekst"); setPdfData(null); setPdfNaam(""); }}>
+                    ✏️ Zelf invullen
+                  </button>
+                </div>
+
+                {invoer === "pdf" ? (
+                  <div className={"pdf-zone" + (pdfNaam ? " has-file" : "") + (misPdf ? " missing" : "")}
+                    style={misPdf ? {borderColor:"#f5b8d8"} : {}}>
+                    <label style={{display:"block", cursor:"pointer"}}>
+                      <input type="file" accept="application/pdf" style={{display:"none"}} onChange={handlePdf} />
+                      <div className="pdf-icon">{pdfNaam ? "📄" : "⬆️"}</div>
+                      {pdfNaam
+                        ? <><div className="pdf-name">{pdfNaam}</div><div className="pdf-hint">Klik om een ander bestand te kiezen</div></>
+                        : <><div className="pdf-name" style={{color: misPdf ? "#c0328a" : "#82176D"}}>
+                            {misPdf ? "Vereist — upload een PDF" : "Klik om dossier te uploaden"}
+                          </div>
+                          <div className="pdf-hint">EPD-export of brief als PDF</div></>
+                      }
+                    </label>
+                  </div>
+                ) : (
+                  <div className="card" style={{display:"flex", flexDirection:"column", gap:14}}>
+                    {[
+                      { val:klacht,     set:setKlacht, label:"Klacht & anamnese",                    ph:"Ontstaanswijze, beloop, pijnscore, ADL-beperkingen...", h:88 },
+                      { val:onderzoek,  set:setOnderz, label:"Bevindingen lichamelijk onderzoek",    ph:"ROM, kracht, klinische tests (geen echo/röntgen)...",   h:88 },
+                      { val:behandeling,set:setBeh,    label:"Behandeling tot nu toe",               ph:"Type behandeling, frequentie, duur, effect, aantal sessies...", h:66 },
+                    ].map(f => (
+                      <div key={f.label} className="field">
+                        <div className="field-label opt">{f.label} <span className="tag-opt">Optioneel</span></div>
+                        <FI>
+                          <textarea value={f.val} onChange={e => f.set(e.target.value)}
+                            placeholder={f.ph} style={{minHeight:f.h}} />
+                        </FI>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Aanvullend */}
+              <div className="section">
+                <span className="section-label">Aanvullend</span>
+                <div className="card">
+                  <div className="field-label opt" style={{marginBottom:8}}>Extra context <span className="tag-opt">Optioneel</span></div>
+                  <FI>
+                    <textarea value={extra} onChange={e => setExtra(e.target.value)}
+                      placeholder="PROMs, 3S-score, specifieke wensen voor de ontvanger..."
+                      style={{minHeight:52}} />
+                  </FI>
+                </div>
+              </div>
+
+              {geprobeerd && ontbrekend && (
+                <div className="warning">Vul de verplichte velden in voordat je de rapportage genereert.</div>
+              )}
               {error && <div className="error-msg">{error}</div>}
 
               <button className="btn-primary" onClick={genereer} disabled={loading}>
@@ -431,8 +539,7 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen diagnoses, geen echo- o
                 <div className="result-header">
                   <span>{type.split("–")[0].trim()}</span>
                   <div className="result-btns">
-                    <button className={"result-btn" + (bewerk ? " editing" : "")}
-                      onClick={() => setBewerk(b => !b)}>
+                    <button className={"result-btn" + (bewerk ? " editing" : "")} onClick={() => setBewerk(b => !b)}>
                       {bewerk ? "✓ Klaar" : "Bewerken"}
                     </button>
                     <button className="result-btn" onClick={kopieer}>
