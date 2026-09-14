@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-09-15.1 -->
+<!-- APP_VERSION: 2026-09-15.2 (ophogen bij elke update — hier én in de constante hieronder) -->
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
@@ -10,7 +10,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-09-15.1";
+  const APP_VERSION = "2026-09-15.2";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -28,22 +28,23 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="theme-color" content="#1a4a3a"/>
+<meta name="theme-color" content="#82176D"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>Fyzio Totaal – VKB Tool</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh;}
+body{font-family:'Poppins','Segoe UI',sans-serif;background:#f3eef2;color:#1a1a18;min-height:100vh;}
 input,select,textarea,button{font-family:inherit;font-size:15px;}
 .ft-input{width:100%;border:1.5px solid #e0e0da;border-radius:8px;padding:10px 12px;font-size:15px;color:#1a1a18;background:#fff;outline:none;-webkit-appearance:none;appearance:none;}
-.ft-input:focus{border-color:#4a9b7f;}
+.ft-input:focus{border-color:#a8368f;}
 select.ft-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5a56' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
-.ft-btn-p{background:#1a4a3a;color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:15px;cursor:pointer;font-weight:500;}
-.ft-btn-p:active{background:#2d6b56;}
+.ft-btn-p{background:#82176D;color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:15px;cursor:pointer;font-weight:500;}
+.ft-btn-p:active{background:#6b1259;}
 .ft-btn-p:disabled{opacity:0.5;cursor:default;}
-.ft-btn-s{background:#fff;color:#1a4a3a;border:1.5px solid #1a4a3a;border-radius:10px;padding:11px 18px;font-size:14px;cursor:pointer;font-weight:500;}
-.ft-btn-s:active{background:#e8f2ee;}
-.ft-btn-sm{background:#fff;color:#1a4a3a;border:1.5px solid #e0e0da;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;}
-.ft-btn-sm:active{border-color:#1a4a3a;background:#e8f2ee;}
+.ft-btn-s{background:#fff;color:#82176D;border:1.5px solid #82176D;border-radius:10px;padding:11px 18px;font-size:14px;cursor:pointer;font-weight:500;}
+.ft-btn-s:active{background:#f3e3ef;}
+.ft-btn-sm{background:#fff;color:#82176D;border:1.5px solid #e2d5df;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;}
+.ft-btn-sm:active{border-color:#82176D;background:#f3e3ef;}
 .ft-card{background:#fff;border:1px solid #e0e0da;border-radius:14px;padding:14px 16px;margin-bottom:12px;}
 .ft-fase-btn{background:#fff;border:1.5px solid #e0e0da;border-radius:12px;padding:14px;text-align:left;cursor:pointer;width:100%;}
 .ft-fase-btn:active{border-color:#4a9b7f;background:#e8f2ee;}
@@ -57,7 +58,7 @@ select.ft-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://ww
 .ft-nee{background:#fdecea;color:#c0392b;border:2px solid #c0392b;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
 .ft-neutral{background:#f5f5f3;color:#5a5a56;border:1.5px solid #e0e0da;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;white-space:nowrap;}
 .ft-tab{background:#f5f5f3;color:#5a5a56;border:none;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;}
-.ft-tab-act{background:#1a4a3a;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-weight:500;}
+.ft-tab-act{background:#82176D;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-weight:500;}
 .badge{border-radius:6px;padding:2px 9px;font-size:13px;font-weight:500;display:inline-block;}
 .norm-info{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:8px 12px;font-size:13px;color:#0369a1;margin-bottom:12px;}
 .save-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;}
@@ -68,7 +69,7 @@ textarea.ft-input{resize:vertical;min-height:70px;}
 .screen{max-width:620px;margin:0 auto;padding:16px 14px 80px;}
 .ft-tab-bar{display:flex;gap:4px;background:#fff;border-bottom:1px solid #e0e0da;padding:8px 14px 0;position:sticky;top:0;z-index:100;}
 .ft-tab-main{flex:1;padding:10px 8px;font-size:14px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#5a5a56;border-bottom:2px solid transparent;margin-bottom:-1px;}
-.ft-tab-main.act{color:#1a4a3a;border-bottom:2px solid #1a4a3a;}
+.ft-tab-main.act{color:#82176D;border-bottom:2px solid #82176D;}
 .pl-moment{border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1.5px solid transparent;}
 .pl-moment.groen{background:#f0faf5;border-color:#4a9b7f;}
 .pl-moment.oranje{background:#fffbeb;border-color:#f59e0b;}
@@ -79,13 +80,13 @@ textarea.ft-input{resize:vertical;min-height:70px;}
 .pl-dot.oranje{background:#f59e0b;}
 .pl-dot.rood{background:#ef4444;}
 .pl-dot.grijs{background:#c0bfba;}
-.urgent-banner{background:#1a4a3a;color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.urgent-banner{background:linear-gradient(120deg,#4a0f42 0%,#82176D 60%,#a8368f 100%);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px;}
 .pat-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #e0e0da;cursor:pointer;gap:8px;}
 .pat-row:last-child{border-bottom:none;}
 .sectie-label{font-size:13px;font-weight:500;color:#4a9b7f;text-transform:uppercase;letter-spacing:1.5px;margin:16px 0 6px;}
 .aclrsi-schaal{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
 .aclrsi-opt{border:1.5px solid #e0e0da;border-radius:6px;padding:5px 8px;font-size:12px;cursor:pointer;background:#f5f5f3;min-width:36px;text-align:center;}
-.aclrsi-opt-sel{border-color:#1a4a3a;background:#e8f2ee;font-weight:500;}
+.aclrsi-opt-sel{border-color:#82176D;background:#f3e3ef;font-weight:500;}
 /* Invoerveld stabiel: nooit focus verliezen */
 .ft-veld-wrap{margin-bottom:12px;}
 .ft-veld-label{font-size:13px;color:#5a5a56;margin-bottom:4px;}
@@ -113,7 +114,7 @@ async function saveData(nr,d){await dbSet("vkb_"+nr,JSON.stringify(d));}
 async function loadData(nr){const v=await dbGet("vkb_"+nr);return v?JSON.parse(v):null;}
 
 // ─── KLEUREN ─────────────────────────────────────────────────────
-const C={groen:"#1a4a3a",groenMid:"#2d6b56",groenLight:"#e8f2ee",groenAccent:"#4a9b7f",mint:"#d4ede4",grijs:"#f5f5f3",grijsBorder:"#e0e0da",tekst:"#1a1a18",muted:"#5a5a56",rood:"#c0392b",roodLight:"#fdecea",oranje:"#d97706",oranjeLight:"#fef9c7",geelLight:"#fef3c7",geel:"#854d0b",ok:"#166534",okLight:"#dcfce7"};
+const C={groen:"#82176D",groenMid:"#6b1259",groenLight:"#f3e3ef",groenAccent:"#00728e",mint:"#e2d5df",grijs:"#f3eef2",grijsBorder:"#e2d5df",tekst:"#1a1a18",muted:"#5a5a56",rood:"#c0392b",roodLight:"#fdecea",oranje:"#d97706",oranjeLight:"#fef9c7",geelLight:"#fef3c7",geel:"#854d0b",ok:"#166534",okLight:"#dcfce7"};
 
 // ─── DATA ─────────────────────────────────────────────────────────
 const FASEN=[{id:1,naam:"Fase 1 – Pre-op Rehabilitatie",kort:"Pre-op"},{id:2,naam:"Fase 2 – Return to ADL",kort:"Return to ADL"},{id:3,naam:"Fase 3 – Klinische Revalidatie",kort:"Klinisch"},{id:4,naam:"Fase 4 – On Field Rehabilitation",kort:"OFR"},{id:5,naam:"Fase 5 – RTS Continuum",kort:"RTS"}];
@@ -334,7 +335,7 @@ function render(){
 function patLabel(){return S.voornaam?`${S.voornaam} (#${S.patNr})`:`#${S.patNr}`;}
 
 function renderStart(){return`
-  <div style="background:${C.groen};border-radius:12px;padding:1.5rem;margin-bottom:20px;color:#fff">
+  <div style="background:linear-gradient(120deg,#4a0f42 0%,#82176D 45%,#a8368f 100%);border-radius:12px;padding:1.5rem;margin-bottom:20px;color:#fff">
     <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px">Fyzio Totaal · UMOOOVE</div>
     <div style="font-size:22px;font-weight:500">Knie Testen & Meten</div>
     <div style="font-size:14px;opacity:.8;margin-top:4px">VKB Revalidatieprotocol</div>
