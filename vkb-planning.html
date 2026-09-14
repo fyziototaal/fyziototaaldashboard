@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-09-15.2 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-09-15.3 (ophogen bij elke update — hier én in de constante hieronder) -->
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
@@ -10,7 +10,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-09-15.2";
+  const APP_VERSION = "2026-09-15.3";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -302,10 +302,10 @@ function updateAllHHDComputed(){
 let S={
   sc:"start",patNr:"",voornaam:"",been:"Links",opDatum:"",patData:null,laden:false,fout:"",
   fase:null,mm:null,test:null,stap:0,hhdStap:0,waarden:{},checkW:{},crit:{},
-  toonVlaggen:false,rapMm:null,ok:false,dashTab:"fasen",
+  toonVlaggen:false,rapMm:null,ok:false,dashTab:"fasen",mmDatumBewerken:false,naamBewerken:false,
   plSc:"overzicht",plPatienten:[],plPatData:null,plPatNr:"",plLaden:false,
   plUitstellenId:null,plNieuwDatum:"",plNieuwReden:"",plFout:"",
-  plDatumAanpassenId:null,plNieuwGedaanDatum:""
+  plDatumAanpassenId:null,plNieuwGedaanDatum:"",plNaamBewerken:false
 };
 let activeTab="testen";
 
@@ -332,7 +332,7 @@ function render(){
   else if(S.sc==="rapport")app.innerHTML=renderRapport();
 }
 
-function patLabel(){return S.voornaam?`${S.voornaam} (#${S.patNr})`:`#${S.patNr}`;}
+function patLabel(){return S.voornaam||("#"+S.patNr);}
 
 function renderStart(){return`
   <div style="background:linear-gradient(120deg,#4a0f42 0%,#82176D 45%,#a8368f 100%);border-radius:12px;padding:1.5rem;margin-bottom:20px;color:#fff">
@@ -370,7 +370,8 @@ function renderDashboard(){
     <div style="background:${C.groen};border-radius:12px;padding:1rem 1.25rem;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;color:#fff">Fyzio Totaal · UMOOOVE</div>
-        <div style="font-size:18px;font-weight:500;color:#fff">${patLabel()}</div>
+        <div style="font-size:18px;font-weight:500;color:#fff;display:flex;align-items:center;gap:6px">${S.naamBewerken?`<input type="text" id="naam-inp" class="ft-input" style="width:auto;padding:4px 8px;font-size:15px;color:#1a1a18" value="${S.voornaam}" placeholder="Voornaam"/><button class="ft-btn-sm" style="padding:3px 8px;font-size:12px" onclick="opslaanVoornaam()">✓</button><button class="ft-btn-sm" style="padding:3px 8px;font-size:12px" onclick="S.naamBewerken=false;render()">✗</button>`:`<span>${S.voornaam||"Naam onbekend"}</span><button style="background:transparent;border:none;color:${C.mint};cursor:pointer;font-size:13px" onclick="S.naamBewerken=true;render()">✎</button>`}</div>
+        <div style="font-size:12px;color:${C.mint};opacity:.75">#${S.patNr}</div>
         <div style="font-size:13px;color:${C.mint}">${S.patData?.been||S.been}${weken!==null?" · Wk "+weken+" post-op":""}</div>
       </div>
       <button style="background:transparent;color:${C.mint};border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer" onclick="S.sc='start';render()">← Wissel</button>
@@ -601,9 +602,9 @@ function renderPlOverzicht(){
   if(S.plLaden)return`<div style="text-align:center;padding:40px;color:${C.muted}">Laden...</div>`;
   const pats=S.plPatienten;
   const urgent=pats.filter(p=>p.urgentie==="rood"||p.urgentie==="oranje");
-  const bannerHTML=urgent.length?`<div class="urgent-banner"><div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8;margin-bottom:6px">⚠️ Actie nodig</div><div style="font-size:15px;font-weight:500;margin-bottom:4px">${urgent.length} patiënt${urgent.length>1?"en":""} te testen</div><div style="font-size:13px;opacity:.85">${urgent.map(p=>`${p.naam} – ${p.volgendLabel}`).join(" · ")}</div></div>`:"";
+  const bannerHTML=urgent.length?`<div class="urgent-banner"><div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8;margin-bottom:6px">⚠️ Actie nodig</div><div style="font-size:15px;font-weight:500;margin-bottom:4px">${urgent.length} patiënt${urgent.length>1?"en":""} te testen</div><div style="font-size:13px;opacity:.85">${urgent.map(p=>`${p.naam||"#"+p.nr} – ${p.volgendLabel}`).join(" · ")}</div></div>`:"";
   const sorted=[...pats].sort((a,b)=>{const o={rood:0,oranje:1,grijs:2,groen:3};return(o[a.urgentie]||2)-(o[b.urgentie]||2);});
-  const lijstHTML=sorted.length?`<div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px">Actieve revalidanten</div><div class="ft-card" style="padding:4px 16px">${sorted.map(p=>{const urg=p.urgentie;const dot=`<div class="pl-dot ${urg}" style="margin-top:6px"></div>`;const b=urg==="rood"?badge(C.roodLight,C.rood,"Over tijd"):urg==="oranje"?badge(C.oranjeLight,"#92400e","Binnenkort"):urg==="groen"?badge(C.okLight,C.ok,"Up to date"):badge(C.grijs,C.muted,"Gepland");return`<div class="pat-row" onclick="openPlPatient('${p.nr}')"><div style="display:flex;gap:10px;align-items:flex-start;flex:1;min-width:0">${dot}<div style="min-width:0"><div style="font-size:14px;font-weight:500;color:${C.groen}">${p.naam}</div><div style="font-size:12px;color:${C.muted};margin-top:1px">${p.been} · op: ${nlDatum(p.opDatum)} · w${p.wekenGeleden}</div><div style="font-size:12px;color:${C.muted};margin-top:1px">${p.volgendLabel}</div></div></div><div style="display:flex;align-items:center;gap:8px;flex-shrink:0">${b}<span style="color:${C.groenAccent};font-size:20px">›</span></div></div>`;}).join("")}</div>`:"";
+  const lijstHTML=sorted.length?`<div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px">Actieve revalidanten</div><div class="ft-card" style="padding:4px 16px">${sorted.map(p=>{const urg=p.urgentie;const dot=`<div class="pl-dot ${urg}" style="margin-top:6px"></div>`;const b=urg==="rood"?badge(C.roodLight,C.rood,"Over tijd"):urg==="oranje"?badge(C.oranjeLight,"#92400e","Binnenkort"):urg==="groen"?badge(C.okLight,C.ok,"Up to date"):badge(C.grijs,C.muted,"Gepland");return`<div class="pat-row" onclick="openPlPatient('${p.nr}')"><div style="display:flex;gap:10px;align-items:flex-start;flex:1;min-width:0">${dot}<div style="min-width:0"><div style="font-size:14px;font-weight:500;color:${C.groen}">${p.naam||"Naam onbekend"}</div><div style="font-size:11px;color:${C.muted}">#${p.nr}</div><div style="font-size:12px;color:${C.muted};margin-top:2px">${p.been} · op: ${nlDatum(p.opDatum)} · w${p.wekenGeleden}</div><div style="font-size:12px;color:${C.muted};margin-top:1px">${p.volgendLabel}</div></div></div><div style="display:flex;align-items:center;gap:8px;flex-shrink:0">${b}<span style="color:${C.groenAccent};font-size:20px">›</span></div></div>`;}).join("")}</div>`:"";
   const nieuwHTML=`<div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:8px;margin-top:${sorted.length?16:0}px">Patiënt toevoegen</div><div class="ft-card">
     <div class="ft-veld-label">Patiëntnummer</div><input id="pl-nr" class="ft-input" placeholder="bijv. 12345" style="margin-bottom:10px"/>
     <div class="ft-veld-label" style="margin-top:4px">Voornaam patiënt</div><input id="pl-naam" class="ft-input" placeholder="bijv. Jan" style="margin-bottom:10px"/>
@@ -620,7 +621,7 @@ function renderPlPatient(){
   const opDat=d.operatiedatum;
   const wekenNu=weeksSinceOp(opDat);
   const planning=d.planning||{};
-  const naam=d.voornaam?`${d.voornaam} (#${S.plPatNr})`:`#${S.plPatNr}`;
+  const naam=d.voornaam||"";
   const items=[];
   PERIODIEK_DEF.forEach(p=>{
     const status=planning[p.id]||{};
@@ -683,7 +684,10 @@ function renderPlPatient(){
   return`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button class="ft-btn-s" style="padding:7px 14px;font-size:13px" onclick="S.plSc='overzicht';renderPlanning()">← Overzicht</button>
-      <div style="flex:1"><div style="font-size:16px;font-weight:500;color:${C.groen}">${naam}</div><div style="font-size:13px;color:${C.muted}">${d.been} · w${wekenNu} post-op</div></div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:500;color:${C.groen};display:flex;align-items:center;gap:6px">${S.plNaamBewerken?`<input type="text" id="pl-naam-inp" class="ft-input" style="width:auto;padding:4px 8px;font-size:15px" value="${naam}" placeholder="Voornaam"/><button class="ft-btn-sm" style="padding:3px 8px;font-size:12px" onclick="opslaanPlVoornaam()">✓</button><button class="ft-btn-sm" style="padding:3px 8px;font-size:12px" onclick="S.plNaamBewerken=false;renderPlanning()">✗</button>`:`<span>${naam||"Naam onbekend"}</span><button style="background:transparent;border:none;color:${C.groenAccent};cursor:pointer;font-size:13px" onclick="S.plNaamBewerken=true;renderPlanning()">✎</button>`}</div>
+        <div style="font-size:12px;color:${C.muted}">#${S.plPatNr} · ${d.been} · w${wekenNu} post-op</div>
+      </div>
     </div>
     <div style="background:${C.groen};border-radius:12px;padding:1rem 1.25rem;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
       <div><div style="font-size:13px;color:${C.mint}">Operatiedatum</div><div style="font-size:17px;font-weight:500;color:#fff">${nlDatum(opDat)}</div><div style="font-size:13px;color:${C.mint};margin-top:2px">Week ${wekenNu} · ${d.been} been</div></div>
@@ -717,6 +721,15 @@ function openPat(){
     }
     S.laden=false;S.sc="dashboard";render();
   });
+}
+
+async function opslaanVoornaam(){
+  const nn=document.getElementById("naam-inp")?.value.trim();
+  S.voornaam=nn||"";
+  const nd={...S.patData};nd.voornaam=S.voornaam;
+  S.patData=nd;
+  await saveData(S.patNr,nd);
+  S.naamBewerken=false;render();
 }
 
 function nieuwMm(type,refId,naam,timing){
@@ -825,7 +838,7 @@ async function laadOverzicht(){
       allItems.sort((a,b)=>a.gepland.localeCompare(b.gepland));
       const volgend=allItems[0];
       const urgentie=volgend?volgend.st:"groen";
-      const naam=d.voornaam?`${d.voornaam} (#${nr})`:`#${nr}`;
+      const naam=d.voornaam||"";
       S.plPatienten.push({nr,naam,been:d.been,opDatum:d.operatiedatum,wekenGeleden:wekenNu,volgendLabel:volgend?`Volgende: ${volgend.label} (${nlDatum(volgend.gepland)})`:"Alle testen gedaan",urgentie});
     }catch(e){}
   }
@@ -847,7 +860,13 @@ async function voegPatToe(){
 }
 async function openPlPatient(nr){
   S.plPatNr=nr;S.plPatData=await loadData(nr);
-  S.plUitstellenId=null;S.plSc="patient";renderPlanning();
+  S.plUitstellenId=null;S.plNaamBewerken=false;S.plSc="patient";renderPlanning();
+}
+async function opslaanPlVoornaam(){
+  const nn=document.getElementById("pl-naam-inp")?.value.trim();
+  S.plPatData.voornaam=nn||"";
+  await saveData(S.plPatNr,S.plPatData);
+  S.plNaamBewerken=false;renderPlanning();
 }
 async function markeerGedaan(id){
   if(!S.plPatData.planning)S.plPatData.planning={};
