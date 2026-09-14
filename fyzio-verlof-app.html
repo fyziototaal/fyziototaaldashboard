@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- APP_VERSION: 2026-09-15.1 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-09-15.2 (ophogen bij elke update — hier én in de constante hieronder) -->
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -19,7 +19,7 @@
 // versie beschikbaar is. Na die ene herlaad komen de versies
 // overeen en gebeurt er niets meer — geen oneindige lus.
 (function () {
-  var APP_VERSION = "2026-09-15.1";
+  var APP_VERSION = "2026-09-15.2";
   try {
     fetch(location.pathname + "?_fresh=" + Date.now(), { cache: "no-store" })
       .then(function (res) { return res.text(); })
@@ -107,7 +107,7 @@ if (!window.storage) {
 "use strict";
 var STORAGE_KEY = "fyzio-verlof-v1";
 // Moet gelijk blijven aan de APP_VERSION in de <script> bovenaan de <head>.
-var APP_VERSION_DISPLAY = "2026-09-15.1";
+var APP_VERSION_DISPLAY = "2026-09-15.2";
 var h = React.createElement;
 var useState = React.useState, useEffect = React.useEffect, useCallback = React.useCallback, useMemo = React.useMemo, useRef = React.useRef;
 
@@ -1054,15 +1054,21 @@ function Goedkeuren(props) {
 var MONTH_LABELS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
 var WEEKDAY_LABELS_SHORT = ["zo", "ma", "di", "wo", "do", "vr", "za"];
 
-function Kalender(props) {
-  var data = props.data, persist = props.persist;
-  var now = new Date();
-  var _year = useState(now.getFullYear()), year = _year[0], setYear = _year[1];
-  var _month = useState(now.getMonth()), month = _month[0], setMonth = _month[1];
-  var _showPending = useState(true), showPending = _showPending[0], setShowPending = _showPending[1];
-  var _detail = useState(null), detail = _detail[0], setDetail = _detail[1];
-  var _confirmDel = useState(false), confirmDel = _confirmDel[0], setConfirmDel = _confirmDel[1];
-  var today = todayISO();
+function cellForDay(data, showPending, empId, iso) {
+  var reqs = data.requests.filter(function (r) { return r.employeeId === empId && r.status !== "rejected" && iso >= r.startDate && iso <= r.endDate; });
+  var approvedLeave = reqs.find(function (r) { return r.type === "verlof" && r.status === "approved"; });
+  if (approvedLeave) return { cls: "bg-emerald-400", req: approvedLeave, title: "Verlof goedgekeurd · " + fmtNum(approvedLeave.hours) + " uur" };
+  var pendingLeave = reqs.find(function (r) { return r.type === "verlof" && r.status === "pending"; });
+  if (pendingLeave && showPending) return { cls: "bg-amber-300", req: pendingLeave, title: "Verlof in behandeling · " + fmtNum(pendingLeave.hours) + " uur" };
+  var overtime = reqs.find(function (r) { return r.type === "overuren" && r.status === "approved"; });
+  if (overtime) return { cls: "bg-[#00B6E8]", req: overtime, title: "Overuren · " + fmtNum(overtime.hours) + " uur" };
+  return null;
+}
+
+// Eén maandtabel (medewerkers x dagen). Herbruikt zowel in de losse
+// maandweergave als, 12x achter elkaar, in het jaaroverzicht.
+function MonthGrid(props) {
+  var data = props.data, year = props.year, month = props.month, today = props.today, showPending = props.showPending, onCellClick = props.onCellClick, compact = props.compact;
 
   var daysInMonth = new Date(year, month + 1, 0).getDate();
   var days = useMemo(function () {
@@ -1074,64 +1080,94 @@ function Kalender(props) {
     return out;
   }, [year, month, daysInMonth]);
 
+  return h(Card, { className: "!p-0" },
+    compact && h("h4", { className: "px-4 pt-3 text-sm font-bold capitalize text-slate-900" }, MONTH_LABELS[month] + " " + year),
+    h("div", { className: "overflow-x-auto rounded-2xl" },
+      h("table", { className: "w-full border-collapse text-xs" },
+        h("thead", null,
+          h("tr", null,
+            h("th", { className: "sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-3 py-1 text-left font-semibold text-slate-700" }, "Medewerker"),
+            days.map(function (d) {
+              return h("th", {
+                key: d.iso,
+                className: "border-b border-slate-100 py-1 text-center font-normal " + (d.iso === today ? "bg-[#f3e3ef] text-[#82176D]" : d.weekend ? "bg-slate-100 text-slate-400" : "text-slate-500")
+              }, h("div", null, d.wd), h("div", { className: "font-semibold " + (d.iso === today ? "text-[#82176D]" : "text-slate-700") }, d.nr));
+            })
+          )
+        ),
+        h("tbody", null,
+          data.employees.map(function (emp) {
+            return h("tr", { key: emp.id },
+              h("td", { className: "sticky left-0 z-10 whitespace-nowrap border-b border-r border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-800" }, emp.name),
+              days.map(function (d) {
+                var cell = cellForDay(data, showPending, emp.id, d.iso);
+                return h("td", {
+                  key: d.iso,
+                  title: cell ? emp.name + " · " + fmtDatumKort(d.iso) + " · " + cell.title : "",
+                  onClick: cell ? function () { onCellClick(emp, cell.req); } : undefined,
+                  className: "h-7 min-w-6 border-b border-slate-100 transition " + (cell ? cell.cls + " cursor-pointer hover:opacity-70" : d.iso === today ? "bg-[#f3e3ef]" : d.weekend ? "bg-slate-100" : "bg-white")
+                });
+              })
+            );
+          })
+        )
+      )
+    )
+  );
+}
+
+function Kalender(props) {
+  var data = props.data, persist = props.persist;
+  var now = new Date();
+  var _viewMode = useState("maand"), viewMode = _viewMode[0], setViewMode = _viewMode[1];
+  var _year = useState(now.getFullYear()), year = _year[0], setYear = _year[1];
+  var _month = useState(now.getMonth()), month = _month[0], setMonth = _month[1];
+  var _showPending = useState(true), showPending = _showPending[0], setShowPending = _showPending[1];
+  var _detail = useState(null), detail = _detail[0], setDetail = _detail[1];
+  var _confirmDel = useState(false), confirmDel = _confirmDel[0], setConfirmDel = _confirmDel[1];
+  var today = todayISO();
+
   function prevMonth() { if (month === 0) { setMonth(11); setYear(year - 1); } else setMonth(month - 1); }
   function nextMonth() { if (month === 11) { setMonth(0); setYear(year + 1); } else setMonth(month + 1); }
 
-  function cellFor(empId, iso) {
-    var reqs = data.requests.filter(function (r) { return r.employeeId === empId && r.status !== "rejected" && iso >= r.startDate && iso <= r.endDate; });
-    var approvedLeave = reqs.find(function (r) { return r.type === "verlof" && r.status === "approved"; });
-    if (approvedLeave) return { cls: "bg-emerald-400", req: approvedLeave, title: "Verlof goedgekeurd · " + fmtNum(approvedLeave.hours) + " uur" };
-    var pendingLeave = reqs.find(function (r) { return r.type === "verlof" && r.status === "pending"; });
-    if (pendingLeave && showPending) return { cls: "bg-amber-300", req: pendingLeave, title: "Verlof in behandeling · " + fmtNum(pendingLeave.hours) + " uur" };
-    var overtime = reqs.find(function (r) { return r.type === "overuren" && r.status === "approved"; });
-    if (overtime) return { cls: "bg-[#00B6E8]", req: overtime, title: "Overuren · " + fmtNum(overtime.hours) + " uur" };
-    return null;
-  }
+  function handleCellClick(emp, req) { setDetail({ emp: emp, req: req }); setConfirmDel(false); }
 
   return h("div", { className: "space-y-4" },
     h("div", { className: "flex flex-wrap items-center gap-2" },
-      h("button", { className: BTN_SECONDARY, onClick: prevMonth, "aria-label": "Vorige maand" }, "←"),
-      h("h3", { className: "w-44 text-center text-lg font-bold capitalize text-slate-900" }, MONTH_LABELS[month] + " " + year),
-      h("button", { className: BTN_SECONDARY, onClick: nextMonth, "aria-label": "Volgende maand" }, "→"),
-      h("button", { className: BTN_SECONDARY, onClick: function () { setYear(now.getFullYear()); setMonth(now.getMonth()); } }, "Vandaag"),
+      h("div", { className: "flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm" },
+        h("button", {
+          className: "rounded-lg px-3 py-1 text-sm font-medium transition " + (viewMode === "maand" ? "bg-[#82176D] text-white" : "text-slate-600 hover:bg-slate-100"),
+          onClick: function () { setViewMode("maand"); }
+        }, "Maand"),
+        h("button", {
+          className: "rounded-lg px-3 py-1 text-sm font-medium transition " + (viewMode === "jaar" ? "bg-[#82176D] text-white" : "text-slate-600 hover:bg-slate-100"),
+          onClick: function () { setViewMode("jaar"); }
+        }, "Jaaroverzicht")
+      ),
+      viewMode === "maand" && h(React.Fragment, null,
+        h("button", { className: BTN_SECONDARY, onClick: prevMonth, "aria-label": "Vorige maand" }, "←"),
+        h("h3", { className: "w-44 text-center text-lg font-bold capitalize text-slate-900" }, MONTH_LABELS[month] + " " + year),
+        h("button", { className: BTN_SECONDARY, onClick: nextMonth, "aria-label": "Volgende maand" }, "→"),
+        h("button", { className: BTN_SECONDARY, onClick: function () { setYear(now.getFullYear()); setMonth(now.getMonth()); } }, "Vandaag")
+      ),
+      viewMode === "jaar" && h(React.Fragment, null,
+        h("button", { className: BTN_SECONDARY, onClick: function () { setYear(year - 1); }, "aria-label": "Vorig jaar" }, "←"),
+        h("h3", { className: "w-24 text-center text-lg font-bold text-slate-900" }, year),
+        h("button", { className: BTN_SECONDARY, onClick: function () { setYear(year + 1); }, "aria-label": "Volgend jaar" }, "→"),
+        h("button", { className: BTN_SECONDARY, onClick: function () { setYear(now.getFullYear()); } }, "Dit jaar")
+      ),
       h("label", { className: "ml-auto flex items-center gap-2 text-sm text-slate-600" },
         h("input", { type: "checkbox", checked: showPending, onChange: function (e) { setShowPending(e.target.checked); }, className: "h-4 w-4 accent-[#82176D]" }),
         "Toon aanvragen in behandeling"
       )
     ),
-    h(Card, { className: "!p-0" },
-      h("div", { className: "overflow-x-auto rounded-2xl" },
-        h("table", { className: "w-full border-collapse text-xs" },
-          h("thead", null,
-            h("tr", null,
-              h("th", { className: "sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-3 py-1 text-left font-semibold text-slate-700" }, "Medewerker"),
-              days.map(function (d) {
-                return h("th", {
-                  key: d.iso,
-                  className: "border-b border-slate-100 py-1 text-center font-normal " + (d.iso === today ? "bg-[#f3e3ef] text-[#82176D]" : d.weekend ? "bg-slate-100 text-slate-400" : "text-slate-500")
-                }, h("div", null, d.wd), h("div", { className: "font-semibold " + (d.iso === today ? "text-[#82176D]" : "text-slate-700") }, d.nr));
-              })
-            )
-          ),
-          h("tbody", null,
-            data.employees.map(function (emp) {
-              return h("tr", { key: emp.id },
-                h("td", { className: "sticky left-0 z-10 whitespace-nowrap border-b border-r border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-800" }, emp.name),
-                days.map(function (d) {
-                  var cell = cellFor(emp.id, d.iso);
-                  return h("td", {
-                    key: d.iso,
-                    title: cell ? emp.name + " · " + fmtDatumKort(d.iso) + " · " + cell.title : "",
-                    onClick: cell ? function () { setDetail({ emp: emp, req: cell.req }); setConfirmDel(false); } : undefined,
-                    className: "h-7 min-w-6 border-b border-slate-100 transition " + (cell ? cell.cls + " cursor-pointer hover:opacity-70" : d.iso === today ? "bg-[#f3e3ef]" : d.weekend ? "bg-slate-100" : "bg-white")
-                  });
-                })
-              );
-            })
-          )
-        )
-      )
-    ),
+    viewMode === "maand"
+      ? h(MonthGrid, { data: data, year: year, month: month, today: today, showPending: showPending, onCellClick: handleCellClick })
+      : h("div", { className: "space-y-4" },
+          [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function (m) {
+            return h(MonthGrid, { key: m, data: data, year: year, month: m, today: today, showPending: showPending, onCellClick: handleCellClick, compact: true });
+          })
+        ),
     h("div", { className: "flex flex-wrap items-center gap-2 text-xs text-slate-600" },
       h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-emerald-400" }), " Verlof goedgekeurd"),
       h("span", { className: "flex items-center gap-1.5 rounded-full border border-slate-100 bg-white px-3 py-1 shadow-sm" }, h("span", { className: "inline-block h-3 w-3 rounded-full bg-amber-300" }), " Verlof in behandeling"),
