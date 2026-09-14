@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-09-15.3 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-09-15.4 (ophogen bij elke update — hier én in de constante hieronder) -->
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
@@ -10,7 +10,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-09-15.3";
+  const APP_VERSION = "2026-09-15.4";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -305,7 +305,8 @@ let S={
   toonVlaggen:false,rapMm:null,ok:false,dashTab:"fasen",mmDatumBewerken:false,naamBewerken:false,
   plSc:"overzicht",plPatienten:[],plPatData:null,plPatNr:"",plLaden:false,
   plUitstellenId:null,plNieuwDatum:"",plNieuwReden:"",plFout:"",
-  plDatumAanpassenId:null,plNieuwGedaanDatum:"",plNaamBewerken:false
+  plDatumAanpassenId:null,plNieuwGedaanDatum:"",plNaamBewerken:false,
+  startMatches:[],startNeedsExtra:false
 };
 let activeTab="testen";
 
@@ -334,30 +335,52 @@ function render(){
 
 function patLabel(){return S.voornaam||("#"+S.patNr);}
 
-function renderStart(){return`
+function normNaam(s){return(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();}
+
+function renderStart(){
+  if(S.startMatches&&S.startMatches.length>1){
+    return`
+    <div class="ft-card">
+      <div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:4px">Meerdere patiënten gevonden</div>
+      <div style="font-size:13px;color:${C.muted};margin-bottom:10px">Kies de juiste patiënt:</div>
+      ${S.startMatches.map(m=>`<div class="ft-test-row" style="cursor:pointer" onclick="kiesMatch('${m.nr}')"><div><div style="font-size:14px;font-weight:500">${m.voornaam||"(naam onbekend)"}</div><div style="font-size:12px;color:${C.muted}">#${m.nr}</div></div><span style="color:${C.groenAccent};font-size:20px">›</span></div>`).join("")}
+      <button class="ft-btn-sm" style="margin-top:10px" onclick="S.startMatches=[];render()">← Opnieuw zoeken</button>
+    </div>`;
+  }
+  if(S.startNeedsExtra){
+    return`
+    <div class="ft-card">
+      <div style="font-size:15px;font-weight:500;color:${C.groen};margin-bottom:4px">${S.voornaam||"Nieuwe patiënt #"+S.patNr}</div>
+      <div style="font-size:13px;color:${C.muted};margin-bottom:12px">Nog niet alle gegevens bekend. Vul aan om te starten:</div>
+      ${!S.voornaam?`<div style="font-size:13px;color:${C.muted};margin-bottom:4px">Voornaam</div><input id="extra-naam" class="ft-input" style="margin-bottom:10px" placeholder="bijv. Jan"/>`:""}
+      <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Aangedaan been</div>
+      <select id="extra-been" class="ft-input" style="margin-bottom:10px">
+        <option value="Links" ${S.been==="Links"?"selected":""}>Links</option>
+        <option value="Rechts" ${S.been==="Rechts"?"selected":""}>Rechts</option>
+      </select>
+      <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Operatiedatum</div>
+      <input id="extra-opdat" class="ft-input" type="date" value="${S.opDatum}" style="margin-bottom:16px"/>
+      ${S.fout?`<div style="color:${C.rood};font-size:14px;margin-bottom:8px">${S.fout}</div>`:""}
+      <button class="ft-btn-p" style="width:100%" onclick="bevestigExtra()">Opslaan & doorgaan →</button>
+      <button class="ft-btn-sm" style="margin-top:8px;width:100%" onclick="S.startNeedsExtra=false;S.patData=null;S.fout='';render()">← Terug</button>
+    </div>`;
+  }
+  return`
   <div style="background:linear-gradient(120deg,#4a0f42 0%,#82176D 45%,#a8368f 100%);border-radius:12px;padding:1.5rem;margin-bottom:20px;color:#fff">
     <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px">Fyzio Totaal · UMOOOVE</div>
     <div style="font-size:22px;font-weight:500">Knie Testen & Meten</div>
     <div style="font-size:14px;opacity:.8;margin-top:4px">VKB Revalidatieprotocol</div>
   </div>
   <div class="ft-card">
-    <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Patiëntnummer (SpotOnMedics)</div>
-    <input id="inp-nr" class="ft-input" placeholder="bijv. 12345" value="${S.patNr}" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')openPat()"/>
-    <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Voornaam patiënt</div>
-    <input id="inp-naam" class="ft-input" placeholder="bijv. Jan" value="${S.voornaam}" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')openPat()"/>
-    <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Aangedaan been</div>
-    <select id="inp-been" class="ft-input" style="margin-bottom:12px">
-      <option ${S.been==="Links"?"selected":""}>Links</option>
-      <option ${S.been==="Rechts"?"selected":""}>Rechts</option>
-    </select>
-    <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Operatiedatum</div>
-    <input id="inp-opdat" class="ft-input" type="date" value="${S.opDatum}" style="margin-bottom:16px"/>
+    <div style="font-size:13px;color:${C.muted};margin-bottom:4px">Patiëntnummer of voornaam</div>
+    <input id="start-zoek" class="ft-input" placeholder="bijv. 12345 of Jan" style="margin-bottom:16px" onkeydown="if(event.key==='Enter')zoekStart()"/>
     ${S.fout?`<div style="color:${C.rood};font-size:14px;margin-bottom:8px">${S.fout}</div>`:""}
-    <button class="ft-btn-p" style="width:100%" onclick="openPat()" ${S.laden?"disabled":""}>
-      ${S.laden?"Laden...":"Patiënt openen →"}
+    <button class="ft-btn-p" style="width:100%" onclick="zoekStart()" ${S.laden?"disabled":""}>
+      ${S.laden?"Zoeken...":"Openen →"}
     </button>
   </div>
-  <div style="font-size:12px;color:${C.muted};text-align:center;margin-top:12px">AVG-proof · Alleen patiëntnummer opgeslagen</div>`;}
+  <div style="font-size:12px;color:${C.muted};text-align:center;margin-top:12px">Bekende patiënten worden automatisch herkend · been en operatiedatum hoeven maar één keer</div>`;
+}
 
 function renderDashboard(){
   const mml=S.patData?.meetmomenten||[];
@@ -702,25 +725,65 @@ function renderPlPatient(){
 }
 
 // ─── TESTEN ACTIES ────────────────────────────────────────────────
-function openPat(){
-  const nr=document.getElementById("inp-nr")?.value.trim();
-  const naam=document.getElementById("inp-naam")?.value.trim();
-  const b=document.getElementById("inp-been")?.value;
-  const od=document.getElementById("inp-opdat")?.value;
-  if(!nr){S.fout="Voer een patiëntnummer in.";render();return;}
-  S.patNr=nr;S.voornaam=naam||"";S.been=b||"Links";S.opDatum=od||"";S.fout="";S.laden=true;render();
-  loadData(nr).then(d=>{
-    S.patData=d||{meetmomenten:[]};
-    S.been=d?.been||S.been;
-    S.opDatum=d?.operatiedatum||S.opDatum;
-    S.voornaam=d?.voornaam||S.voornaam;
-    if((naam||od)&&(!d?.voornaam||!d?.operatiedatum)){
-      S.patData.voornaam=S.voornaam;S.patData.been=S.been;
-      if(od)S.patData.operatiedatum=od;
-      saveData(nr,S.patData);
-    }
-    S.laden=false;S.sc="dashboard";render();
+async function zoekStart(){
+  const term=document.getElementById("start-zoek")?.value.trim();
+  if(!term){S.fout="Voer een patiëntnummer of voornaam in.";render();return;}
+  S.fout="";S.startMatches=[];S.laden=true;render();
+
+  // Eerst: direct proberen als patiëntnummer
+  const direct=await loadData(term);
+  if(direct){
+    openGevondenPatient(term,direct);
+    return;
+  }
+
+  // Niet gevonden als nummer → zoek op voornaam (diakritisch- en hoofdletterongevoelig)
+  const rows=await dbList();
+  const termNorm=normNaam(term);
+  const matches=[];
+  rows.forEach(row=>{
+    try{
+      const dd=JSON.parse(row.value);
+      const nr=row.key.replace("vkb_","");
+      if(dd.voornaam&&normNaam(dd.voornaam)===termNorm)matches.push({nr,...dd});
+    }catch(e){}
   });
+
+  if(matches.length===1){openGevondenPatient(matches[0].nr,matches[0]);return;}
+  if(matches.length>1){S.startMatches=matches;S.laden=false;render();return;}
+
+  // Helemaal niet gevonden → nieuwe patiënt, term wordt patiëntnummer
+  S.patNr=term;S.voornaam="";S.been="Links";S.opDatum="";S.patData={meetmomenten:[]};
+  S.startNeedsExtra=true;S.laden=false;render();
+}
+
+function openGevondenPatient(nr,d){
+  S.patNr=nr;
+  S.patData=d||{meetmomenten:[]};
+  S.voornaam=d?.voornaam||"";
+  S.been=d?.been||"";
+  S.opDatum=d?.operatiedatum||"";
+  if(S.been&&S.opDatum){S.laden=false;S.sc="dashboard";render();}
+  else{S.startNeedsExtra=true;S.laden=false;render();}
+}
+
+function kiesMatch(nr){
+  const m=S.startMatches.find(x=>x.nr===nr);
+  if(m)openGevondenPatient(nr,m);
+}
+
+async function bevestigExtra(){
+  const b=document.getElementById("extra-been")?.value;
+  const od=document.getElementById("extra-opdat")?.value;
+  const naamInp=document.getElementById("extra-naam")?.value.trim();
+  if(!b||!od){S.fout="Vul aangedaan been en operatiedatum in.";render();return;}
+  if(naamInp)S.voornaam=naamInp;
+  S.been=b;S.opDatum=od;
+  const nd={...S.patData,meetmomenten:S.patData?.meetmomenten||[]};
+  nd.been=b;nd.operatiedatum=od;if(S.voornaam)nd.voornaam=S.voornaam;
+  S.patData=nd;
+  await saveData(S.patNr,nd);
+  S.startNeedsExtra=false;S.fout="";S.sc="dashboard";render();
 }
 
 async function opslaanVoornaam(){
