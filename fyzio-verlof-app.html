@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- APP_VERSION: 2026-09-15.2 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-09-15.3 (ophogen bij elke update — hier én in de constante hieronder) -->
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -19,7 +19,7 @@
 // versie beschikbaar is. Na die ene herlaad komen de versies
 // overeen en gebeurt er niets meer — geen oneindige lus.
 (function () {
-  var APP_VERSION = "2026-09-15.2";
+  var APP_VERSION = "2026-09-15.3";
   try {
     fetch(location.pathname + "?_fresh=" + Date.now(), { cache: "no-store" })
       .then(function (res) { return res.text(); })
@@ -107,7 +107,7 @@ if (!window.storage) {
 "use strict";
 var STORAGE_KEY = "fyzio-verlof-v1";
 // Moet gelijk blijven aan de APP_VERSION in de <script> bovenaan de <head>.
-var APP_VERSION_DISPLAY = "2026-09-15.2";
+var APP_VERSION_DISPLAY = "2026-09-15.3";
 var h = React.createElement;
 var useState = React.useState, useEffect = React.useEffect, useCallback = React.useCallback, useMemo = React.useMemo, useRef = React.useRef;
 
@@ -579,6 +579,7 @@ function Nav(props) {
   ];
   var admin = [
     { id: "goedkeuren", label: pendingCount > 0 ? "Goedkeuren (" + pendingCount + ")" : "Goedkeuren" },
+    { id: "saldo", label: "Saldo" },
     { id: "kalender", label: "Kalender" },
     { id: "team", label: "Team" },
   ];
@@ -996,6 +997,92 @@ function AllRequestsList(props) {
           })
         ),
     h("p", { className: "mt-3 text-xs text-slate-500" }, "Verwijderen kan niet ongedaan worden. Het saldo van de medewerker wordt automatisch herrekend.")
+  );
+}
+
+// ------------------------------------------------------------
+// Saldo-overzicht (admin) — volledige opbouw per collega
+// ------------------------------------------------------------
+function SaldoOverzicht(props) {
+  var data = props.data;
+  var _sort = useState("naam"), sortBy = _sort[0], setSortBy = _sort[1];
+
+  var rows = data.employees.map(function (emp) {
+    var opgenomen = sumHours(data.requests, emp.id, "verlof", "approved");
+    var inAanvraag = sumHours(data.requests, emp.id, "verlof", "pending");
+    var overurenGoedgekeurd = sumHours(data.requests, emp.id, "overuren", "approved");
+    var overurenInAanvraag = sumHours(data.requests, emp.id, "overuren", "pending");
+    var beschikbaar = saldoFor(emp, data.requests);
+    return {
+      emp: emp, opgenomen: opgenomen, inAanvraag: inAanvraag,
+      overurenGoedgekeurd: overurenGoedgekeurd, overurenInAanvraag: overurenInAanvraag, beschikbaar: beschikbaar
+    };
+  });
+
+  var sorted = rows.slice().sort(function (a, b) {
+    if (sortBy === "saldo") return a.beschikbaar - b.beschikbaar;
+    if (sortBy === "saldo-desc") return b.beschikbaar - a.beschikbaar;
+    return a.emp.name.localeCompare(b.emp.name);
+  });
+
+  var totaalBasis = rows.reduce(function (s, r) { return s + (Number(r.emp.baseSaldo) || 0); }, 0);
+  var totaalBeschikbaar = rows.reduce(function (s, r) { return s + r.beschikbaar; }, 0);
+
+  function SortBtn(sortProps) {
+    var actief = sortBy === sortProps.value;
+    return h("button", {
+      className: "text-xs font-semibold " + (actief ? "text-[#82176D] underline" : "text-slate-400 hover:text-[#82176D] hover:underline"),
+      onClick: function () { setSortBy(sortProps.value); }
+    }, sortProps.children);
+  }
+
+  return h("div", { className: "space-y-4" },
+    h("div", { className: "grid grid-cols-2 gap-3 sm:grid-cols-3" },
+      h(StatCard, { label: "Totaal basissaldo", value: fmtNum(totaalBasis) + " uur", accent: "text-[#82176D]", bar: "from-[#82176D] to-[#a8368f]" }),
+      h(StatCard, { label: "Totaal beschikbaar nu", value: fmtNum(totaalBeschikbaar) + " uur", accent: "text-[#00728e]", bar: "from-[#00728e] to-[#00B6E8]" }),
+      h(StatCard, { label: "Aantal medewerkers", value: String(rows.length), accent: "text-slate-700", bar: "from-slate-300 to-slate-200" })
+    ),
+    h(Card, { className: "!p-0" },
+      h("div", { className: "flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3" },
+        h("h3", { className: "text-base font-bold text-slate-900" }, "Saldo per collega"),
+        h("div", { className: "ml-auto flex items-center gap-3" },
+          h("span", { className: "text-xs text-slate-400" }, "Sorteer op:"),
+          h(SortBtn, { value: "naam" }, "Naam"),
+          h(SortBtn, { value: "saldo" }, "Laagste saldo eerst"),
+          h(SortBtn, { value: "saldo-desc" }, "Hoogste saldo eerst")
+        )
+      ),
+      h("div", { className: "overflow-x-auto rounded-2xl" },
+        h("table", { className: "w-full text-sm" },
+          h("thead", null,
+            h("tr", { className: "border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500" },
+              h("th", { className: "px-4 py-2.5" }, "Naam"),
+              h("th", { className: "px-4 py-2.5" }, "Basissaldo"),
+              h("th", { className: "px-4 py-2.5" }, "Opgenomen verlof"),
+              h("th", { className: "px-4 py-2.5" }, "Verlof in aanvraag"),
+              h("th", { className: "px-4 py-2.5" }, "Overuren bijgeschreven"),
+              h("th", { className: "px-4 py-2.5" }, "Overuren in aanvraag"),
+              h("th", { className: "px-4 py-2.5" }, "Beschikbaar saldo")
+            )
+          ),
+          h("tbody", { className: "divide-y divide-slate-100" },
+            sorted.map(function (r) {
+              var negatief = r.beschikbaar < 0;
+              return h("tr", { key: r.emp.id },
+                h("td", { className: "px-4 py-2.5 font-medium text-slate-800" }, r.emp.name),
+                h("td", { className: "px-4 py-2.5 text-slate-600" }, fmtNum(r.emp.baseSaldo) + " uur"),
+                h("td", { className: "px-4 py-2.5 text-slate-600" }, fmtNum(r.opgenomen) + " uur"),
+                h("td", { className: "px-4 py-2.5 text-slate-600" }, r.inAanvraag > 0 ? fmtNum(r.inAanvraag) + " uur" : "—"),
+                h("td", { className: "px-4 py-2.5 text-slate-600" }, fmtNum(r.overurenGoedgekeurd) + " uur"),
+                h("td", { className: "px-4 py-2.5 text-slate-600" }, r.overurenInAanvraag > 0 ? fmtNum(r.overurenInAanvraag) + " uur" : "—"),
+                h("td", { className: "px-4 py-2.5 font-semibold " + (negatief ? "text-rose-600" : "text-slate-900") }, fmtNum(r.beschikbaar) + " uur" + (negatief ? " ⚠" : ""))
+              );
+            })
+          )
+        )
+      )
+    ),
+    h("p", { className: "text-xs text-slate-400" }, "\"Beschikbaar saldo\" = basissaldo − opgenomen verlof + goedgekeurde overuren. Aanvragen die nog in behandeling zijn, tellen hier nog niet in mee.")
   );
 }
 
@@ -1467,6 +1554,7 @@ function App() {
             tab === "overuren" && h(OverurenForm, { user: user, data: data, persist: persist, done: function () { setTab("overzicht"); } }),
             tab === "pin" && h(PincodeForm, { user: user, data: data, persist: persist }),
             user.isAdmin && tab === "goedkeuren" && h(Goedkeuren, { user: user, data: data, persist: persist }),
+            user.isAdmin && tab === "saldo" && h(SaldoOverzicht, { data: data }),
             user.isAdmin && tab === "kalender" && h(Kalender, { data: data, persist: persist }),
             user.isAdmin && tab === "team" && h(Team, { data: data, persist: persist })
           )
