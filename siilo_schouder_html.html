@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-09-14.3 -->
+<!-- APP_VERSION: 2026-09-14.4 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,13 +10,13 @@
   <title>Schouderrapportage – Fyzio Totaal</title>
 
   <script>
-    const APP_VERSION = "2026-09-14.3";
+    const APP_VERSION = "2026-09-14.4";
     (function () {
       if (!location.search.includes("_v=")) {
         fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
           .then(r => r.text())
           .then(html => {
-            const m = html.match(/<!--\s*APP_VERSION:\s*([^\s-]+(?:\.\d+)?)\s*-->/);
+            const m = html.match(/<!--\s*APP_VERSION:\s*([\d\-.]+)\s*-->/);
             if (m && m[1] !== APP_VERSION) {
               location.replace(location.pathname + "?_v=" + Date.now());
             }
@@ -35,6 +35,7 @@
     body { font-family: 'Poppins', 'Segoe UI', sans-serif; background: #f3eef2; min-height: 100vh; color: #1a1a1a; }
     .wrap { max-width: 680px; margin: 0 auto; }
 
+    /* Hero */
     .hero {
       position: relative;
       background: linear-gradient(120deg, #4a0f42 0%, #82176D 45%, #a8368f 100%);
@@ -54,7 +55,7 @@
       font-size: 28px; margin: 0 auto 14px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.18);
     }
-    .hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 5px; letter-spacing: -0.3px; }
+    .hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
     .hero p { font-size: 13px; color: rgba(255,255,255,0.78); margin-bottom: 16px; }
     .hero-pill {
       display: inline-block; background: #00B6E8; color: #fff;
@@ -62,6 +63,7 @@
       text-transform: uppercase; padding: 7px 18px; border-radius: 20px;
     }
 
+    /* API balk */
     .api-bar {
       background: #fff; border-bottom: 1px solid #e2d5df;
       padding: 10px 20px; display: flex; align-items: center; gap: 10px;
@@ -69,7 +71,7 @@
     .api-bar label { font-size: 12px; font-weight: 600; color: #82176D; white-space: nowrap; }
     .api-bar input {
       flex: 1; font-family: 'Poppins', sans-serif; font-size: 13px;
-      border: 1px solid #d8c7d4; border-radius: 8px; padding: 6px 10px; color: #1a1a1a; outline: none;
+      border: 1px solid #d8c7d4; border-radius: 8px; padding: 6px 10px; outline: none;
     }
     .api-bar input:focus { border-color: #82176D; }
     .save-btn {
@@ -83,6 +85,7 @@
       border: 1px solid #d8c7d4; background: #fff; color: #82176D; cursor: pointer;
     }
 
+    /* Body */
     .body { padding: 24px 20px 48px; }
     .section { margin-bottom: 18px; }
     .section-label {
@@ -104,32 +107,28 @@
     textarea { resize: vertical; }
 
     /* Toggle */
-    .toggle { display: flex; gap: 6px; margin-bottom: 14px; }
+    .toggle { display: flex; gap: 6px; }
     .toggle-btn {
       flex: 1; padding: 9px 0; font-family: 'Poppins', sans-serif;
       font-size: 13px; font-weight: 600; border-radius: 10px;
       border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s;
     }
-    .toggle-btn.active {
-      background: linear-gradient(120deg, #4a0f42, #82176D); color: #fff;
-    }
-    .toggle-btn.inactive {
-      background: #fff; color: #82176D; border-color: #d8c7d4;
-    }
+    .toggle-btn.active { background: linear-gradient(120deg, #4a0f42, #82176D); color: #fff; }
+    .toggle-btn.inactive { background: #fff; color: #82176D; border-color: #d8c7d4; }
 
-    /* PDF upload zone */
+    /* PDF upload */
     .pdf-zone {
       border: 2px dashed #d8c7d4; border-radius: 12px;
       padding: 28px 16px; text-align: center; cursor: pointer;
-      transition: border-color 0.15s, background 0.15s; background: #faf7fb;
+      background: #faf7fb; transition: border-color 0.15s, background 0.15s;
     }
-    .pdf-zone:hover { border-color: #82176D; background: #f8f0f6; }
-    .pdf-zone.has-file { border-color: #82176D; border-style: solid; background: #f8f0f6; }
+    .pdf-zone:hover, .pdf-zone.has-file { border-color: #82176D; border-style: solid; background: #f8f0f6; }
+    .pdf-zone.missing { border-color: #f5b8d8; }
     .pdf-icon { font-size: 30px; margin-bottom: 8px; }
     .pdf-name { font-size: 14px; font-weight: 600; color: #82176D; margin-bottom: 4px; }
     .pdf-hint { font-size: 12px; color: #aaa; }
 
-    /* Fields */
+    /* Velden */
     .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
     .field-label {
@@ -140,23 +139,20 @@
     .tag-req { font-size: 10px; background: #f3e3ef; color: #82176D; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
     .tag-mis { font-size: 10px; background: #fde8f4; color: #c0328a; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
     .tag-opt { font-size: 10px; background: #f0f0f0; color: #999; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
-    .field-input {
-      background: #faf7fb; border-radius: 10px;
-      border: 1px solid #e2d5df; padding: 9px 13px;
-    }
+    .field-input { background: #faf7fb; border-radius: 10px; border: 1px solid #e2d5df; padding: 9px 13px; }
     .field-input.missing { border-color: #f5b8d8; background: #fdf5fa; }
 
+    /* Meldingen */
     .warning {
       font-size: 13px; color: #7a4f00; margin-bottom: 14px;
-      padding: 10px 14px; background: #fff8e6;
-      border-radius: 10px; border: 1px solid #f0d080;
+      padding: 10px 14px; background: #fff8e6; border-radius: 10px; border: 1px solid #f0d080;
     }
     .error-msg {
       font-size: 13px; color: #82176D; margin-bottom: 12px;
-      padding: 10px 14px; background: #fdf0f7;
-      border-radius: 10px; border: 1px solid #e8c2da;
+      padding: 10px 14px; background: #fdf0f7; border-radius: 10px; border: 1px solid #e8c2da;
     }
 
+    /* Knoppen */
     .btn-primary {
       width: 100%; padding: 13px 0;
       font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
@@ -174,6 +170,7 @@
     }
     .btn-secondary:hover { background: #f8f0f6; }
 
+    /* Resultaat */
     .result-card {
       background: #fff; border-radius: 16px;
       box-shadow: 0 2px 14px rgba(130,23,109,0.08);
@@ -230,15 +227,11 @@
 <body>
 <div id="root"></div>
 <footer>
-  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-14.3</span>
+  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-14.4</span>
 </footer>
 
 <script type="text/babel">
   const { useState } = React;
-
-  function FI({mis, children}) {
-    return <div className={"field-input" + (mis ? " missing" : "")}>{children}</div>;
-  }
 
   const TYPEN = [
     "Huisarts – vraag over mogelijke medische interventie",
@@ -250,38 +243,87 @@
     "Spoed / afwijkend beloop",
   ];
 
-  const SYSTEM = `Je bent een medische rapportage-assistent voor fysiotherapeuten in Nederland. Je schrijft collegiaal, informeel en direct — zoals fysiotherapeuten met elkaar en met huisartsen/orthopeden communiceren. Denk aan de toon van een Siilo-bericht tussen collega's.
+  const SYSTEM = `Je bent een medische rapportage-assistent voor fysiotherapeuten in Nederland. Je schrijft collegiaal, informeel en direct — zoals fysiotherapeuten onderling en met huisartsen/orthopeden communiceren via Siilo.
 
 STRIKTE REGELS:
-- Geen diagnoses stellen — gebruik "beeld passend bij", "vermoeden van", of benoem enkel klinische bevindingen
-- Geen echografische of radiologische bevindingen opnemen — dit is een fysiotherapeutische rapportage
-- Geen medische interpretaties die buiten fysiotherapeutische competentie vallen
-- Gebruik ALLEEN informatie die letterlijk in de aangeleverde tekst staat
+- Gebruik ALLEEN informatie die letterlijk in de aangeleverde tekst of het dossier staat
+- Geen diagnoses stellen — gebruik "beeld passend bij" of "vermoeden van", of benoem alleen klinische bevindingen
+- Geen echografische of radiologische bevindingen — dit is een fysiotherapeutische rapportage
 - Geen markdown, geen sterretjes, geen vetgedrukte tekst — gewone platte tekst
-- Informele maar professionele toon (zoals collega's onderling)
-- Sluit af met een concrete vraag of verzoek aan de ontvanger
+- Informele maar professionele toon
+- Geen naam onder de afsluiting — sluit af met alleen "Groet,"
+- Geen interpretatie, geen aanvulling buiten de tekst
 
-STRUCTUUR (UMOOOVE-conform):
-Aanhef: Hallo [naam ontvanger indien bekend, anders weglaten],
-Openingszin met reden van contact en patiëntgegevens (leeftijd, startdatum).
-Beloop: kort de voorgeschiedenis en het klachtbeloop.
-Klinisch beeld: anamnestische bevindingen + lichamelijk onderzoek (ROM, kracht, klinische tests). Geen echo/röntgen.
-Behandeling: wat gedaan, hoeveel sessies, met welk effect.
-Vraag/verzoek: concrete vraag aan de ontvanger.
-Afsluiting: Groet, [therapeutnaam indien bekend]
+OPMAAK OPSOMMEND:
+Schrijf een scanbare rapportage met maximaal 10 regels. Elke bullet één zin, elke bullet begint met •.
+• Patiënt: [leeftijd] | start traject [datum]
+• Werkdiagnose: [alleen indien letterlijk in tekst, anders: Niet beschikbaar]
+• Vraag/advies: [exact uit tekst / Niet bekend]
+• Objectief: [gemelde bevindingen + PROMs indien vermeld]
+• Functie/ADL: [alleen indien benoemd]
+• Behandeling: [type + frequentie + duur + effect]; aantal behandelingen: [x]
+• Aanvullend: [alleen indien vermeld]
 
-VERBODEN: echo/MSU-bevindingen, radiologie, harde diagnoses, formele taal, bullets in output.`;
+OPMAAK VERHALEND:
+Schrijf een vloeiende alineatekst in maximaal 10 zinnen. Geen bullets.
+Vraag: [exact uit tekst of Niet bekend]
+[leeftijd], start traject [datum], werkdiagnose: [alleen indien letterlijk in tekst].
+Objectief: [bevindingen in zinnen + PROMs indien vermeld].
+Functie/ADL: [beperkingen zoals vermeld].
+Behandeling: [zoals in tekst]; aantal behandelingen: [x].
+Aanvullend: [alleen indien vermeld].
+Groet,`;
+
+  function buildMessages(type, formaat, leeftijd, start, vraag, pdfData, klacht, onderzoek, behandeling, extra) {
+    const formatInstr = formaat === "opsommend"
+      ? "Gebruik het OPSOMMEND format met bullets (•)."
+      : "Gebruik het VERHALEND format als vloeiende alineatekst zonder bullets.";
+
+    const tekstPrompt = `Rapportagetype: ${type}
+${formatInstr}
+Leeftijd: ${leeftijd}
+Start traject: ${start}
+${vraag       ? `Vraag/reden contact: ${vraag}`       : ""}
+${klacht      ? `Klacht/anamnese: ${klacht}`           : ""}
+${onderzoek   ? `Lichamelijk onderzoek: ${onderzoek}`  : ""}
+${behandeling ? `Behandeling: ${behandeling}`          : ""}
+${extra       ? `Aanvullend: ${extra}`                 : ""}
+
+Schrijf de rapportage. Geen naam onder de afsluiting — sluit af met alleen "Groet,"`;
+
+    const pdfPrompt = `Rapportagetype: ${type}
+${formatInstr}
+Leeftijd: ${leeftijd}
+Start traject: ${start}
+${vraag  ? `Vraag/reden contact: ${vraag}` : ""}
+${extra  ? `Aanvullend: ${extra}`           : ""}
+
+Haal klacht, anamnese, lichamelijk onderzoek en behandeling uit het bijgevoegde dossier. Geen echo- of röntgenbevindingen. Geen naam onder de afsluiting — sluit af met alleen "Groet,"`;
+
+    if (pdfData) {
+      return [{ role:"user", content:[
+        { type:"document", source:{ type:"base64", media_type:"application/pdf", data: pdfData } },
+        { type:"text", text: pdfPrompt }
+      ]}];
+    }
+    return [{ role:"user", content: tekstPrompt }];
+  }
+
+  function FieldInput({ mis, children }) {
+    return <div className={"field-input" + (mis ? " missing" : "")}>{children}</div>;
+  }
 
   function App() {
     const [apiKey, setApiKey]     = useState(localStorage.getItem("ft_apikey") || "");
     const [apiInput, setApiInput] = useState("");
     const [fase, setFase]         = useState("invoer");
     const [type, setType]         = useState(TYPEN[0]);
-    const [invoer, setInvoer]     = useState("pdf"); // "pdf" | "tekst"
+    const [formaat, setFormaat]   = useState("opsommend");
+    const [invoer, setInvoer]     = useState("pdf");
     const [pdfData, setPdfData]   = useState(null);
     const [pdfNaam, setPdfNaam]   = useState("");
     const [leeftijd, setLeeftijd] = useState("");
-    const [startdatum, setStart]  = useState("");
+    const [start, setStart]       = useState("");
     const [vraag, setVraag]       = useState("");
     const [klacht, setKlacht]     = useState("");
     const [onderzoek, setOnderz]  = useState("");
@@ -294,12 +336,10 @@ VERBODEN: echo/MSU-bevindingen, radiologie, harde diagnoses, formele taal, bulle
     const [bewerk, setBewerk]     = useState(false);
     const [geprobeerd, setGep]    = useState(false);
 
-    // Alleen leeftijd en startdatum zijn verplicht
-    const misLeeftijd  = geprobeerd && !leeftijd.trim();
-    const misStart     = geprobeerd && !startdatum.trim();
-    // Bij PDF-modus: PDF verplicht
-    const misPdf       = geprobeerd && invoer === "pdf" && !pdfData;
-    const ontbrekend   = [misLeeftijd, misStart, misPdf].some(Boolean);
+    const misLeeftijd = geprobeerd && !leeftijd.trim();
+    const misStart    = geprobeerd && !start.trim();
+    const misPdf      = geprobeerd && invoer === "pdf" && !pdfData;
+    const heeftFout   = misLeeftijd || misStart || misPdf;
 
     function handlePdf(e) {
       const file = e.target.files[0];
@@ -315,38 +355,9 @@ VERBODEN: echo/MSU-bevindingen, radiologie, harde diagnoses, formele taal, bulle
       setApiKey(apiInput); setApiInput("");
     }
 
-    function buildMessages() {
-      const pdfPrompt = `Rapportagetype: ${type}
-Leeftijd: ${leeftijd}
-Start traject: ${startdatum}
-${vraag       ? `Vraag/reden contact: ${vraag}` : ""}
-${extra       ? `Aanvullend: ${extra}` : ""}
-
-Haal de klinische informatie (klacht, anamnese, lichamelijk onderzoek, behandeling) uit het bijgevoegde dossier. Geen echo- of röntgenbevindingen. Schrijf een informele, collegiale Siilo-rapportage. Sluit af met een concrete vraag aan de ontvanger.`;
-
-      const tekstPrompt = `Rapportagetype: ${type}
-Leeftijd: ${leeftijd}
-Start traject: ${startdatum}
-${vraag       ? `Vraag/reden contact: ${vraag}`       : ""}
-${klacht      ? `Klacht/anamnese: ${klacht}`           : ""}
-${onderzoek   ? `Lichamelijk onderzoek: ${onderzoek}`  : ""}
-${behandeling ? `Behandeling: ${behandeling}`          : ""}
-${extra       ? `Aanvullend: ${extra}`                 : ""}
-
-Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevindingen. Sluit af met een concrete vraag aan de ontvanger.`;
-
-      if (invoer === "pdf") {
-        return [{ role:"user", content:[
-          { type:"document", source:{ type:"base64", media_type:"application/pdf", data: pdfData } },
-          { type:"text", text: pdfPrompt }
-        ]}];
-      }
-      return [{ role:"user", content: tekstPrompt }];
-    }
-
     async function genereer() {
       setGep(true);
-      if (ontbrekend) return;
+      if (heeftFout || (!leeftijd.trim()) || (!start.trim()) || (invoer === "pdf" && !pdfData)) return;
       if (!apiKey) { setError("Sla eerst je API-sleutel op."); return; }
       setError(""); setRes(""); setLoading(true);
       try {
@@ -363,12 +374,12 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
             max_tokens: 1000,
             temperature: 0,
             system: SYSTEM,
-            messages: buildMessages(),
+            messages: buildMessages(type, formaat, leeftijd, start, vraag, pdfData, klacht, onderzoek, behandeling, extra),
           }),
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        const tekst = data.content?.map(b => b.text||"").join("\n") || "";
+        const tekst = data.content?.map(b => b.text || "").join("\n") || "";
         if (!tekst) throw new Error("Geen resultaat ontvangen.");
         setRes(`${type}\n\n${tekst}`);
         setBewerk(false); setFase("resultaat");
@@ -387,7 +398,7 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
 
     function reset() {
       setFase("invoer"); setRes(""); setError(""); setGep(false);
-      setType(TYPEN[0]); setInvoer("pdf");
+      setType(TYPEN[0]); setFormaat("opsommend"); setInvoer("pdf");
       setPdfData(null); setPdfNaam("");
       setLeeftijd(""); setStart(""); setVraag("");
       setKlacht(""); setOnderz(""); setBeh(""); setExtra("");
@@ -396,12 +407,13 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
 
     return (
       <div className="wrap">
+        {/* API balk */}
         {!apiKey ? (
           <div className="api-bar">
             <label>API-sleutel</label>
             <input type="password" placeholder="sk-ant-..." value={apiInput}
               onChange={e => setApiInput(e.target.value)}
-              onKeyDown={e => e.key==="Enter" && slaKeyOp()} />
+              onKeyDown={e => e.key === "Enter" && slaKeyOp()} />
             <button className="save-btn" onClick={slaKeyOp}>Opslaan</button>
           </div>
         ) : (
@@ -411,6 +423,7 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
           </div>
         )}
 
+        {/* Hero */}
         <div className="hero">
           <div className="hero-badge">📨 Siilo · Rapportage</div>
           <div className="hero-ring">🫀</div>
@@ -432,7 +445,18 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
                 </div>
               </div>
 
-              {/* Verplichte basisvelden */}
+              {/* Outputformaat */}
+              <div className="section">
+                <span className="section-label">Outputformaat</span>
+                <div className="toggle">
+                  <button className={"toggle-btn " + (formaat === "opsommend" ? "active" : "inactive")}
+                    onClick={() => setFormaat("opsommend")}>Opsommend</button>
+                  <button className={"toggle-btn " + (formaat === "verhalend" ? "active" : "inactive")}
+                    onClick={() => setFormaat("verhalend")}>Verhalend</button>
+                </div>
+              </div>
+
+              {/* Basisgegevens */}
               <div className="section">
                 <span className="section-label">Basisgegevens</span>
                 <div className="card" style={{display:"flex", flexDirection:"column", gap:14}}>
@@ -440,70 +464,75 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
                     <div className="field-label">
                       Leeftijd {misLeeftijd ? <span className="tag-mis">Vereist — vul in</span> : <span className="tag-req">Verplicht</span>}
                     </div>
-                    <FI mis={misLeeftijd}>
+                    <FieldInput mis={misLeeftijd}>
                       <input type="text" value={leeftijd} onChange={e => setLeeftijd(e.target.value)} placeholder="bijv. 42 jaar" />
-                    </FI>
+                    </FieldInput>
                   </div>
                   <div className="field">
                     <div className="field-label">
                       Startdatum traject {misStart ? <span className="tag-mis">Vereist — vul in</span> : <span className="tag-req">Verplicht</span>}
                     </div>
-                    <FI mis={misStart}>
-                      <input type="text" value={startdatum} onChange={e => setStart(e.target.value)} placeholder="bijv. maart 2025" />
-                    </FI>
+                    <FieldInput mis={misStart}>
+                      <input type="text" value={start} onChange={e => setStart(e.target.value)} placeholder="bijv. maart 2025" />
+                    </FieldInput>
                   </div>
                   <div className="field">
                     <div className="field-label opt">Vraag / reden van contact <span className="tag-opt">Optioneel</span></div>
-                    <FI>
+                    <FieldInput>
                       <textarea value={vraag} onChange={e => setVraag(e.target.value)}
-                        placeholder="Wat is de concrete vraag aan de ontvanger?" style={{minHeight:56}} />
-                    </FI>
+                        placeholder="Wat is de concrete vraag aan de ontvanger?" style={{minHeight:54}} />
+                    </FieldInput>
                   </div>
                 </div>
               </div>
 
-              {/* Dossierbron */}
+              {/* Klinische invoer */}
               <div className="section">
                 <span className="section-label">Klinische informatie</span>
-                <div className="toggle">
-                  <button className={"toggle-btn " + (invoer==="pdf" ? "active" : "inactive")}
+                <div className="toggle" style={{marginBottom:12}}>
+                  <button className={"toggle-btn " + (invoer === "pdf" ? "active" : "inactive")}
                     onClick={() => { setInvoer("pdf"); setKlacht(""); setOnderz(""); setBeh(""); }}>
                     📄 PDF uploaden
                   </button>
-                  <button className={"toggle-btn " + (invoer==="tekst" ? "active" : "inactive")}
+                  <button className={"toggle-btn " + (invoer === "tekst" ? "active" : "inactive")}
                     onClick={() => { setInvoer("tekst"); setPdfData(null); setPdfNaam(""); }}>
                     ✏️ Zelf invullen
                   </button>
                 </div>
 
                 {invoer === "pdf" ? (
-                  <div className={"pdf-zone" + (pdfNaam ? " has-file" : "") + (misPdf ? " missing" : "")}
-                    style={misPdf ? {borderColor:"#f5b8d8"} : {}}>
+                  <div className={"pdf-zone" + (pdfNaam ? " has-file" : "") + (misPdf ? " missing" : "")}>
                     <label style={{display:"block", cursor:"pointer"}}>
                       <input type="file" accept="application/pdf" style={{display:"none"}} onChange={handlePdf} />
                       <div className="pdf-icon">{pdfNaam ? "📄" : "⬆️"}</div>
-                      {pdfNaam
-                        ? <><div className="pdf-name">{pdfNaam}</div><div className="pdf-hint">Klik om een ander bestand te kiezen</div></>
-                        : <><div className="pdf-name" style={{color: misPdf ? "#c0328a" : "#82176D"}}>
+                      {pdfNaam ? (
+                        <>
+                          <div className="pdf-name">{pdfNaam}</div>
+                          <div className="pdf-hint">Klik om een ander bestand te kiezen</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="pdf-name" style={{color: misPdf ? "#c0328a" : "#82176D"}}>
                             {misPdf ? "Vereist — upload een PDF" : "Klik om dossier te uploaden"}
                           </div>
-                          <div className="pdf-hint">EPD-export of brief als PDF</div></>
-                      }
+                          <div className="pdf-hint">EPD-export of brief als PDF</div>
+                        </>
+                      )}
                     </label>
                   </div>
                 ) : (
                   <div className="card" style={{display:"flex", flexDirection:"column", gap:14}}>
                     {[
-                      { val:klacht,     set:setKlacht, label:"Klacht & anamnese",                    ph:"Ontstaanswijze, beloop, pijnscore, ADL-beperkingen...", h:88 },
-                      { val:onderzoek,  set:setOnderz, label:"Bevindingen lichamelijk onderzoek",    ph:"ROM, kracht, klinische tests (geen echo/röntgen)...",   h:88 },
-                      { val:behandeling,set:setBeh,    label:"Behandeling tot nu toe",               ph:"Type behandeling, frequentie, duur, effect, aantal sessies...", h:66 },
+                      { val:klacht,      set:setKlacht, label:"Klacht & anamnese",                  ph:"Ontstaanswijze, beloop, pijnscore, ADL-beperkingen...", h:88 },
+                      { val:onderzoek,   set:setOnderz, label:"Bevindingen lichamelijk onderzoek",  ph:"ROM, kracht, klinische tests (geen echo/röntgen)...",   h:88 },
+                      { val:behandeling, set:setBeh,    label:"Behandeling tot nu toe",             ph:"Type, frequentie, duur, effect, aantal sessies...",      h:66 },
                     ].map(f => (
                       <div key={f.label} className="field">
                         <div className="field-label opt">{f.label} <span className="tag-opt">Optioneel</span></div>
-                        <FI>
+                        <FieldInput>
                           <textarea value={f.val} onChange={e => f.set(e.target.value)}
                             placeholder={f.ph} style={{minHeight:f.h}} />
-                        </FI>
+                        </FieldInput>
                       </div>
                     ))}
                   </div>
@@ -515,15 +544,15 @@ Schrijf een informele, collegiale Siilo-rapportage. Geen echo- of röntgenbevind
                 <span className="section-label">Aanvullend</span>
                 <div className="card">
                   <div className="field-label opt" style={{marginBottom:8}}>Extra context <span className="tag-opt">Optioneel</span></div>
-                  <FI>
+                  <FieldInput>
                     <textarea value={extra} onChange={e => setExtra(e.target.value)}
                       placeholder="PROMs, 3S-score, specifieke wensen voor de ontvanger..."
                       style={{minHeight:52}} />
-                  </FI>
+                  </FieldInput>
                 </div>
               </div>
 
-              {geprobeerd && ontbrekend && (
+              {geprobeerd && heeftFout && (
                 <div className="warning">Vul de verplichte velden in voordat je de rapportage genereert.</div>
               )}
               {error && <div className="error-msg">{error}</div>}
