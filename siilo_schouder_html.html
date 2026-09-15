@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-09-15.3 -->
+<!-- APP_VERSION: 2026-09-15.4 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,7 +10,7 @@
   <title>Schouderrapportage – Fyzio Totaal</title>
 
   <script>
-    var APP_VERSION = "2026-09-15.3";
+    const APP_VERSION = "2026-09-15.4";
     (function () {
       if (location.search.indexOf("_v=") === -1) {
         fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
@@ -29,8 +29,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Poppins', 'Segoe UI', sans-serif; background: #f3eef2; min-height: 100vh; color: #1a1a1a; }
-    .wrap { max-width: 680px; margin: 0 auto; }
+    body { font-family: 'Poppins', 'Segoe UI', sans-serif; background: #f3eef2; min-height: 100vh; color: #1a1a1a; display: flex; justify-content: center; }
+    .wrap { max-width: 680px; width: 100%; }
 
     .hero {
       position: relative;
@@ -195,11 +195,9 @@
       vertical-align: middle; margin-right: 8px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    footer {
-      background: #4a0f42; color: rgba(255,255,255,0.45);
+    footer { max-width: 680px; width: 100%; background: #4a0f42; color: rgba(255,255,255,0.45);
       text-align: center; padding: 14px 1rem;
-      font-size: 11.5px; font-family: 'Poppins', sans-serif;
-    }
+      font-size: 11.5px; font-family: 'Poppins', sans-serif; }
     footer strong { color: rgba(255,255,255,0.75); }
     .ver { color: #00B6E8; font-weight: 600; }
   </style>
@@ -207,7 +205,7 @@
 <body>
 <div id="root"></div>
 <footer>
-  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-15.3</span>
+  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-15.4</span>
 </footer>
 
 <script>
