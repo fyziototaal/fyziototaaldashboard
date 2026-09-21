@@ -95,8 +95,8 @@
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-// v1.0.0 — verhoog dit nummer bij elke wijziging (zichtbaar in de footer, handig om GitHub Pages-deploys te checken)
-const VERSION = "1.0.0";
+// v1.1.0 — verhoog dit nummer bij elke wijziging (zichtbaar in de footer, handig om GitHub Pages-deploys te checken)
+const VERSION = "1.1.0";
 const SB_URL = "https://szunargvsmtzbbnmnghc.supabase.co/rest/v1/fyzio_zorgverzekeraars";
 const SB_KEY = "sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
 const HDR = { apikey: SB_KEY, "Content-Type": "application/json" };
@@ -114,35 +114,52 @@ const mk = (name, aliases, verwijzing, eigenRisico, gecontroleerd) => ({
 const CHECKED = "2026-09-21"; // op basis van het overzicht dat Lonneke heeft aangeleverd
 // Verzekeraars die niet expliciet zijn aangeleverd: standaard wel-verwijzing/wel-eigen-risico, en gemarkeerd als "nog niet gecontroleerd".
 const SEED = [
-  mk("VGZ", ["IZZ", "IZA Zorgverzekering", "UMC Zorgverzekering", "Univé", "Bewuzt"], false, false, CHECKED),
-  mk("CZ", ["CZdirect", "OHRA", "Nationale-Nederlanden", "OZF"], true, true, CHECKED),
-  mk("Menzis", ["Anderzorg", "HEMA"], false, true, CHECKED),
-  mk("Zilveren Kruis", ["FBTO", "Interpolis", "Avéro Achmea", "De Friesland", "Pro Life"], false, false, CHECKED),
+  mk("VGZ", ["IZZ", "IZA Zorgverzekering", "UMC Zorgverzekering", "Univé", "ZEKUR", "United Consumers"], false, false, CHECKED),
+  mk("CZ", ["CZdirect", "Just", "Nationale-Nederlanden", "OHRA"], true, true, CHECKED),
+  mk("Menzis", ["Anderzorg", "VinkVink"], false, true, CHECKED),
+  mk("Zilveren Kruis", ["FBTO", "Interpolis", "Avéro Achmea", "De Friesland", "ZieZo", "Pro Life", "De christelijke zorgverzekeraar"], false, false, CHECKED),
   mk("Zorg en Zekerheid", [], true, false, CHECKED),
-  mk("Salland", [], true, false, CHECKED),
-  mk("a.s.r.", ["Ditzo"], true, true),
+  // Eno is de oude naam van deze verzekeraar (in 2023 omgedoopt); geen apart label, dus hier samengevoegd i.p.v. als losse kaart.
+  mk("Salland", ["Eno", "Zorgdirect", "HollandZorg"], true, false, CHECKED),
+  mk("a.s.r.", ["Ditzo", "Ik kies zelf van a.s.r."], true, true),
   mk("ONVZ", ["PNOzorg", "VvAA"], true, true),
   mk("DSW", ["Stad Holland", "inTwente"], true, true),
-  mk("Eno", ["Salland Verzekeringen", "HollandZorg"], true, true),
+  // Geen gewone Zvw-basisverzekeraars, maar aparte regelingen — zie de opmerking bij elke kaart.
+  {
+    id: "ins_szvk", name: "SZVK (Defensie)", aliases: ["Stichting Ziektekostenverzekering Krijgsmacht"],
+    topics: { [TOPIC.id]: {
+      verwijzing: true, eigenRisico: true,
+      opmerking: "Aparte regeling voor actief dienende militairen (geen gewone Zvw-basisverzekering), sinds 2022 uitgevoerd door DSW. Onduidelijk of het gewone eigen risico en de gewone verwijsregels 1-op-1 gelden — vraag dit na bij de patiënt of check szvk.nl voordat je dit als uitleg gebruikt.",
+      gecontroleerd: null,
+    } },
+  },
+  {
+    id: "ins_rmo", name: "RMO (Oekraïense vluchtelingen)", aliases: ["Regeling Medische zorg Oekraïners", "Regeling Medische zorg Oekraïne"],
+    topics: { [TOPIC.id]: {
+      verwijzing: true, eigenRisico: false,
+      opmerking: "Geen gewone basisverzekering maar een overheidsregeling voor Oekraïense vluchtelingen: patiënten betalen geen premie en geen eigen risico, wij declareren via de reguliere weg. Nog navragen of een verwijzing hier net zo verplicht is als bij een gewone verzekering.",
+      gecontroleerd: null,
+    } },
+  },
 ];
 
 const DEFAULT_TEMPLATES = {
   verwijzing_ja: "Voor artrosezorg aan je knie of heup heb je bij {verzekeraar} een verwijzing nodig van je huisarts of specialist. Regel die dus voordat we starten met je traject.",
   verwijzing_nee: "Bij {verzekeraar} heb je geen verwijzing nodig voor artrosezorg. Je kunt dus gewoon direct bij ons terecht.",
   verwijzing_algemeen: "Of je een verwijzing nodig hebt voor artrosezorg aan je knie of heup, hangt af van je zorgverzekeraar. Sommige verzekeraars vragen om een verwijzing van je huisarts of specialist, andere niet. Laat ons weten bij welke verzekeraar je zit, dan vertellen we je precies wat je moet regelen.",
-  er_ja: "De behandelingen voor artrosezorg vallen bij {verzekeraar} onder je eigen risico. Dat betekent dat je de kosten eerst zelf betaalt, totdat je eigen risico van dit jaar (maximaal €{bedrag}) op is. De rekening krijg je overigens niet van ons, maar van je zorgverzekeraar. Heb je je eigen risico dit jaar al (deels) gebruikt voor andere zorg? Dan betaal je voor onze behandelingen minder of niks meer.",
+  er_ja: "De behandelingen voor artrosezorg vallen bij {verzekeraar} onder je eigen risico. Dat betekent dat je de kosten eerst zelf betaalt, totdat je eigen risico van dit jaar op is. Het verplichte eigen risico is in {jaar} minimaal €{bedragMin} — je kunt er zelf voor kiezen dit vrijwillig te verhogen tot maximaal €{bedragMax} in ruil voor een lagere premie, dus check in je polis welk bedrag voor jou geldt. De rekening krijg je overigens niet van ons, maar van je zorgverzekeraar. Heb je je eigen risico dit jaar al (deels) gebruikt voor andere zorg? Dan betaal je voor onze behandelingen minder of niks meer.",
   er_nee: "Bij {verzekeraar} vallen de behandelingen voor artrosezorg niet onder je eigen risico. Je betaalt hiervoor dus niks van je eigen risico, en het gaat er ook niet vanaf.",
-  er_algemeen: "Je eigen risico is het bedrag dat je elk jaar eerst zelf betaalt, voordat je zorgverzekeraar de zorgkosten vergoedt. In {jaar} is dat maximaal €{bedrag}. Of onze behandelingen voor artrose aan de knie of heup hieronder vallen, hangt af van je zorgverzekeraar: sommige rekenen dit niet mee. Check dit in je polis of vraag het na bij je verzekeraar. De rekening voor je eigen risico krijg je overigens van je zorgverzekeraar, niet van ons.",
-  jaar_ja: "Let op: zit je in een chronisch traject dat over de jaarwisseling heen loopt? Dan begint je eigen risico in januari gewoon weer opnieuw. Behandelingen die je in {volgendjaar} krijgt, tellen mee voor het eigen risico van {volgendjaar}, ook als je traject al in {jaar} is gestart. Je kunt in het nieuwe jaar dus opnieuw een rekening van je zorgverzekeraar krijgen.",
-  jaar_nee: "Ook als je traject over de jaarwisseling heen loopt, verandert er voor jou niks: bij {verzekeraar} betaal je geen eigen risico voor artrosezorg. Verzekeraars kunnen dit wel jaarlijks aanpassen, dus check bij de jaarwisseling even of dit nog steeds zo is.",
-  jaar_algemeen: "Loopt je chronische traject over de jaarwisseling heen? Dan begint je eigen risico in januari gewoon weer opnieuw. Valt artrosezorg bij jouw verzekeraar onder het eigen risico, dan betaal je in het nieuwe jaar dus opnieuw, ook al ben je al in het vorige jaar gestart met je traject. Rekent jouw verzekeraar er geen eigen risico voor, dan verandert er niks.",
+  er_algemeen: "Je eigen risico is het bedrag dat je elk jaar eerst zelf betaalt, voordat je zorgverzekeraar de zorgkosten vergoedt. Het verplichte eigen risico is in {jaar} minimaal €{bedragMin}; je kunt zelf kiezen om dit vrijwillig te verhogen tot maximaal €{bedragMax} — hoe hoger je eigen risico, hoe lager je premie. Of onze behandelingen voor artrose aan de knie of heup hieronder vallen, hangt af van je zorgverzekeraar: sommige rekenen dit niet mee. Check dit in je polis of vraag het na bij je verzekeraar. De rekening voor je eigen risico krijg je overigens van je zorgverzekeraar, niet van ons.",
+  jaar_ja: "Let op: zit je in een chronisch traject dat over de jaarwisseling heen loopt — bijvoorbeeld na een knie- of heupoperatie (THP/TKP) of een VKB-reconstructie? Dan begint je eigen risico in januari gewoon weer opnieuw. Behandelingen die je in {volgendjaar} krijgt, tellen mee voor het eigen risico van {volgendjaar}, ook als je traject al in {jaar} is gestart en je toen je eigen risico al had volgemaakt. Je kunt in het nieuwe jaar dus opnieuw een rekening van je zorgverzekeraar krijgen voor hetzelfde traject.",
+  jaar_nee: "Ook als je traject over de jaarwisseling heen loopt — bijvoorbeeld na een knie- of heupoperatie (THP/TKP) of een VKB-reconstructie — verandert er voor jou niks: bij {verzekeraar} betaal je geen eigen risico voor artrosezorg. Verzekeraars kunnen dit wel jaarlijks aanpassen, dus check bij de jaarwisseling even of dit nog steeds zo is.",
+  jaar_algemeen: "Loopt je chronische traject over de jaarwisseling heen — bijvoorbeeld na een knie- of heupoperatie (THP/TKP) of een VKB-reconstructie? Dan begint je eigen risico in januari gewoon weer opnieuw. Valt artrosezorg bij jouw verzekeraar onder het eigen risico, dan betaal je in het nieuwe jaar dus opnieuw, ook al ben je al in het vorige jaar gestart met je traject en had je toen je eigen risico al volgemaakt. Rekent jouw verzekeraar er geen eigen risico voor, dan verandert er niks.",
 };
 const TEMPLATE_LABELS = {
   verwijzing_ja: "Verwijzing: wel nodig", verwijzing_nee: "Verwijzing: niet nodig", verwijzing_algemeen: "Verwijzing: algemeen (onbekende verzekeraar)",
   er_ja: "Eigen risico: wel van toepassing", er_nee: "Eigen risico: niet van toepassing", er_algemeen: "Eigen risico: algemeen (onbekende verzekeraar)",
   jaar_ja: "Nieuw jaar: eigen risico begint opnieuw", jaar_nee: "Nieuw jaar: geen eigen risico van toepassing", jaar_algemeen: "Nieuw jaar: algemeen (onbekende verzekeraar)",
 };
-const DEFAULT_SETTINGS = { bedrag: 385, templates: {} };
+const DEFAULT_SETTINGS = { bedragMin: 385, bedragMax: 885, templates: {} };
 
 const norm = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const slug = (s) => "ins_" + norm(s).replace(/[^a-z0-9]+/g, "").slice(0, 40);
@@ -240,15 +257,18 @@ function EditModal({ ins, isNew, onSave, onDelete, onClose }) {
 }
 
 function TemplateModal({ settings, onSave, onClose }) {
-  const [bedrag, setBedrag] = useState(settings.bedrag);
+  const [bedragMin, setBedragMin] = useState(settings.bedragMin);
+  const [bedragMax, setBedragMax] = useState(settings.bedragMax);
   const [tpl, setTpl] = useState({ ...DEFAULT_TEMPLATES, ...settings.templates });
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal wide">
         <h2>Uitlegteksten aanpassen</h2>
-        <div className="hint">Gebruik {"{verzekeraar}"}, {"{bedrag}"}, {"{jaar}"} en {"{volgendjaar}"} als invulvelden — die worden automatisch ingevuld.</div>
-        <label className="l">Eigen risico per jaar (€, wettelijk vastgesteld bedrag)</label>
-        <input className="field" type="number" style={{ maxWidth: 160 }} value={bedrag} onChange={(e) => setBedrag(e.target.value)} />
+        <div className="hint">Gebruik {"{verzekeraar}"}, {"{bedragMin}"}, {"{bedragMax}"}, {"{jaar}"} en {"{volgendjaar}"} als invulvelden — die worden automatisch ingevuld.</div>
+        <label className="l">Verplicht eigen risico (minimum, €)</label>
+        <input className="field" type="number" style={{ maxWidth: 160 }} value={bedragMin} onChange={(e) => setBedragMin(e.target.value)} />
+        <label className="l">Eigen risico bij maximale vrijwillige verhoging (€)</label>
+        <input className="field" type="number" style={{ maxWidth: 160 }} value={bedragMax} onChange={(e) => setBedragMax(e.target.value)} />
         {Object.keys(DEFAULT_TEMPLATES).map((k) => (
           <div key={k}>
             <label className="l">
@@ -265,7 +285,11 @@ function TemplateModal({ settings, onSave, onClose }) {
           <button className="btn" onClick={() => {
             const templates = {};
             Object.keys(tpl).forEach((k) => { if (tpl[k] !== DEFAULT_TEMPLATES[k]) templates[k] = tpl[k]; });
-            onSave({ bedrag: Number(bedrag) || DEFAULT_SETTINGS.bedrag, templates });
+            onSave({
+              bedragMin: Number(bedragMin) || DEFAULT_SETTINGS.bedragMin,
+              bedragMax: Number(bedragMax) || DEFAULT_SETTINGS.bedragMax,
+              templates,
+            });
           }}>Opslaan</button>
         </div>
       </div>
@@ -335,7 +359,13 @@ function Uitleg({ insurers, settings, onEditTemplates, toast }) {
   const [sel, setSel] = useState("");
   const ins = insurers.find((i) => i.id === sel);
   const tpl = { ...DEFAULT_TEMPLATES, ...settings.templates };
-  const vars = { verzekeraar: ins ? ins.name : "", bedrag: String(settings.bedrag), jaar: String(JAAR), volgendjaar: String(JAAR + 1) };
+  const vars = {
+    verzekeraar: ins ? ins.name : "",
+    bedragMin: String(settings.bedragMin),
+    bedragMax: String(settings.bedragMax),
+    jaar: String(JAAR),
+    volgendjaar: String(JAAR + 1),
+  };
   const t = ins ? ins.topics[TOPIC.id] : null;
   const blocks = ins ? [
     ["Verwijzing", tpl[t.verwijzing ? "verwijzing_ja" : "verwijzing_nee"]],
