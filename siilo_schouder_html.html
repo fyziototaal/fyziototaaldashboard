@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-09-15.8 -->
+<!-- APP_VERSION: 2026-09-15.9 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,7 +10,7 @@
   <title>Schouderrapportage – Fyzio Totaal</title>
 
   <script>
-    const APP_VERSION = "2026-09-15.8";
+    var APP_VERSION = "2026-09-15.9";
     (function () {
       if (location.search.indexOf("_v=") === -1) {
         fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
@@ -29,8 +29,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Poppins', 'Segoe UI', sans-serif; background: #f3eef2; min-height: 100vh; color: #1a1a1a; display: flex; justify-content: center; }
-    .wrap { max-width: 680px; width: 100%; }
+    html, body { background: #f3eef2; }
+    body { font-family: 'Poppins', 'Segoe UI', sans-serif; color: #1a1a1a; }
+    #app { max-width: 680px; margin: 0 auto; }
 
     .hero {
       position: relative;
@@ -53,185 +54,106 @@
     }
     .hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
     .hero p { font-size: 13px; color: rgba(255,255,255,0.78); margin-bottom: 16px; }
-    .hero-pill {
-      display: inline-block; background: #00B6E8; color: #fff;
-      font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
-      text-transform: uppercase; padding: 7px 18px; border-radius: 20px;
-    }
-    .api-bar {
-      background: #fff; border-bottom: 1px solid #e2d5df;
-      padding: 10px 20px; display: flex; align-items: center; gap: 10px;
-    }
+    .hero-pill { display: inline-block; background: #00B6E8; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; padding: 7px 18px; border-radius: 20px; }
+
+    .api-bar { background: #fff; border-bottom: 1px solid #e2d5df; padding: 10px 20px; display: flex; align-items: center; gap: 10px; }
     .api-bar label { font-size: 12px; font-weight: 600; color: #82176D; white-space: nowrap; }
-    .api-bar input {
-      flex: 1; font-family: 'Poppins', sans-serif; font-size: 13px;
-      border: 1px solid #d8c7d4; border-radius: 8px; padding: 6px 10px; outline: none;
-    }
+    .api-bar input { flex: 1; font-family: 'Poppins', sans-serif; font-size: 13px; border: 1px solid #d8c7d4; border-radius: 8px; padding: 6px 10px; outline: none; }
     .api-bar input:focus { border-color: #82176D; }
-    .save-btn {
-      font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
-      padding: 6px 14px; border-radius: 8px; border: none;
-      background: linear-gradient(120deg, #4a0f42, #82176D); color: #fff; cursor: pointer;
-    }
+    .save-btn { font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 8px; border: none; background: linear-gradient(120deg, #4a0f42, #82176D); color: #fff; cursor: pointer; }
     .api-saved { font-size: 12px; color: #aaa; }
-    .api-change {
-      font-size: 11px; padding: 4px 10px; border-radius: 6px;
-      border: 1px solid #d8c7d4; background: #fff; color: #82176D; cursor: pointer;
-    }
-    .body { padding: 24px 20px 48px; }
+    .api-change { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #d8c7d4; background: #fff; color: #82176D; cursor: pointer; }
+
+    .body { padding: 24px 20px 48px; background: #f3eef2; }
     .section { margin-bottom: 18px; }
-    .section-label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1.4px; color: #82176D; margin-bottom: 10px; display: block;
-    }
-    .card {
-      background: #fff; border-radius: 16px;
-      box-shadow: 0 2px 14px rgba(130,23,109,0.07);
-      padding: 16px 18px;
-    }
-    select, textarea, input[type=text] {
-      width: 100%; font-family: 'Poppins', sans-serif;
-      font-size: 13.5px; color: #1a1a1a; background: transparent;
-      border: none; outline: none; line-height: 1.6;
-    }
+    .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; color: #82176D; margin-bottom: 10px; display: block; }
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 2px 14px rgba(130,23,109,0.07); padding: 16px 18px; }
+
+    select, textarea, input[type=text] { width: 100%; font-family: 'Poppins', sans-serif; font-size: 13.5px; color: #1a1a1a; background: transparent; border: none; outline: none; line-height: 1.6; }
     select { cursor: pointer; }
     textarea { resize: vertical; }
+
     .toggle { display: flex; gap: 6px; }
-    .toggle-btn {
-      flex: 1; padding: 9px 0; font-family: 'Poppins', sans-serif;
-      font-size: 13px; font-weight: 600; border-radius: 10px;
-      border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s;
-    }
+    .toggle-btn { flex: 1; padding: 9px 0; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s; }
     .toggle-btn.active { background: linear-gradient(120deg, #4a0f42, #82176D); color: #fff; }
     .toggle-btn.inactive { background: #fff; color: #82176D; border-color: #d8c7d4; }
-    .pdf-zone {
-      border: 2px dashed #d8c7d4; border-radius: 12px;
-      padding: 28px 16px; text-align: center; cursor: pointer;
-      background: #faf7fb; transition: border-color 0.15s, background 0.15s;
-    }
-    .pdf-zone:hover, .pdf-zone.has-file { border-color: #82176D; border-style: solid; background: #f8f0f6; }
+
+    .pdf-zone { border: 2px dashed #d8c7d4; border-radius: 12px; padding: 28px 16px; text-align: center; cursor: pointer; background: #faf7fb; transition: border-color 0.15s; }
+    .pdf-zone:hover { border-color: #82176D; background: #f8f0f6; }
+    .pdf-zone.has-file { border-color: #82176D; border-style: solid; background: #f8f0f6; }
     .pdf-zone.missing { border-color: #f5b8d8; }
     .pdf-icon { font-size: 30px; margin-bottom: 8px; }
     .pdf-name { font-size: 14px; font-weight: 600; color: #82176D; margin-bottom: 4px; }
     .pdf-hint { font-size: 12px; color: #aaa; }
+
     .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
-    .field-label {
-      font-size: 11.5px; font-weight: 600; color: #82176D;
-      margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
-    }
+    .field-label { font-size: 11.5px; font-weight: 600; color: #82176D; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
     .field-label.opt { color: #999; }
     .tag-req { font-size: 10px; background: #f3e3ef; color: #82176D; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
     .tag-mis { font-size: 10px; background: #fde8f4; color: #c0328a; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
     .tag-opt { font-size: 10px; background: #f0f0f0; color: #999; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
     .field-input { background: #faf7fb; border-radius: 10px; border: 1px solid #e2d5df; padding: 9px 13px; }
     .field-input.missing { border-color: #f5b8d8; background: #fdf5fa; }
-    .warning {
-      font-size: 13px; color: #7a4f00; margin-bottom: 14px;
-      padding: 10px 14px; background: #fff8e6; border-radius: 10px; border: 1px solid #f0d080;
-    }
-    .error-msg {
-      font-size: 13px; color: #82176D; margin-bottom: 12px;
-      padding: 10px 14px; background: #fdf0f7; border-radius: 10px; border: 1px solid #e8c2da;
-    }
-    .btn-primary {
-      width: 100%; padding: 13px 0;
-      font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
-      border: none; border-radius: 12px;
-      background: linear-gradient(120deg, #4a0f42 0%, #82176D 100%);
-      color: #fff; cursor: pointer; transition: opacity 0.15s;
-    }
+
+    .warning { font-size: 13px; color: #7a4f00; margin-bottom: 14px; padding: 10px 14px; background: #fff8e6; border-radius: 10px; border: 1px solid #f0d080; }
+    .error-msg { font-size: 13px; color: #82176D; margin-bottom: 12px; padding: 10px 14px; background: #fdf0f7; border-radius: 10px; border: 1px solid #e8c2da; }
+
+    .btn-primary { width: 100%; padding: 13px 0; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; border: none; border-radius: 12px; background: linear-gradient(120deg, #4a0f42 0%, #82176D 100%); color: #fff; cursor: pointer; transition: opacity 0.15s; }
     .btn-primary:hover { opacity: 0.91; }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary {
-      width: 100%; padding: 11px 0;
-      font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600;
-      border: 1.5px solid #d8c7d4; border-radius: 12px;
-      background: #fff; color: #82176D; cursor: pointer; transition: background 0.15s;
-    }
+    .btn-secondary { width: 100%; padding: 11px 0; font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 600; border: 1.5px solid #d8c7d4; border-radius: 12px; background: #fff; color: #82176D; cursor: pointer; }
     .btn-secondary:hover { background: #f8f0f6; }
-    .result-card {
-      background: #fff; border-radius: 16px;
-      box-shadow: 0 2px 14px rgba(130,23,109,0.08);
-      overflow: hidden; margin-bottom: 18px;
-    }
-    .result-header {
-      background: linear-gradient(120deg, #4a0f42 0%, #82176D 100%);
-      padding: 11px 16px; display: flex; align-items: center; justify-content: space-between;
-    }
+
+    .result-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 14px rgba(130,23,109,0.08); overflow: hidden; margin-bottom: 18px; }
+    .result-header { background: linear-gradient(120deg, #4a0f42 0%, #82176D 100%); padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; }
     .result-header span { font-size: 13px; font-weight: 600; color: #fff; }
     .result-btns { display: flex; gap: 6px; }
-    .result-btn {
-      font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600;
-      padding: 5px 14px; border-radius: 20px;
-      border: 1.5px solid rgba(255,255,255,0.45);
-      background: rgba(255,255,255,0.13); color: #fff; cursor: pointer; transition: background 0.15s;
-    }
+    .result-btn { font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600; padding: 5px 14px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,0.45); background: rgba(255,255,255,0.13); color: #fff; cursor: pointer; }
     .result-btn:hover { background: rgba(255,255,255,0.25); }
     .result-btn.editing { background: rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.85); }
-    .result-body {
-      padding: 18px 20px; font-size: 13.5px; line-height: 1.8;
-      color: #1a1a1a; white-space: pre-wrap; font-family: 'Poppins', sans-serif;
-    }
+    .result-body { padding: 18px 20px; font-size: 13.5px; line-height: 1.8; color: #1a1a1a; white-space: pre-wrap; font-family: 'Poppins', sans-serif; }
     .kopje { display: block; font-weight: 700; color: #82176D; margin-top: 10px; margin-bottom: 2px; font-size: 12px; }
     .kopje:first-child { margin-top: 0; }
-    .result-edit {
-      width: 100%; min-height: 230px; font-size: 13.5px; line-height: 1.8;
-      color: #1a1a1a; font-family: 'Poppins', sans-serif;
-      padding: 18px 20px; border: none; outline: none;
-      resize: vertical; background: #faf7fb; display: block;
-    }
-    .badge-ready {
-      display: inline-block; font-size: 10.5px; font-weight: 700;
-      padding: 4px 12px; border-radius: 20px;
-      background: #dcf4fb; color: #00728e;
-      letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 12px;
-    }
+    .result-edit { width: 100%; min-height: 230px; font-size: 13.5px; line-height: 1.8; color: #1a1a1a; font-family: 'Poppins', sans-serif; padding: 18px 20px; border: none; outline: none; resize: vertical; background: #faf7fb; display: block; }
+
+    .badge-ready { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: #dcf4fb; color: #00728e; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 12px; }
     .divider { height: 1px; background: #e2d5df; margin: 18px 0; }
-    .spinner {
-      display: inline-block; width: 15px; height: 15px;
-      border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff;
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-      vertical-align: middle; margin-right: 8px;
-    }
+    .spinner { display: inline-block; width: 15px; height: 15px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    footer { max-width: 680px; width: 100%; background: #4a0f42; color: rgba(255,255,255,0.45);
-      text-align: center; padding: 14px 1rem;
-      font-size: 11.5px; font-family: 'Poppins', sans-serif; }
-    footer strong { color: rgba(255,255,255,0.75); }
+
+    .ft-footer { background: #4a0f42; color: rgba(255,255,255,0.45); text-align: center; padding: 14px 1rem; font-size: 11.5px; font-family: 'Poppins', sans-serif; }
     .ver { color: #00B6E8; font-weight: 600; }
   </style>
 </head>
 <body>
-<div id="root"></div>
-<footer>
-  <strong>Fyzio Totaal</strong> · Schouderrapportage · <span class="ver">v2026-09-15.4</span>
-</footer>
+<div id="app"></div>
 
 <script>
-// ── Staat ──────────────────────────────────────────────────────────────────
+var APP_VERSION = "2026-09-15.9";
+
 var state = {
-  apiKey:      localStorage.getItem("ft_apikey") || "",
-  apiInput:    "",
-  fase:        "invoer",
-  type:        0,
-  formaat:     "opsommend",
-  invoer:      "pdf",
-  pdfData:     null,
-  pdfNaam:     "",
-  leeftijd:    "",
-  start:       "",
-  vraag:       "",
-  klacht:      "",
-  onderzoek:   "",
+  apiKey: localStorage.getItem("ft_apikey") || "",
+  apiInput: "",
+  fase: "invoer",
+  type: 0,
+  formaat: "opsommend",
+  invoer: "pdf",
+  pdfData: null,
+  pdfNaam: "",
+  leeftijd: "",
+  start: "",
+  vraag: "",
+  klacht: "",
+  onderzoek: "",
   behandeling: "",
-  extra:       "",
-  resultaat:   "",
-  loading:     false,
-  error:       "",
-  copied:      false,
-  bewerk:      false,
-  geprobeerd:  false
+  extra: "",
+  resultaat: "",
+  loading: false,
+  error: "",
+  copied: false,
+  bewerk: false,
+  geprobeerd: false
 };
 
 var TYPEN = [
@@ -246,149 +168,122 @@ var TYPEN = [
 
 var SYSTEM = "Je bent een medische rapportage-assistent voor fysiotherapeuten in Nederland. Je schrijft collegiaal, informeel en direct.\n\nSTRIKTE REGELS:\n- Gebruik ALLEEN informatie die letterlijk in de aangeleverde tekst of het dossier staat\n- Geen diagnoses stellen \u2014 gebruik \"beeld passend bij\" of \"vermoeden van\"\n- Geen echografische of radiologische bevindingen\n- Geen markdown, geen sterretjes, geen vetgedrukte tekst \u2014 gewone platte tekst\n- Informele maar professionele toon\n- Geen naam onder de afsluiting \u2014 sluit af met alleen \"Groet,\"\n- Gebruik NOOIT het woord \"schermutseling\" \u2014 omschrijf als bijv. \"fysiek incident op het werk\"\n\nOPMAAK OPSOMMEND:\nGebruik kopjes per onderdeel. Elk kopje op eigen regel, daarna inhoud op volgende regel(s).\n\nVraag:\n[exact uit tekst / Niet bekend]\n\nPati\u00ebnt:\n[leeftijd] | start traject [datum]\n\nWerkdiagnose:\n[alleen indien letterlijk in tekst, anders: Niet beschikbaar]\n\nObjectief:\n[gemelde bevindingen + PROMs indien vermeld, per bevinding een nieuwe regel met \u2022]\n\nFunctie/ADL:\n[beperkingen zoals benoemd, per punt een nieuwe regel met \u2022]\n\nBehandeling:\n[type behandelingen, per onderdeel een nieuwe regel met \u2022]\nAantal behandelingen: [x]\n\nAanvullend:\n[alleen indien vermeld]\n\nGroet,\n\nOPMAAK VERHALEND:\nZelfde kopjes maar vloeiende zinnen zonder bullets.\n\nVraag:\n[exact uit tekst of Niet bekend]\n\nPati\u00ebnt:\n[leeftijd], start traject [datum], werkdiagnose: [alleen indien letterlijk in tekst].\n\nObjectief:\n[bevindingen in zinnen + PROMs]\n\nFunctie/ADL:\n[beperkingen in zinnen]\n\nBehandeling:\n[in zinnen]; aantal behandelingen: [x].\n\nAanvullend:\n[alleen indien vermeld]\n\nGroet,";
 
-// ── Render ─────────────────────────────────────────────────────────────────
-function render() {
-  var root = document.getElementById("root");
-  root.innerHTML = buildHTML();
-  bindEvents();
-}
-
-function buildHTML() {
-  if (state.fase === "resultaat") return buildResultaat();
-  return buildInvoer();
-}
-
-function buildInvoer() {
-  var apiBar = state.apiKey
-    ? '<div class="api-bar" style="justify-content:flex-end;gap:8px"><span class="api-saved">API-sleutel opgeslagen</span><button class="api-change" onclick="wijzigKey()">Wijzigen</button></div>'
-    : '<div class="api-bar"><label>API-sleutel</label><input type="password" id="apiInput" placeholder="sk-ant-..." value="' + esc(state.apiInput) + '"><button class="save-btn" onclick="slaKeyOp()">Opslaan</button></div>';
-
-  var typeOpties = TYPEN.map(function(t, i) {
-    return '<option value="' + i + '"' + (state.type === i ? " selected" : "") + '>' + esc(t) + '</option>';
-  }).join("");
-
-  var formaatToggle = '<div class="toggle">'
-    + '<button class="toggle-btn ' + (state.formaat === "opsommend" ? "active" : "inactive") + '" onclick="setFormaat(\'opsommend\')">Opsommend</button>'
-    + '<button class="toggle-btn ' + (state.formaat === "verhalend" ? "active" : "inactive") + '" onclick="setFormaat(\'verhalend\')">Verhalend</button>'
-    + '</div>';
-
-  var invoerToggle = '<div class="toggle" style="margin-bottom:12px">'
-    + '<button class="toggle-btn ' + (state.invoer === "pdf" ? "active" : "inactive") + '" onclick="setInvoer(\'pdf\')">&#128196; PDF uploaden</button>'
-    + '<button class="toggle-btn ' + (state.invoer === "tekst" ? "active" : "inactive") + '" onclick="setInvoer(\'tekst\')">&#9999; Zelf invullen</button>'
-    + '</div>';
-
-  var misLeeftijd = state.geprobeerd && !state.leeftijd.trim();
-  var misStart    = state.geprobeerd && !state.start.trim();
-  var misPdf      = state.geprobeerd && state.invoer === "pdf" && !state.pdfData;
-
-  var klinisch;
-  if (state.invoer === "pdf") {
-    var pdfClass = "pdf-zone" + (state.pdfNaam ? " has-file" : "") + (misPdf ? " missing" : "");
-    var pdfInner = state.pdfNaam
-      ? '<div class="pdf-icon">&#128196;</div><div class="pdf-name">' + esc(state.pdfNaam) + '</div><div class="pdf-hint">Klik om een ander bestand te kiezen</div>'
-      : '<div class="pdf-icon">&#11014;</div><div class="pdf-name" style="color:' + (misPdf ? "#c0328a" : "#82176D") + '">' + (misPdf ? "Vereist \u2014 upload een PDF" : "Klik om dossier te uploaden") + '</div><div class="pdf-hint">EPD-export of brief als PDF</div>';
-    klinisch = '<div class="' + pdfClass + '" onclick="document.getElementById(\'pdfInput\').click()">'
-      + '<input type="file" id="pdfInput" accept="application/pdf" style="display:none">'
-      + pdfInner + '</div>';
-  } else {
-    klinisch = '<div class="card" style="display:flex;flex-direction:column;gap:14px">'
-      + veld("klacht", "Klacht &amp; anamnese", state.klacht, "Ontstaanswijze, beloop, pijnscore, ADL-beperkingen...", true, false, 88)
-      + veld("onderzoek", "Bevindingen lichamelijk onderzoek", state.onderzoek, "ROM, kracht, klinische tests (geen echo/r\u00f6ntgen)...", true, false, 88)
-      + veld("behandeling", "Behandeling tot nu toe", state.behandeling, "Type, frequentie, duur, effect, aantal sessies...", true, false, 66)
-      + '</div>';
-  }
-
-  var waarschuwing = (state.geprobeerd && (misLeeftijd || misStart || misPdf))
-    ? '<div class="warning">Vul de verplichte velden in voordat je de rapportage genereert.</div>' : "";
-  var foutmelding = state.error ? '<div class="error-msg">' + esc(state.error) + '</div>' : "";
-  var btnTekst = state.loading
-    ? '<span class="spinner"></span>Rapportage genereren...'
-    : 'Genereer rapportage \u2192';
-
-  return apiBar
-    + '<div class="hero">'
-    + '<div class="hero-badge">&#128232; Siilo &middot; Rapportage</div>'
-    + '<div class="hero-ring">&#129360;</div>'
-    + '<h1>Schouderrapportage</h1>'
-    + '<p>UMOOOVE-conform &middot; Informeel &middot; Klaar voor Siilo</p>'
-    + '<span class="hero-pill">Fyzio Totaal</span>'
-    + '</div>'
-    + '<div class="body">'
-    + '<div class="section"><span class="section-label">Rapportagetype</span>'
-    + '<div class="card"><select onchange="setType(this.value)">' + typeOpties + '</select></div></div>'
-    + '<div class="section"><span class="section-label">Outputformaat</span>' + formaatToggle + '</div>'
-    + '<div class="section"><span class="section-label">Basisgegevens</span>'
-    + '<div class="card" style="display:flex;flex-direction:column;gap:14px">'
-    + veld("leeftijd", "Leeftijd", state.leeftijd, "bijv. 42 jaar", false, misLeeftijd)
-    + veld("start", "Startdatum traject", state.start, "bijv. maart 2025", false, misStart)
-    + veld("vraag", "Vraag / reden van contact", state.vraag, "Wat is de concrete vraag aan de ontvanger?", true, false, 54)
-    + '</div></div>'
-    + '<div class="section"><span class="section-label">Klinische informatie</span>'
-    + invoerToggle + klinisch + '</div>'
-    + '<div class="section"><span class="section-label">Aanvullend</span>'
-    + '<div class="card">'
-    + '<div class="field-label opt" style="margin-bottom:8px">Extra context <span class="tag-opt">Optioneel</span></div>'
-    + '<div class="field-input"><textarea rows="3" oninput="setState(\'extra\',this.value)" placeholder="PROMs, 3S-score, specifieke wensen voor de ontvanger...">' + esc(state.extra) + '</textarea></div>'
-    + '</div></div>'
-    + waarschuwing + foutmelding
-    + '<button class="btn-primary" onclick="genereer()" ' + (state.loading ? "disabled" : "") + '>' + btnTekst + '</button>'
-    + '</div>';
-}
-
-function veld(key, label, waarde, placeholder, optioneel, mis, hoogte) {
-  var tagHTML = mis
-    ? '<span class="tag-mis">Vereist \u2014 vul in</span>'
-    : (optioneel ? '<span class="tag-opt">Optioneel</span>' : '<span class="tag-req">Verplicht</span>');
-  var labelClass = optioneel ? "field-label opt" : "field-label";
-  var inputClass = "field-input" + (mis ? " missing" : "");
-  var inputHTML;
-  if (hoogte) {
-    inputHTML = '<textarea style="min-height:' + hoogte + 'px" oninput="setState(\'' + key + '\',this.value)" placeholder="' + esc(placeholder) + '">' + esc(waarde) + '</textarea>';
-  } else {
-    inputHTML = '<input type="text" value="' + esc(waarde) + '" oninput="setState(\'' + key + '\',this.value)" placeholder="' + esc(placeholder) + '">';
-  }
-  return '<div class="field"><div class="' + labelClass + '">' + label + ' ' + tagHTML + '</div><div class="' + inputClass + '">' + inputHTML + '</div></div>';
-}
-
-function buildResultaat() {
-  var regels = state.resultaat.split("\n");
-  var bodyHTML = regels.map(function(r, i) {
-    var kopjes = ["Vraag:", "Pati\u00ebnt:", "Werkdiagnose:", "Objectief:", "Functie/ADL:", "Behandeling:", "Aanvullend:"];
-    var isKopje = kopjes.indexOf(r.trim()) !== -1;
-    return isKopje ? '<span class="kopje">' + esc(r) + '</span>' : esc(r) + (i < regels.length - 1 ? "\n" : "");
-  }).join("");
-
-  var resultaatInhoud = state.bewerk
-    ? '<textarea class="result-edit" oninput="setState(\'resultaat\',this.value)">' + esc(state.resultaat) + '</textarea>'
-    : '<div class="result-body">' + bodyHTML + '</div>';
-
-  return '<div class="hero">'
-    + '<div class="hero-badge">&#128232; Siilo &middot; Rapportage</div>'
-    + '<div class="hero-ring">&#129360;</div>'
-    + '<h1>Schouderrapportage</h1>'
-    + '<p>UMOOOVE-conform &middot; Informeel &middot; Klaar voor Siilo</p>'
-    + '<span class="hero-pill">Fyzio Totaal</span>'
-    + '</div>'
-    + '<div class="body">'
-    + '<span class="badge-ready">&#10003; Siilo-ready</span>'
-    + '<div class="result-card">'
-    + '<div class="result-header"><span>' + esc(TYPEN[state.type].split("\u2013")[0].trim()) + '</span>'
-    + '<div class="result-btns">'
-    + '<button class="result-btn ' + (state.bewerk ? "editing" : "") + '" onclick="toggleBewerk()">' + (state.bewerk ? "&#10003; Klaar" : "Bewerken") + '</button>'
-    + '<button class="result-btn" onclick="kopieer()">' + (state.copied ? "&#10003; Gekopieerd" : "Kopieer") + '</button>'
-    + '</div></div>'
-    + resultaatInhoud
-    + '</div>'
-    + '<div class="divider"></div>'
-    + '<button class="btn-secondary" onclick="reset()">+ Nieuwe rapportage</button>'
-    + '</div>';
-}
-
 function esc(s) {
   return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
-// ── Events ────────────────────────────────────────────────────────────────
+function render() {
+  var html = "";
+
+  // API balk
+  if (state.apiKey) {
+    html += '<div class="api-bar" style="justify-content:flex-end;gap:8px"><span class="api-saved">API-sleutel opgeslagen</span><button class="api-change" onclick="wijzigKey()">Wijzigen</button></div>';
+  } else {
+    html += '<div class="api-bar"><label>API-sleutel</label><input type="password" id="apiInput" placeholder="sk-ant-..." value=""><button class="save-btn" onclick="slaKeyOp()">Opslaan</button></div>';
+  }
+
+  // Hero
+  html += '<div class="hero"><div class="hero-badge">&#128232; Siilo &middot; Rapportage</div><div class="hero-ring">&#129360;</div><h1>Schouderrapportage</h1><p>UMOOOVE-conform &middot; Informeel &middot; Klaar voor Siilo</p><span class="hero-pill">Fyzio Totaal</span></div>';
+
+  if (state.fase === "invoer") {
+    html += buildInvoer();
+  } else {
+    html += buildResultaat();
+  }
+
+  // Footer altijd onderaan, binnen #app
+  html += '<div class="ft-footer"><strong>Fyzio Totaal</strong> &middot; Schouderrapportage &middot; <span class="ver">v2026-09-15.9</span></div>';
+
+  document.getElementById("app").innerHTML = html;
+  bindEvents();
+}
+
+function buildInvoer() {
+  var misLeeftijd = state.geprobeerd && !state.leeftijd.trim();
+  var misStart    = state.geprobeerd && !state.start.trim();
+  var misPdf      = state.geprobeerd && state.invoer === "pdf" && !state.pdfData;
+
+  var typeOpties = "";
+  for (var i = 0; i < TYPEN.length; i++) {
+    typeOpties += '<option value="' + i + '"' + (state.type === i ? " selected" : "") + '>' + esc(TYPEN[i]) + '</option>';
+  }
+
+  var klinisch = "";
+  if (state.invoer === "pdf") {
+    var pdfClass = "pdf-zone" + (state.pdfNaam ? " has-file" : "") + (misPdf ? " missing" : "");
+    klinisch = '<div class="' + pdfClass + '" onclick="document.getElementById(\'pdfInput\').click()">'
+      + '<input type="file" id="pdfInput" accept="application/pdf" style="display:none">'
+      + '<div class="pdf-icon">' + (state.pdfNaam ? "&#128196;" : "&#11014;") + '</div>';
+    if (state.pdfNaam) {
+      klinisch += '<div class="pdf-name">' + esc(state.pdfNaam) + '</div><div class="pdf-hint">Klik om een ander bestand te kiezen</div>';
+    } else {
+      klinisch += '<div class="pdf-name" style="color:' + (misPdf ? "#c0328a" : "#82176D") + '">' + (misPdf ? "Vereist \u2014 upload een PDF" : "Klik om dossier te uploaden") + '</div><div class="pdf-hint">EPD-export of brief als PDF</div>';
+    }
+    klinisch += '</div>';
+  } else {
+    klinisch = '<div class="card" style="display:flex;flex-direction:column;gap:14px">'
+      + maakVeld("klacht", "Klacht &amp; anamnese", state.klacht, "Ontstaanswijze, beloop, pijnscore, ADL-beperkingen...", true, false, 88)
+      + maakVeld("onderzoek", "Bevindingen lichamelijk onderzoek", state.onderzoek, "ROM, kracht, klinische tests (geen echo/r\u00f6ntgen)...", true, false, 88)
+      + maakVeld("behandeling", "Behandeling tot nu toe", state.behandeling, "Type, frequentie, duur, effect, aantal sessies...", true, false, 66)
+      + '</div>';
+  }
+
+  var h = '<div class="body">';
+  h += '<div class="section"><span class="section-label">Rapportagetype</span><div class="card"><select onchange="setType(this.value)">' + typeOpties + '</select></div></div>';
+  h += '<div class="section"><span class="section-label">Outputformaat</span><div class="toggle"><button class="toggle-btn ' + (state.formaat==="opsommend"?"active":"inactive") + '" onclick="setFormaat(\'opsommend\')">Opsommend</button><button class="toggle-btn ' + (state.formaat==="verhalend"?"active":"inactive") + '" onclick="setFormaat(\'verhalend\')">Verhalend</button></div></div>';
+  h += '<div class="section"><span class="section-label">Basisgegevens</span><div class="card" style="display:flex;flex-direction:column;gap:14px">'
+    + maakVeld("leeftijd", "Leeftijd", state.leeftijd, "bijv. 42 jaar", false, misLeeftijd, 0)
+    + maakVeld("start", "Startdatum traject", state.start, "bijv. maart 2025", false, misStart, 0)
+    + maakVeld("vraag", "Vraag / reden van contact", state.vraag, "Wat is de concrete vraag aan de ontvanger?", true, false, 54)
+    + '</div></div>';
+  h += '<div class="section"><span class="section-label">Klinische informatie</span>'
+    + '<div class="toggle" style="margin-bottom:12px"><button class="toggle-btn ' + (state.invoer==="pdf"?"active":"inactive") + '" onclick="setInvoer(\'pdf\')">&#128196; PDF uploaden</button><button class="toggle-btn ' + (state.invoer==="tekst"?"active":"inactive") + '" onclick="setInvoer(\'tekst\')">&#9999; Zelf invullen</button></div>'
+    + klinisch + '</div>';
+  h += '<div class="section"><span class="section-label">Aanvullend</span><div class="card"><div class="field-label opt" style="margin-bottom:8px">Extra context <span class="tag-opt">Optioneel</span></div><div class="field-input"><textarea rows="3" oninput="state.extra=this.value" placeholder="PROMs, 3S-score, specifieke wensen voor de ontvanger...">' + esc(state.extra) + '</textarea></div></div></div>';
+  if (state.geprobeerd && (misLeeftijd || misStart || misPdf)) {
+    h += '<div class="warning">Vul de verplichte velden in voordat je de rapportage genereert.</div>';
+  }
+  if (state.error) h += '<div class="error-msg">' + esc(state.error) + '</div>';
+  h += '<button class="btn-primary" onclick="genereer()"' + (state.loading ? " disabled" : "") + '>' + (state.loading ? '<span class="spinner"></span>Rapportage genereren...' : 'Genereer rapportage \u2192') + '</button>';
+  h += '</div>';
+  return h;
+}
+
+function maakVeld(key, label, waarde, placeholder, optioneel, mis, hoogte) {
+  var tag = mis ? '<span class="tag-mis">Vereist \u2014 vul in</span>' : (optioneel ? '<span class="tag-opt">Optioneel</span>' : '<span class="tag-req">Verplicht</span>');
+  var lClass = optioneel ? "field-label opt" : "field-label";
+  var iClass = "field-input" + (mis ? " missing" : "");
+  var input = hoogte
+    ? '<textarea style="min-height:' + hoogte + 'px" oninput="state.' + key + '=this.value" placeholder="' + esc(placeholder) + '">' + esc(waarde) + '</textarea>'
+    : '<input type="text" value="' + esc(waarde) + '" oninput="state.' + key + '=this.value" placeholder="' + esc(placeholder) + '">';
+  return '<div class="field"><div class="' + lClass + '">' + label + ' ' + tag + '</div><div class="' + iClass + '">' + input + '</div></div>';
+}
+
+function buildResultaat() {
+  var regels = state.resultaat.split("\n");
+  var KOPJES = ["Vraag:", "Pati\u00ebnt:", "Werkdiagnose:", "Objectief:", "Functie/ADL:", "Behandeling:", "Aanvullend:"];
+  var bodyHTML = "";
+  for (var i = 0; i < regels.length; i++) {
+    var r = regels[i];
+    if (KOPJES.indexOf(r.trim()) !== -1) {
+      bodyHTML += '<span class="kopje">' + esc(r) + '</span>';
+    } else {
+      bodyHTML += esc(r) + (i < regels.length - 1 ? "\n" : "");
+    }
+  }
+
+  var inhoud = state.bewerk
+    ? '<textarea class="result-edit" oninput="state.resultaat=this.value">' + esc(state.resultaat) + '</textarea>'
+    : '<div class="result-body">' + bodyHTML + '</div>';
+
+  var h = '<div class="body">';
+  h += '<span class="badge-ready">&#10003; Siilo-ready</span>';
+  h += '<div class="result-card"><div class="result-header"><span>' + esc(TYPEN[state.type].split("\u2013")[0].trim()) + '</span><div class="result-btns"><button class="result-btn ' + (state.bewerk?"editing":"") + '" onclick="toggleBewerk()">' + (state.bewerk?"&#10003; Klaar":"Bewerken") + '</button><button class="result-btn" onclick="kopieer()">' + (state.copied?"&#10003; Gekopieerd":"Kopieer") + '</button></div></div>' + inhoud + '</div>';
+  h += '<div class="divider"></div><button class="btn-secondary" onclick="reset()">+ Nieuwe rapportage</button>';
+  h += '</div>';
+  return h;
+}
+
 function bindEvents() {
   var pdfInput = document.getElementById("pdfInput");
   if (pdfInput) {
@@ -397,51 +292,30 @@ function bindEvents() {
       if (!file) return;
       state.pdfNaam = file.name;
       var reader = new FileReader();
-      reader.onload = function() {
-        state.pdfData = reader.result.split(",")[1];
-        render();
-      };
+      reader.onload = function() { state.pdfData = reader.result.split(",")[1]; render(); };
       reader.readAsDataURL(file);
     });
   }
-  var apiInput = document.getElementById("apiInput");
-  if (apiInput) {
-    apiInput.addEventListener("keydown", function(e) { if (e.key === "Enter") slaKeyOp(); });
-    apiInput.addEventListener("input", function(e) { state.apiInput = e.target.value; });
-  }
 }
 
-function setState(key, val) { state[key] = val; }
-function setType(val) { state.type = parseInt(val); render(); }
-function setFormaat(val) { state.formaat = val; render(); }
-function setInvoer(val) {
-  state.invoer = val;
-  if (val === "pdf") { state.klacht = ""; state.onderzoek = ""; state.behandeling = ""; }
+function setType(v) { state.type = parseInt(v); }
+function setFormaat(v) { state.formaat = v; render(); }
+function setInvoer(v) {
+  state.invoer = v;
+  if (v === "pdf") { state.klacht = ""; state.onderzoek = ""; state.behandeling = ""; }
   else { state.pdfData = null; state.pdfNaam = ""; }
   render();
 }
 function slaKeyOp() {
-  state.apiKey = state.apiInput;
-  localStorage.setItem("ft_apikey", state.apiKey);
-  state.apiInput = "";
-  render();
+  var el = document.getElementById("apiInput");
+  if (el) { state.apiKey = el.value; localStorage.setItem("ft_apikey", state.apiKey); render(); }
 }
-function wijzigKey() {
-  localStorage.removeItem("ft_apikey");
-  state.apiKey = "";
-  render();
-}
+function wijzigKey() { localStorage.removeItem("ft_apikey"); state.apiKey = ""; render(); }
 function toggleBewerk() { state.bewerk = !state.bewerk; render(); }
 function kopieer() {
   var el = document.createElement("textarea");
-  el.value = state.resultaat;
-  document.body.appendChild(el);
-  el.select();
-  document.execCommand("copy");
-  document.body.removeChild(el);
-  state.copied = true;
-  render();
-  setTimeout(function() { state.copied = false; render(); }, 2000);
+  el.value = state.resultaat; document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el);
+  state.copied = true; render(); setTimeout(function() { state.copied = false; render(); }, 2000);
 }
 function reset() {
   state.fase = "invoer"; state.resultaat = ""; state.error = ""; state.geprobeerd = false;
@@ -449,19 +323,13 @@ function reset() {
   state.pdfData = null; state.pdfNaam = "";
   state.leeftijd = ""; state.start = ""; state.vraag = "";
   state.klacht = ""; state.onderzoek = ""; state.behandeling = ""; state.extra = "";
-  state.bewerk = false;
-  render();
+  state.bewerk = false; render();
 }
 
-// ── API aanroep ───────────────────────────────────────────────────────────
 function genereer() {
   state.geprobeerd = true;
-  var misLeeftijd = !state.leeftijd.trim();
-  var misStart    = !state.start.trim();
-  var misPdf      = state.invoer === "pdf" && !state.pdfData;
-  if (misLeeftijd || misStart || misPdf) { render(); return; }
+  if (!state.leeftijd.trim() || !state.start.trim() || (state.invoer === "pdf" && !state.pdfData)) { render(); return; }
   if (!state.apiKey) { state.error = "Sla eerst je API-sleutel op."; render(); return; }
-
   state.error = ""; state.resultaat = ""; state.loading = true; render();
 
   var formatInstr = state.formaat === "opsommend"
@@ -470,32 +338,24 @@ function genereer() {
 
   var messages;
   if (state.pdfData) {
-    var pdfTekst = "Rapportagetype: " + TYPEN[state.type] + "\n" + formatInstr + "\nLeeftijd: " + state.leeftijd + "\nStart traject: " + state.start;
-    if (state.vraag) pdfTekst += "\nVraag/reden contact: " + state.vraag;
-    if (state.extra) pdfTekst += "\nAanvullend: " + state.extra;
-    pdfTekst += "\nHaal klacht, anamnese, lichamelijk onderzoek en behandeling uit het bijgevoegde dossier. Geen echo- of röntgenbevindingen. Geen naam onder de afsluiting, sluit af met alleen Groet,";
+    var pt = "Rapportagetype: " + TYPEN[state.type] + "\n" + formatInstr + "\nLeeftijd: " + state.leeftijd + "\nStart traject: " + state.start;
+    if (state.vraag) pt += "\nVraag/reden contact: " + state.vraag;
+    if (state.extra) pt += "\nAanvullend: " + state.extra;
+    pt += "\nHaal klacht, anamnese, lichamelijk onderzoek en behandeling uit het bijgevoegde dossier. Geen echo- of rontgenbevindingen. Sluit af met alleen Groet,";
     messages = [{ role: "user", content: [
       { type: "document", source: { type: "base64", media_type: "application/pdf", data: state.pdfData } },
-      { type: "text", text: pdfTekst }
+      { type: "text", text: pt }
     ]}];
   } else {
-    var tekst = "Rapportagetype: " + TYPEN[state.type] + "\n" + formatInstr + "\nLeeftijd: " + state.leeftijd + "\nStart traject: " + state.start;
-    if (state.vraag)       tekst += "\nVraag/reden contact: " + state.vraag;
-    if (state.klacht)      tekst += "\nKlacht/anamnese: " + state.klacht;
-    if (state.onderzoek)   tekst += "\nLichamelijk onderzoek: " + state.onderzoek;
-    if (state.behandeling) tekst += "\nBehandeling: " + state.behandeling;
-    if (state.extra)       tekst += "\nAanvullend: " + state.extra;
-    tekst += "\nSchrijf de rapportage. Geen naam onder de afsluiting, sluit af met alleen Groet,";
-    messages = [{ role: "user", content: tekst }];
+    var tt = "Rapportagetype: " + TYPEN[state.type] + "\n" + formatInstr + "\nLeeftijd: " + state.leeftijd + "\nStart traject: " + state.start;
+    if (state.vraag)       tt += "\nVraag/reden contact: " + state.vraag;
+    if (state.klacht)      tt += "\nKlacht/anamnese: " + state.klacht;
+    if (state.onderzoek)   tt += "\nLichamelijk onderzoek: " + state.onderzoek;
+    if (state.behandeling) tt += "\nBehandeling: " + state.behandeling;
+    if (state.extra)       tt += "\nAanvullend: " + state.extra;
+    tt += "\nSchrijf de rapportage. Sluit af met alleen Groet,";
+    messages = [{ role: "user", content: tt }];
   }
-
-  var requestBody = JSON.stringify({
-    model: "claude-sonnet-4-5",
-    max_tokens: 1000,
-    temperature: 0,
-    system: SYSTEM,
-    messages: messages
-  });
 
   fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -505,29 +365,29 @@ function genereer() {
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true"
     },
-    body: requestBody
+    body: JSON.stringify({
+      model: "claude-sonnet-4-5",
+      max_tokens: 1000,
+      temperature: 0,
+      system: SYSTEM,
+      messages: messages
+    })
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
     if (data.error) throw new Error(data.error.message);
     var tekst = "";
-    for (var i = 0; i < (data.content || []).length; i++) {
-      tekst += data.content[i].text || "";
-    }
+    for (var i = 0; i < (data.content || []).length; i++) tekst += data.content[i].text || "";
     if (!tekst) throw new Error("Geen resultaat ontvangen.");
     state.resultaat = TYPEN[state.type] + "\n\n" + tekst;
-    state.fase = "resultaat";
-    state.loading = false;
-    render();
+    state.fase = "resultaat"; state.loading = false; render();
   })
   .catch(function(e) {
     state.error = "Er ging iets mis: " + e.message;
-    state.loading = false;
-    render();
+    state.loading = false; render();
   });
 }
 
-// Start
 render();
 </script>
 </body>
