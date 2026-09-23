@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-09-23.3 -->
+<!-- APP_VERSION: 2026-09-23.4 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,7 +10,7 @@
   <title>Schouderrapportage – Fyzio Totaal</title>
 
   <script>
-    var APP_VERSION = "2026-09-23.3";
+    var APP_VERSION = "2026-09-23.4";
     (function () {
       if (location.search.indexOf("_v=") === -1) {
         fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
@@ -131,7 +131,7 @@
 <div id="app"></div>
 
 <script>
-var APP_VERSION = "2026-09-23.3";
+var APP_VERSION = "2026-09-23.4";
 
 var state = {
   apiKey: localStorage.getItem("ft_apikey") || "",
@@ -173,7 +173,7 @@ var SYSTEM = "Je bent een medische rapportage-assistent voor fysiotherapeuten in
   + "Gebruik altijd precies 4 losse alinea’s, gescheiden door een lege regel. Nooit alles aan elkaar plakken.\n\n"
   + "Alinea 1 — Vraag: EERST de concrete vraag aan de ontvanger + leeftijd + startdatum + hoofdklacht. (1–2 zinnen)\n"
   + "Alinea 2 — Anamnese & beloop: ontstaanswijze, beloop, klachten, relevante scores (SPADI, NRS). (2–3 zinnen)\n"
-  + "Alinea 3 — Lichamelijk onderzoek: meest relevante bevindingen LO en klinische tests. (2–3 zinnen)\n"
+  + "Alinea 3 — Lichamelijk onderzoek: begin deze alinea letterlijk met 'Lichamelijk onderzoek:' gevolgd door de meest relevante bevindingen en klinische tests. (2–3 zinnen)\n"
   + "Alinea 4 — Conclusie & vraag: klinische redenering in één zin, eindigend met de concrete vraag herhaald als slotvraag.\n\n"
   + "Afsluiting: alleen ‘Groet,’ op een aparte regel (geen naam)\n\n"
   + "- Geen kopjes, geen bullets, geen alineatitels — de witregels verdelen de tekst al\n"
@@ -185,7 +185,8 @@ var SYSTEM = "Je bent een medische rapportage-assistent voor fysiotherapeuten in
   + "- Het mag klinken als een fysiotherapeut die een collega-specialist aanspreekt\n\n"
   + "VOORBEELD (gebruik als stijlreferentie voor structuur en toon — kopieer nooit letterlijk):\n"
   + "Graag je beoordeling of insturen van belang is voor dhr. X (29 jaar, start traject 01-09-2026) i.v.m. aanhoudende traumatische klachten aan de linker schouder.\n\n"
-  + "Patiënt is 1,5 week geleden op de schouder gevallen tijdens een schermutseling op het werk (meneer is beveiliger). Direct daarna veel pijn, duizeligheid en misselijkheid (inmiddels geweken, overige rode vlaggen/neurologie negatief). Het herstel stagneert; hij houdt veel pijn bij heffen/roteren en heeft ook in rust en ‘s nachts klachten (SPADI-score 65). Actief/passief beperkt en pijnlijk. Bicepsprovocaties en subscapularistesten zijn pijnlijk/afwijkend.\n\n"
+  + "Patiënt is 1,5 week geleden op de schouder gevallen tijdens een schermutseling op het werk (meneer is beveiliger). Direct daarna veel pijn, duizeligheid en misselijkheid (inmiddels geweken, overige rode vlaggen/neurologie negatief). Het herstel stagneert; hij houdt veel pijn bij heffen/roteren en heeft ook in rust en ‘s nachts klachten (SPADI-score 65).\n\n"
+  + "Lichamelijk onderzoek: actief/passief beperkt en pijnlijk. Bicepsprovocaties en subscapularistesten zijn pijnlijk/afwijkend.\n\n"
   + "Gezien het trauma, het beloop en het vermoeden van een structureel letsel wil ik hem graag insturen. Acht jij dit ook verstandig?\n\n"
   + "Groet,\n\n"
   + "STRIKTE REGELS:\n"
@@ -230,7 +231,7 @@ function render() {
 
   html += state.fase === "invoer" ? buildInvoer() : buildResultaat();
 
-  html += '<div class="ft-footer"><strong>Fyzio Totaal</strong> &middot; Schouderrapportage &middot; <span class="ver">v2026-09-23.3</span></div>';
+  html += '<div class="ft-footer"><strong>Fyzio Totaal</strong> &middot; Schouderrapportage &middot; <span class="ver">v2026-09-23.4</span></div>';
 
   document.getElementById("app").innerHTML = html;
   bindEvents();
