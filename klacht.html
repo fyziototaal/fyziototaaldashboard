@@ -1,23 +1,93 @@
 <!DOCTYPE html>
-<!-- build: 2026-07-06 v1 -->
+<!-- APP_VERSION: 2026-09-23.1 -->
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Versiecheck: altijd als EERSTE script. Verhoog APP_VERSION hier én in de comment bovenaan bij elke wijziging. -->
+  <script>
+    var APP_VERSION = "2026-09-23.1";
+    (function () {
+      try {
+        var params = new URLSearchParams(location.search);
+        if (params.has("_v")) {
+          // Net herladen na versiecheck: niet opnieuw checken (voorkomt herlaadlus) en URL opschonen
+          params.delete("_v");
+          var q = params.toString();
+          history.replaceState(null, "", location.pathname + (q ? "?" + q : "") + location.hash);
+          return;
+        }
+        fetch(location.pathname + "?_vc=" + Date.now(), { cache: "no-store" })
+          .then(function (r) { return r.ok ? r.text() : null; })
+          .then(function (html) {
+            if (!html) return;
+            var m = html.match(/<!--\s*APP_VERSION:\s*([^\s]+)\s*-->/);
+            if (m && m[1] !== APP_VERSION) {
+              location.replace(location.pathname + "?_v=" + Date.now());
+            }
+          })
+          .catch(function () {});
+      } catch (e) {}
+    })();
+  </script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KLACHT-methode assistent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, sans-serif; background: linear-gradient(135deg,#f8f9ff 0%,#f0f4ff 100%); min-height: 100vh; }
+    body { margin: 0; font-family: 'Poppins', 'Segoe UI', sans-serif; background: #f3eef2; color: #1f2937; }
+    input, textarea, select, button { font-family: inherit; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+    .app-main { flex: 1; padding: 2rem 1rem; }
+
+    .ft-input { transition: border-color .15s, box-shadow .15s; }
+    .ft-input:focus { border-color: #82176D !important; box-shadow: 0 0 0 3px #f3e3ef !important; outline: none; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #82176D, #a8368f); color: #fff; border: none;
+      box-shadow: 0 2px 12px rgba(130,23,109,0.28); cursor: pointer;
+      transition: box-shadow .15s, background .15s;
+    }
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, #6b1259, #8f2d78); box-shadow: 0 4px 18px rgba(130,23,109,0.38); }
+    .btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 4px #f3e3ef; }
+    .btn-primary:disabled { background: #e5e7eb; color: #9ca3af; box-shadow: none; cursor: default; }
+
+    .btn-ghost { background: #fff; color: #6b7280; border: 1.5px solid #e5e7eb; cursor: pointer; transition: background .15s, border-color .15s; }
+    .btn-ghost:hover { background: #f9fafb; border-color: #d1d5db; }
+
+    @media (max-width: 560px) {
+      .t-grid { grid-template-columns: 1fr !important; }
+      .step-label { display: none; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useRef } = React;
+
+    const PAARS = "#82176D";
+    const PAARS_DONKER = "#4a0f42";
+    const PAARS_LICHT = "#a8368f";
+    const CYAAN = "#00B6E8";
+    const BLAUW_TEKST = "#00728e";
+    const TAG_PAARS_BG = "#f3e3ef";
+    const TAG_BLAUW_BG = "#dcf4fb";
+    const RAND = "#e2d5df";
+    const SELECT_BG = "#fbf5f9";
+    const KAART_SCHADUW = "0 2px 14px rgba(130,23,109,0.08)";
+    const GRADIENT = "linear-gradient(135deg," + PAARS + "," + PAARS_LICHT + ")";
 
     function getApiKey() {
       return localStorage.getItem("ft_apikey") || "";
@@ -26,8 +96,8 @@
     async function vraagApiKey() {
       return new Promise(function(resolve) {
         var overlay = document.createElement("div");
-        overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px";
-        overlay.innerHTML = '<div style="background:#fff;border-radius:12px;padding:24px;max-width:380px;width:100%"><p style="font-size:15px;font-weight:700;color:#667eea;margin-bottom:8px">API key invoeren</p><p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:16px">Voer eenmalig de API key in. Deze wordt opgeslagen in je browser en hoef je daarna niet opnieuw in te voeren.</p><input id="klacht-apikey-input" type="password" placeholder="sk-ant-api03-..." style="width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid #e5e7eb;font-size:14px;box-sizing:border-box;margin-bottom:8px;font-family:monospace"><p id="klacht-apikey-fout" style="font-size:12px;color:#f87171;display:none;margin-bottom:8px">Voer een geldige key in (begint met sk-ant-).</p><button id="klacht-apikey-opslaan" style="width:100%;padding:11px;border-radius:8px;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:14px;font-weight:700;cursor:pointer">Opslaan en doorgaan</button></div>';
+        overlay.style.cssText = "position:fixed;inset:0;background:rgba(74,15,66,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px";
+        overlay.innerHTML = '<div style="background:#fff;border-radius:18px;padding:24px;max-width:380px;width:100%;box-shadow:0 8px 32px rgba(130,23,109,.18)"><p style="font-size:15px;font-weight:700;color:#82176D;margin:0 0 8px">API key invoeren</p><p style="font-size:13px;color:#555;line-height:1.6;margin:0 0 16px">Voer eenmalig de API key in. Deze wordt opgeslagen in je browser en hoef je daarna niet opnieuw in te voeren.</p><input id="klacht-apikey-input" class="ft-input" type="password" placeholder="sk-ant-api03-..." style="width:100%;padding:10px 12px;border-radius:12px;border:1.5px solid #e5e7eb;font-size:14px;box-sizing:border-box;margin-bottom:8px;font-family:monospace"><p id="klacht-apikey-fout" style="font-size:12px;color:#f87171;display:none;margin:0 0 8px">Voer een geldige key in (begint met sk-ant-).</p><button id="klacht-apikey-opslaan" class="btn-primary" style="width:100%;padding:11px;border-radius:12px;font-size:14px;font-weight:600">Opslaan en doorgaan</button></div>';
         document.body.appendChild(overlay);
         var input = overlay.querySelector("#klacht-apikey-input");
         var btn = overlay.querySelector("#klacht-apikey-opslaan");
@@ -55,6 +125,8 @@
     const H_SUGGESTIONS_SYSTEM = "Je bent een fysiotherapeut-assistent. Op basis van de anamnesetekst genereer je 2 korte, concrete hulpvraagopties die een patiënt zou kunnen hebben. Elke optie is max 15 woorden, in eerste persoon (\"Ik wil...\"), toegankelijke taal, geen medisch jargon.\n\nAls er al een hulpvraag (expliciet of impliciet) in de anamnesetekst staat, neem die dan als eerste optie over. Een hulpvraag kan expliciet zijn (bijv. na \"HV:\", \"hulpvraag:\") maar ook impliciet: alles wat de patiënt graag wil kunnen (bijv. \"wil graag weer voetballen\", \"wil kunnen lopen zonder pijn\") of wil krijgen (bijv. \"wil graag oefeningen\", \"wil weten wat hij kan doen\"). Pas de formulering zo nodig licht aan naar eerste persoon. De tweede optie is dan een alternatieve suggestie.\nAls er helemaal geen hulpvraag of wens in de tekst staat, geef dan 2 eigen suggesties.\n\nBelangrijk: als de patiënt meerdere vergelijkbare wensen noemt (bijv. zowel pijnvrij werken als pijnvrij sporten), combineer deze dan in één optie (bijv. \"Ik wil weer pijnvrij kunnen werken en sporten\"). Splits ze niet op in twee losse opties.\n\nGeef ALLEEN een JSON array met 2 strings, niets anders.";
 
     const LEEFSTIJL_CHECK_SYSTEM = "Analyseer de anamnesetekst en bepaal welke van de volgende drie onderwerpen NIET of nauwelijks worden besproken: fitheid, slaap, stress. Geef ALLEEN een JSON object: {\"fitheid\": true/false, \"slaap\": true/false, \"stress\": true/false}. true = ontbreekt, false = al vermeld. Niets anders.";
+
+    const LEEFSTIJL_SIGNAAL_SYSTEM = "Analyseer de anamnesetekst (inclusief eventuele aanvullende leefstijlinformatie) op leefstijlbijzonderheden die aanleiding geven voor extra aandacht voor leefstijl. Voorbeelden: overgangsklachten, slecht slapen of slaapproblemen, weinig fit of weinig beweging, veel stress of hoge werkdruk, vermoeidheid, overgewicht, roken, veel alcoholgebruik, ongezond eetpatroon.\nNoem uitsluitend wat expliciet in de tekst staat, geen aannames. Neutrale of positieve informatie (bijv. \"slaapt goed\", \"weinig stress\", \"sport 3x pw\") is GEEN bijzonderheid.\nGeef ALLEEN een JSON object: {\"bijzonderheden\": [\"korte omschrijving\", ...]}. Max 4 items, elk max 4 woorden, in het Nederlands. Geen bijzonderheden: {\"bijzonderheden\": []}. Niets anders.";
 
     const REVALIDATIE_CHECK_SYSTEM = "Analyseer de anamnesetekst en bepaal of er sprake is van revalidatie na een operatie. Herken o.a.: THP, TKP, VKB, meniscus, schouder (rotator cuff, SLAP, Bankart), tuberositas transpositie, MCL-reconstructie, ACL, PCL, enkelbandreconstructie, heupprothese, knieprothese, hallux valgus, laminectomie, discusoperatie.\nGeef ALLEEN een JSON object:\n- Bij postoperatieve revalidatie: {\"isRevalidatie\": true, \"label\": \"<kort label>\"}\n- Geen revalidatie: {\"isRevalidatie\": false, \"label\": null}";
 
@@ -108,14 +180,14 @@
 
     const taStyle = {
       width: "100%", minHeight: 160, resize: "vertical", fontSize: 14,
-      fontFamily: "system-ui", padding: "12px 14px", borderRadius: 12,
-      border: "1.5px solid #e5e7eb", background: "#f9fafb", color: "#1f2937",
+      padding: "12px 14px", borderRadius: 12,
+      border: "1.5px solid #e5e7eb", background: "#fcfafb", color: "#1f2937",
       lineHeight: 1.7, outline: "none", boxSizing: "border-box",
     };
 
     const inpStyle = function(err) {
       return {
-        fontSize: 14, padding: "9px 11px", borderRadius: 10, fontFamily: "system-ui",
+        fontSize: 14, padding: "9px 11px", borderRadius: 12,
         border: err ? "1.5px solid #f87171" : "1.5px solid #e5e7eb",
         background: err ? "#fff7f7" : "#fff", color: "#1f2937",
         outline: "none", boxSizing: "border-box",
@@ -139,6 +211,7 @@
       const [loading, setLoading] = useState(false);
       const [loadingMsg, setLoadingMsg] = useState("");
       const [fullKlacht, setFullKlacht] = useState("");
+      const [leefstijlSignalen, setLeefstijlSignalen] = useState([]);
       const [extras, setExtras] = useState({ behandelplan: null, patientbrief: null });
       const [patientbriefEdit, setPatientbriefEdit] = useState("");
       const [werkdiagnose, setWerkdiagnose] = useState("");
@@ -218,10 +291,15 @@
           const res2 = await Promise.all([
             callClaude([{ role: "user", content: inputVoorKlacht }], KLACHT_SYSTEM),
             callClaude([{ role: "user", content: tInput }], T_SYSTEM),
+            callClaude([{ role: "user", content: inputVoorKlacht }], LEEFSTIJL_SIGNAAL_SYSTEM).catch(function() { return ""; }),
           ]);
           // Verwijder witregels tussen KLACHT-onderdelen
           var klachtTekst = res2[0].replace(/\n\s*\n/g, "\n").trim();
           setFullKlacht(klachtTekst + "\nH: " + hVal + "\n" + res2[1].trim());
+          try {
+            const p = JSON.parse(res2[2].replace(/```json|```/g, "").trim());
+            setLeefstijlSignalen(Array.isArray(p.bijzonderheden) ? p.bijzonderheden.slice(0, 4) : []);
+          } catch(e) { setLeefstijlSignalen([]); }
           setExtras({ behandelplan: null, patientbrief: null });
           setPatientbriefEdit("");
           setStep(2); scrollTo(step3Ref);
@@ -264,7 +342,7 @@
         setLeefstijl({ fitheid: "", slaap: "", stress: "" });
         setRevalidatie({ isRevalidatie: false, label: null });
         setTMode(T_MODE_MANUAL); setTFields(emptyT()); setTErrors({});
-        setFullKlacht(""); setExtras({ behandelplan: null, patientbrief: null });
+        setFullKlacht(""); setLeefstijlSignalen([]); setExtras({ behandelplan: null, patientbrief: null });
         setPatientbriefEdit(""); setWerkdiagnose(""); setCopied(false);
         scrollTo(topRef);
       };
@@ -277,283 +355,305 @@
       const toonLeefstijl = LEEFSTIJL_VRAGEN.some(function(v) { return ontbreekt[v.key]; });
 
       return (
-        <div style={{ padding: "2rem 1rem" }}>
-          <div style={{ maxWidth: 680, margin: "0 auto" }} ref={topRef}>
-
-            <div style={{ marginBottom: "1.75rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}>K</span>
-                </div>
-                <h1 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>KLACHT-methode assistent</h1>
+        <div className="app-shell">
+          <header style={{ background: "linear-gradient(120deg," + PAARS_DONKER + " 0%," + PAARS + " 45%," + PAARS_LICHT + " 100%)", borderBottom: "4px solid " + CYAAN, padding: "1.75rem 1rem" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#fff", border: "2px solid " + CYAAN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ color: PAARS, fontSize: 19, fontWeight: 800 }}>K</span>
               </div>
-              <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>Fysiotherapie - Gestructureerde verslaglegging</p>
+              <div>
+                <h1 style={{ fontSize: 21, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.25 }}>KLACHT-methode assistent</h1>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", margin: "2px 0 0" }}>Fysiotherapie · Gestructureerde verslaglegging</p>
+              </div>
             </div>
+          </header>
 
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "2rem" }}>
-              {steps.map(function(s, i) {
-                return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 2 ? 1 : "none" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{
-                        width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 12, fontWeight: 600,
-                        background: i < step ? "linear-gradient(135deg,#667eea,#764ba2)" : i === step ? "#fff" : "#f3f4f6",
-                        color: i < step ? "#fff" : i === step ? "#667eea" : "#9ca3af",
-                        border: i === step ? "2px solid #667eea" : i < step ? "none" : "2px solid #e5e7eb",
-                        boxShadow: i === step ? "0 0 0 4px rgba(102,126,234,0.15)" : "none",
-                      }}>
-                        {i < step ? "✓" : i + 1}
+          <main className="app-main">
+            <div style={{ maxWidth: 680, margin: "0 auto" }} ref={topRef}>
+
+              <div style={{ display: "flex", alignItems: "center", marginBottom: "2rem" }}>
+                {steps.map(function(s, i) {
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 2 ? 1 : "none" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{
+                          width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 12, fontWeight: 600, flexShrink: 0,
+                          background: i < step ? GRADIENT : i === step ? "#fff" : "#fff",
+                          color: i < step ? "#fff" : i === step ? PAARS : "#9ca3af",
+                          border: i === step ? "2px solid " + PAARS : i < step ? "none" : "2px solid " + RAND,
+                          boxShadow: i === step ? "0 0 0 4px rgba(130,23,109,0.15)" : "none",
+                        }}>
+                          {i < step ? "✓" : i + 1}
+                        </div>
+                        <span className="step-label" style={{ fontSize: 13, fontWeight: i === step ? 600 : 400, color: i === step ? "#1f2937" : i < step ? PAARS : "#9ca3af" }}>{s}</span>
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: i === step ? 600 : 400, color: i === step ? "#1a1a2e" : i < step ? "#667eea" : "#9ca3af" }}>{s}</span>
+                      {i < 2 && <div style={{ flex: 1, height: 2, margin: "0 12px", background: i < step ? "linear-gradient(90deg," + PAARS + "," + PAARS_LICHT + ")" : RAND, borderRadius: 1 }} />}
                     </div>
-                    {i < 2 && <div style={{ flex: 1, height: 2, margin: "0 12px", background: i < step ? "linear-gradient(90deg,#667eea,#764ba2)" : "#e5e7eb", borderRadius: 1 }} />}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {step === 0 && (
-              <Card>
-                <Label>Anamnesetekst</Label>
-                <textarea value={anamnese} onChange={function(e) { setAnamnese(e.target.value); }}
-                  placeholder="Plak hier de anamnesetekst van de patient..."
-                  onKeyDown={handleAnamneseKey} style={taStyle} />
-                <p style={{ fontSize: 12, color: "#9ca3af", margin: "6px 0 16px" }}>Tip: 2x Enter om verder te gaan</p>
-                <PrimaryBtn onClick={goToStep1} disabled={loading || !anamnese.trim()} loading={loading} loadingText={loadingMsg}>Verder</PrimaryBtn>
-              </Card>
-            )}
+              {step === 0 && (
+                <Card>
+                  <Label>Anamnesetekst</Label>
+                  <textarea className="ft-input" value={anamnese} onChange={function(e) { setAnamnese(e.target.value); }}
+                    placeholder="Plak hier de anamnesetekst van de patiënt..."
+                    onKeyDown={handleAnamneseKey} style={taStyle} />
+                  <p style={{ fontSize: 12, color: "#9ca3af", margin: "6px 0 16px" }}>Tip: 2x Enter om verder te gaan</p>
+                  <PrimaryBtn onClick={goToStep1} disabled={loading || !anamnese.trim()} loading={loading} loadingText={loadingMsg}>Verder</PrimaryBtn>
+                </Card>
+              )}
 
-            {step === 1 && (
-              <div ref={step2Ref}>
-                {toonLeefstijl && (
-                  <Card style={{ marginBottom: 12, border: "1.5px solid #e0e7ff", background: "#fafbff" }}>
+              {step === 1 && (
+                <div ref={step2Ref}>
+                  {toonLeefstijl && (
+                    <Card style={{ marginBottom: 12, border: "1.5px solid " + RAND, background: "#fbf7fa" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 16 }}>&#128161;</span>
+                        <Label style={{ marginBottom: 0, color: PAARS }}>Leefstijl - aanvullen?</Label>
+                      </div>
+                      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>Onderstaande onderwerpen staan nog niet in de anamnese. Optioneel aanvullen voor de L.</p>
+                      {LEEFSTIJL_VRAGEN.filter(function(v) { return ontbreekt[v.key]; }).map(function(v) {
+                        return (
+                          <div key={v.key} style={{ marginBottom: 10 }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>{v.vraag} <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optioneel)</span></p>
+                            <input className="ft-input" type="text" value={leefstijl[v.key]} onChange={function(e) { setLeefstijl(function(a) { return Object.assign({}, a, { [v.key]: e.target.value }); }); }} placeholder={v.placeholder} style={Object.assign({}, inpStyle(false), { width: "100%" })} />
+                          </div>
+                        );
+                      })}
+                    </Card>
+                  )}
+
+                  <Card>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 16 }}>&#128161;</span>
-                      <Label style={{ marginBottom: 0, color: "#4338ca" }}>Leefstijl - aanvullen?</Label>
+                      <Stripe /><Label style={{ marginBottom: 0 }}>H - Hulpvraag</Label>
                     </div>
-                    <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>Onderstaande onderwerpen staan nog niet in de anamnese. Optioneel aanvullen voor de L.</p>
-                    {LEEFSTIJL_VRAGEN.filter(function(v) { return ontbreekt[v.key]; }).map(function(v) {
-                      return (
-                        <div key={v.key} style={{ marginBottom: 10 }}>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>{v.vraag} <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optioneel)</span></p>
-                          <input type="text" value={leefstijl[v.key]} onChange={function(e) { setLeefstijl(function(a) { return Object.assign({}, a, { [v.key]: e.target.value }); }); }} placeholder={v.placeholder} style={Object.assign({}, inpStyle(false), { width: "100%" })} />
-                        </div>
-                      );
+                    <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>Kies een suggestie of formuleer zelf de hulpvraag van de patiënt.</p>
+                    {hSuggestions.map(function(s, i) {
+                      return <ModeCard key={i} selected={hSelected === i} onClick={function() { setHSelected(i); setHError(false); }} label={s} />;
                     })}
+                    <ModeCard selected={hSelected === 2} onClick={function() { setHSelected(2); setHError(false); }} label="Zelf formuleren..." labelItalic={true} />
+                    {hSelected === 2 && (
+                      <textarea className="ft-input" value={hCustom} onChange={function(e) { setHCustom(e.target.value); }} placeholder="Typ hier de hulpvraag van de patiënt..." style={Object.assign({}, taStyle, { minHeight: 70, marginTop: 8 })} />
+                    )}
+                    {hError && <p style={{ fontSize: 12, color: "#f87171", marginTop: 6 }}>Selecteer of formuleer een hulpvraag voordat je verder gaat.</p>}
                   </Card>
-                )}
 
-                <Card>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <Stripe /><Label style={{ marginBottom: 0 }}>H - Hulpvraag</Label>
-                  </div>
-                  <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>Kies een suggestie of formuleer zelf de hulpvraag van de patient.</p>
-                  {hSuggestions.map(function(s, i) {
-                    return <ModeCard key={i} selected={hSelected === i} onClick={function() { setHSelected(i); setHError(false); }} label={s} />;
-                  })}
-                  <ModeCard selected={hSelected === 2} onClick={function() { setHSelected(2); setHError(false); }} label="Zelf formuleren..." labelItalic={true} />
-                  {hSelected === 2 && (
-                    <textarea value={hCustom} onChange={function(e) { setHCustom(e.target.value); }} placeholder="Typ hier de hulpvraag van de patient..." style={Object.assign({}, taStyle, { minHeight: 70, marginTop: 8 })} />
-                  )}
-                  {hError && <p style={{ fontSize: 12, color: "#f87171", marginTop: 6 }}>Selecteer of formuleer een hulpvraag voordat je verder gaat.</p>}
-                </Card>
-
-                <Card style={{ marginTop: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <Stripe /><Label style={{ marginBottom: 0 }}>T - Behandelplan</Label>
-                  </div>
-                  <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>
-                    {revalidatie.isRevalidatie ? "Er is een postoperatieve revalidatie herkend. Kies hoe je de T wilt invullen." : "Kies het type vervolg voor deze patient."}
-                  </p>
-
-                  {revalidatie.isRevalidatie && (
-                    <ModeCard selected={tMode === T_MODE_PROTOCOL} onClick={function() { setTMode(T_MODE_PROTOCOL); setTErrors({}); }}
-                      label={"Volgens " + revalidatie.label + "-protocol (Herkend)"}
-                      desc={"Revalidatie volgt het standaard " + revalidatie.label + "-protocol"} />
-                  )}
-                  <ModeCard selected={tMode === T_MODE_INTAKE} onClick={function() { setTMode(T_MODE_INTAKE); setTErrors({}); }}
-                    label="Alleen intake, geen vervolg" desc="Patient komt niet terug voor behandeling" />
-                  <ModeCard selected={tMode === T_MODE_DIAGNOSTIC} onClick={function() { setTMode(T_MODE_DIAGNOSTIC); setTErrors({}); }}
-                    label="Diagnostisch vervolg" desc="bijv. performance analyse, meting, verwijzing voor aanvullend onderzoek" />
-                  <ModeCard selected={tMode === T_MODE_MANUAL} onClick={function() { setTMode(T_MODE_MANUAL); setTErrors({}); }}
-                    label="Zelf invullen" desc="Handmatig frequentie en evaluatie opgeven" />
-
-                  {tMode === T_MODE_DIAGNOSTIC && (
-                    <div style={{ marginTop: 16 }}>
-                      <div style={{ marginBottom: 12 }}>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8 }}>Type vervolg <span style={{ color: "#f87171" }}>*</span></p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                          {DIAGNOSTIC_TYPES.map(function(t) {
-                            return (
-                              <div key={t} onClick={function() { setT("diagType", t); }} style={{
-                                padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: "pointer",
-                                border: tFields.diagType === t ? "1.5px solid #667eea" : "1.5px solid #e5e7eb",
-                                background: tFields.diagType === t ? "#f5f3ff" : "#fafafa",
-                                color: tFields.diagType === t ? "#4338ca" : "#6b7280",
-                              }}>{t}</div>
-                            );
-                          })}
-                        </div>
-                        {tErrors.diagType && <p style={{ fontSize: 11, color: "#f87171", marginTop: 5 }}>Selecteer een type vervolg.</p>}
-                      </div>
-                      <div style={{ marginBottom: 12 }}>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>Bij wie / wanneer <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optioneel)</span></p>
-                        <input type="text" value={tFields.diagWie} onChange={function(e) { setT("diagWie", e.target.value); }}
-                          placeholder="bijv. collega Jan Willem volgende week, huisarts"
-                          style={Object.assign({}, inpStyle(false), { width: "100%" })} />
-                      </div>
-                      <div style={{ marginBottom: "1.5rem" }}>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8 }}>Vervolgbehandeling na uitkomsten?</p>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          {[["ja", "Ja, behandeling volgt"], ["nee", "Nog niet bepaald"]].map(function(item) {
-                            return (
-                              <div key={item[0]} onClick={function() { setT("diagVervolgplan", item[0]); }} style={{
-                                flex: 1, padding: "8px 12px", borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "center",
-                                border: tFields.diagVervolgplan === item[0] ? "1.5px solid #667eea" : "1.5px solid #e5e7eb",
-                                background: tFields.diagVervolgplan === item[0] ? "#f5f3ff" : "#fafafa",
-                                color: tFields.diagVervolgplan === item[0] ? "#4338ca" : "#6b7280",
-                              }}>{item[1]}</div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                  <Card style={{ marginTop: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Stripe /><Label style={{ marginBottom: 0 }}>T - Behandelplan</Label>
                     </div>
-                  )}
+                    <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>
+                      {revalidatie.isRevalidatie ? "Er is een postoperatieve revalidatie herkend. Kies hoe je de T wilt invullen." : "Kies het type vervolg voor deze patiënt."}
+                    </p>
 
-                  {tMode === T_MODE_MANUAL && (
-                    <div style={{ marginTop: 16 }}>
-                      <div style={{ marginBottom: 12 }}>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>Frequentie <span style={{ color: "#f87171" }}>*</span></p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <input type="text" value={tFields.freqNum} onChange={function(e) { setT("freqNum", e.target.value); }} placeholder="bijv. 2" style={Object.assign({}, inpStyle(tErrors.freqNum), { width: 72 })} />
-                          <span style={{ fontSize: 13, color: "#9ca3af", whiteSpace: "nowrap" }}>x per</span>
-                          <select value={tFields.freqUnit} onChange={function(e) { setT("freqUnit", e.target.value); }}
-                            style={{ fontSize: 14, padding: "9px 11px", borderRadius: 10, fontFamily: "system-ui", border: "1.5px solid #e5e7eb", background: "#fff", color: "#1f2937", outline: "none", cursor: "pointer" }}>
-                            {FREQ_UNITS.map(function(u) { return <option key={u} value={u}>{u}</option>; })}
-                          </select>
+                    {revalidatie.isRevalidatie && (
+                      <ModeCard selected={tMode === T_MODE_PROTOCOL} onClick={function() { setTMode(T_MODE_PROTOCOL); setTErrors({}); }}
+                        label={"Volgens " + revalidatie.label + "-protocol (Herkend)"}
+                        desc={"Revalidatie volgt het standaard " + revalidatie.label + "-protocol"} />
+                    )}
+                    <ModeCard selected={tMode === T_MODE_INTAKE} onClick={function() { setTMode(T_MODE_INTAKE); setTErrors({}); }}
+                      label="Alleen intake, geen vervolg" desc="Patiënt komt niet terug voor behandeling" />
+                    <ModeCard selected={tMode === T_MODE_DIAGNOSTIC} onClick={function() { setTMode(T_MODE_DIAGNOSTIC); setTErrors({}); }}
+                      label="Diagnostisch vervolg" desc="bijv. performance analyse, meting, verwijzing voor aanvullend onderzoek" />
+                    <ModeCard selected={tMode === T_MODE_MANUAL} onClick={function() { setTMode(T_MODE_MANUAL); setTErrors({}); }}
+                      label="Zelf invullen" desc="Handmatig frequentie en evaluatie opgeven" />
+
+                    {tMode === T_MODE_DIAGNOSTIC && (
+                      <div style={{ marginTop: 16 }}>
+                        <div style={{ marginBottom: 12 }}>
+                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8 }}>Type vervolg <span style={{ color: "#f87171" }}>*</span></p>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {DIAGNOSTIC_TYPES.map(function(t) {
+                              const sel = tFields.diagType === t;
+                              return (
+                                <div key={t} onClick={function() { setT("diagType", t); }} style={{
+                                  padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                                  border: sel ? "1.5px solid " + PAARS : "1.5px solid #e5e7eb",
+                                  background: sel ? TAG_PAARS_BG : "#fff",
+                                  color: sel ? PAARS : "#6b7280",
+                                }}>{t}</div>
+                              );
+                            })}
+                          </div>
+                          {tErrors.diagType && <p style={{ fontSize: 11, color: "#f87171", marginTop: 5 }}>Selecteer een type vervolg.</p>}
                         </div>
-                        {tErrors.freqNum && <p style={{ fontSize: 11, color: "#f87171", marginTop: 3 }}>Dit veld is verplicht.</p>}
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                        <TField label="Aantal behandelingen totaal" placeholder="bijv. 10" suffix="behandelingen" value={tFields.freqTotal} error={tErrors.freqTotal} onChange={function(v) { setT("freqTotal", v); }} />
-                        <TField label="Evaluatiemoment" placeholder="bijv. 4" prefix="na" suffix="behandelingen" value={tFields.evaluatie} error={tErrors.evaluatie} onChange={function(v) { setT("evaluatie", v); }} />
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: "1.5rem" }}>
-                        <TField label="Plan bij verbetering" placeholder="bijv. opstarten oefentherapie" isArea={true} value={tFields.verbetering} error={tErrors.verbetering} onChange={function(v) { setT("verbetering", v); }} />
-                        <TField label="Plan bij geen verbetering (back-up)" placeholder="bijv. terugverwijzen naar HA" isArea={true} value={tFields.backup} error={tErrors.backup} onChange={function(v) { setT("backup", v); }} />
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                    <GhostBtn onClick={function() { setStep(0); scrollTo(topRef); }}>Vorige stap</GhostBtn>
-                    <PrimaryBtn onClick={generateAll} disabled={loading} loading={loading} loadingText={loadingMsg}>Genereer KLACHT</PrimaryBtn>
-                  </div>
-                </Card>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div ref={step3Ref}>
-                <Card>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "1rem" }}>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#16a34a" }}>Volledige KLACHT-output gereed</span>
-                  </div>
-                  <textarea value={fullKlacht} onChange={function(e) { setFullKlacht(e.target.value); }}
-                    style={{ width: "100%", minHeight: 200, fontSize: 14, fontFamily: "system-ui", padding: "1rem 1.25rem", borderRadius: 12, border: "1.5px solid #c7d2fe", background: "#fafbff", color: "#1f2937", lineHeight: 1.8, outline: "none", boxSizing: "border-box", resize: "vertical" }} />
-                  <div style={{ display: "flex", gap: 10, marginTop: "1.25rem", flexWrap: "wrap" }}>
-                    <button onClick={copyOutput} style={{
-                      padding: "10px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                      background: copied ? "#f0fdf4" : "linear-gradient(135deg,#667eea,#764ba2)",
-                      color: copied ? "#16a34a" : "#fff",
-                      border: copied ? "1.5px solid #86efac" : "none",
-                      boxShadow: copied ? "none" : "0 2px 8px rgba(102,126,234,0.35)",
-                    }}>{copied ? "Gekopieerd!" : "Kopieer output"}</button>
-                    <GhostBtn onClick={function() { setStep(1); scrollTo(step2Ref); }}>Vorige stap</GhostBtn>
-                    <GhostBtn onClick={reset}>Nieuwe anamnese</GhostBtn>
-                  </div>
-                </Card>
-
-                <Card style={{ marginTop: 12 }}>
-                  <Label>Wil je meer genereren?</Label>
-                  <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>Op basis van de KLACHT-output kunnen we nog het volgende genereren:</p>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div style={{ borderRadius: 14, border: extras.behandelplan ? "1.5px solid #86efac" : "1.5px solid #e5e7eb", background: extras.behandelplan ? "#f0fdf4" : "#fafafa", overflow: "hidden" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px" }}>
-                        <div>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: extras.behandelplan ? "#16a34a" : "#1f2937", margin: 0 }}>Behandelstrategie</p>
-                          <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Korte, bondige strategie op basis van de klacht</p>
-                        </div>
-                        {extras.behandelplan ? <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600 }}>Gegenereerd</span>
-                          : extraLoading.behandelplan ? <Spinner />
-                          : <button onClick={function() { generateExtra("behandelplan"); }} style={{ padding: "7px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "linear-gradient(135deg,#667eea,#764ba2)", color: "#fff", border: "none" }}>Ja</button>}
-                      </div>
-                      {!extras.behandelplan && (
-                        <div style={{ padding: "0 16px 14px" }}>
-                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>Werkdiagnose / fysiotherapeutische conclusie <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optioneel)</span></p>
-                          <input type="text" value={werkdiagnose} onChange={function(e) { setWerkdiagnose(e.target.value); }}
-                            placeholder="bijv. tendinopathie m. supraspinatus, PFPS, VKB-revalidatie week 6..."
+                        <div style={{ marginBottom: 12 }}>
+                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>Bij wie / wanneer <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optioneel)</span></p>
+                          <input className="ft-input" type="text" value={tFields.diagWie} onChange={function(e) { setT("diagWie", e.target.value); }}
+                            placeholder="bijv. collega Jan Willem volgende week, huisarts"
                             style={Object.assign({}, inpStyle(false), { width: "100%" })} />
                         </div>
-                      )}
-                    </div>
-                    <ExtraOption label="Samenvatting voor patient" desc="Begrijpelijke tekst: wat speelt er, zelfzorg en het plan"
-                      done={!!extras.patientbrief} loading={extraLoading.patientbrief} onYes={function() { generateExtra("patientbrief"); }} />
-                  </div>
-                </Card>
+                        <div style={{ marginBottom: "1.5rem" }}>
+                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 8 }}>Vervolgbehandeling na uitkomsten?</p>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            {[["ja", "Ja, behandeling volgt"], ["nee", "Nog niet bepaald"]].map(function(item) {
+                              const sel = tFields.diagVervolgplan === item[0];
+                              return (
+                                <div key={item[0]} onClick={function() { setT("diagVervolgplan", item[0]); }} style={{
+                                  flex: 1, padding: "8px 12px", borderRadius: 12, fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "center",
+                                  border: sel ? "1.5px solid " + PAARS : "1.5px solid #e5e7eb",
+                                  background: sel ? TAG_PAARS_BG : "#fff",
+                                  color: sel ? PAARS : "#6b7280",
+                                }}>{item[1]}</div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                {extras.behandelplan && (
-                  <Card style={{ marginTop: 12 }}>
+                    {tMode === T_MODE_MANUAL && (
+                      <div style={{ marginTop: 16 }}>
+                        <div style={{ marginBottom: 12 }}>
+                          <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>Frequentie <span style={{ color: "#f87171" }}>*</span></p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <input className="ft-input" type="text" value={tFields.freqNum} onChange={function(e) { setT("freqNum", e.target.value); }} placeholder="bijv. 2" style={Object.assign({}, inpStyle(tErrors.freqNum), { width: 72 })} />
+                            <span style={{ fontSize: 13, color: "#9ca3af", whiteSpace: "nowrap" }}>x per</span>
+                            <select className="ft-input" value={tFields.freqUnit} onChange={function(e) { setT("freqUnit", e.target.value); }}
+                              style={{ fontSize: 14, padding: "9px 11px", borderRadius: 12, border: "1.5px solid #e5e7eb", background: "#fff", color: "#1f2937", outline: "none", cursor: "pointer" }}>
+                              {FREQ_UNITS.map(function(u) { return <option key={u} value={u}>{u}</option>; })}
+                            </select>
+                          </div>
+                          {tErrors.freqNum && <p style={{ fontSize: 11, color: "#f87171", marginTop: 3 }}>Dit veld is verplicht.</p>}
+                        </div>
+                        <div className="t-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                          <TField label="Aantal behandelingen totaal" placeholder="bijv. 10" suffix="behandelingen" value={tFields.freqTotal} error={tErrors.freqTotal} onChange={function(v) { setT("freqTotal", v); }} />
+                          <TField label="Evaluatiemoment" placeholder="bijv. 4" prefix="na" suffix="behandelingen" value={tFields.evaluatie} error={tErrors.evaluatie} onChange={function(v) { setT("evaluatie", v); }} />
+                        </div>
+                        <div className="t-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: "1.5rem" }}>
+                          <TField label="Plan bij verbetering" placeholder="bijv. opstarten oefentherapie" isArea={true} value={tFields.verbetering} error={tErrors.verbetering} onChange={function(v) { setT("verbetering", v); }} />
+                          <TField label="Plan bij geen verbetering (back-up)" placeholder="bijv. terugverwijzen naar HA" isArea={true} value={tFields.backup} error={tErrors.backup} onChange={function(v) { setT("backup", v); }} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                      <GhostBtn onClick={function() { setStep(0); scrollTo(topRef); }}>Vorige stap</GhostBtn>
+                      <PrimaryBtn onClick={generateAll} disabled={loading} loading={loading} loadingText={loadingMsg}>Genereer KLACHT</PrimaryBtn>
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div ref={step3Ref}>
+                  <Card>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "1rem" }}>
-                      <Stripe /><Label style={{ marginBottom: 0 }}>Behandelstrategie</Label>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#16a34a" }}>Volledige KLACHT-output gereed</span>
                     </div>
-                    <OutputBox text={extras.behandelplan} />
+                    <textarea className="ft-input" value={fullKlacht} onChange={function(e) { setFullKlacht(e.target.value); }}
+                      style={{ width: "100%", minHeight: 200, fontSize: 14, padding: "1rem 1.25rem", borderRadius: 12, border: "1.5px solid " + RAND, background: "#fcfafb", color: "#1f2937", lineHeight: 1.8, outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+                    <div style={{ display: "flex", gap: 10, marginTop: "1.25rem", flexWrap: "wrap" }}>
+                      <button onClick={copyOutput} className={copied ? "" : "btn-primary"} style={Object.assign(
+                        { padding: "10px 20px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer" },
+                        copied ? { background: "#f0fdf4", color: "#16a34a", border: "1.5px solid #86efac" } : {}
+                      )}>{copied ? "Gekopieerd!" : "Kopieer output"}</button>
+                      <GhostBtn onClick={function() { setStep(1); scrollTo(step2Ref); }}>Vorige stap</GhostBtn>
+                      <GhostBtn onClick={reset}>Nieuwe anamnese</GhostBtn>
+                    </div>
                   </Card>
-                )}
 
-                {extras.patientbrief && (
+                  {leefstijlSignalen.length > 0 && (
+                    <div style={{ marginTop: 12, borderRadius: 20, background: TAG_BLAUW_BG, border: "1.5px solid " + CYAAN, borderLeft: "6px solid " + CYAAN, padding: "1.1rem 1.4rem", boxShadow: "0 2px 14px rgba(0,182,232,0.15)" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#fff", border: "2px solid " + CYAAN, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>&#127807;</div>
+                        <div>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: BLAUW_TEKST, margin: 0 }}>Tip: overleg met Mayke</p>
+                          <p style={{ fontSize: 13, color: "#1f2937", margin: "4px 0 10px", lineHeight: 1.6 }}>Er komen leefstijlbijzonderheden naar voren bij deze patiënt. Overleg met Mayke over een eventuele aanpak.</p>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {leefstijlSignalen.map(function(s, i) {
+                              return <span key={i} style={{ fontSize: 12, fontWeight: 500, padding: "4px 10px", borderRadius: 20, background: "#fff", color: BLAUW_TEKST, border: "1px solid " + CYAAN }}>{s}</span>;
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <Card style={{ marginTop: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <Stripe /><Label style={{ marginBottom: 0 }}>Samenvatting voor patient</Label>
+                    <Label>Wil je meer genereren?</Label>
+                    <p style={{ fontSize: 13, color: "#6b7280", marginBottom: "1rem" }}>Op basis van de KLACHT-output kunnen we nog het volgende genereren:</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ borderRadius: 14, border: extras.behandelplan ? "1.5px solid #86efac" : "1.5px solid " + RAND, background: extras.behandelplan ? "#f0fdf4" : "#fcfafb", overflow: "hidden" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", gap: 12 }}>
+                          <div>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: extras.behandelplan ? "#16a34a" : "#1f2937", margin: 0 }}>Behandelstrategie</p>
+                            <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Korte, bondige strategie op basis van de klacht</p>
+                          </div>
+                          {extras.behandelplan ? <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600 }}>Gegenereerd</span>
+                            : extraLoading.behandelplan ? <Spinner />
+                            : <button className="btn-primary" onClick={function() { generateExtra("behandelplan"); }} style={{ padding: "7px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600 }}>Ja</button>}
+                        </div>
+                        {!extras.behandelplan && (
+                          <div style={{ padding: "0 16px 14px" }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>Werkdiagnose / fysiotherapeutische conclusie <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optioneel)</span></p>
+                            <input className="ft-input" type="text" value={werkdiagnose} onChange={function(e) { setWerkdiagnose(e.target.value); }}
+                              placeholder="bijv. tendinopathie m. supraspinatus, PFPS, VKB-revalidatie week 6..."
+                              style={Object.assign({}, inpStyle(false), { width: "100%" })} />
+                          </div>
+                        )}
+                      </div>
+                      <ExtraOption label="Samenvatting voor patiënt" desc="Begrijpelijke tekst: wat speelt er, zelfzorg en het plan"
+                        done={!!extras.patientbrief} loading={extraLoading.patientbrief} onYes={function() { generateExtra("patientbrief"); }} />
                     </div>
-                    <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>Je kunt de tekst hieronder direct bewerken voor je hem deelt.</p>
-                    <textarea value={patientbriefEdit} onChange={function(e) { setPatientbriefEdit(e.target.value); }}
-                      style={{ width: "100%", minHeight: 160, fontSize: 14, fontFamily: "system-ui", padding: "1rem 1.25rem", borderRadius: 12, border: "1.5px solid #c7d2fe", background: "#fafbff", color: "#1f2937", lineHeight: 1.8, outline: "none", boxSizing: "border-box", resize: "vertical" }} />
                   </Card>
-                )}
-              </div>
-            )}
 
-            <p style={{ fontSize: 12, color: "#c4c4cc", textAlign: "center", marginTop: "1.5rem" }}>KLACHT-methode - Fysiotherapie verslaglegging</p>
-          </div>
+                  {extras.behandelplan && (
+                    <Card style={{ marginTop: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "1rem" }}>
+                        <Stripe /><Label style={{ marginBottom: 0 }}>Behandelstrategie</Label>
+                      </div>
+                      <OutputBox text={extras.behandelplan} />
+                    </Card>
+                  )}
+
+                  {extras.patientbrief && (
+                    <Card style={{ marginTop: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <Stripe /><Label style={{ marginBottom: 0 }}>Samenvatting voor patiënt</Label>
+                      </div>
+                      <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>Je kunt de tekst hieronder direct bewerken voor je hem deelt.</p>
+                      <textarea className="ft-input" value={patientbriefEdit} onChange={function(e) { setPatientbriefEdit(e.target.value); }}
+                        style={{ width: "100%", minHeight: 160, fontSize: 14, padding: "1rem 1.25rem", borderRadius: 12, border: "1.5px solid " + RAND, background: "#fcfafb", color: "#1f2937", lineHeight: 1.8, outline: "none", boxSizing: "border-box", resize: "vertical" }} />
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
+          </main>
+
+          <footer style={{ background: PAARS_DONKER, padding: "1rem", textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+            <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>Fyzio Totaal</span> · KLACHT-methode assistent · versie {window.APP_VERSION}
+          </footer>
         </div>
       );
     }
 
     function Card(props) {
-      return <div style={Object.assign({ background: "#fff", borderRadius: 20, boxShadow: "0 4px 24px rgba(0,0,0,0.07)", padding: "1.75rem" }, props.style)}>{props.children}</div>;
+      return <div style={Object.assign({ background: "#fff", borderRadius: 20, boxShadow: KAART_SCHADUW, padding: "1.75rem" }, props.style)}>{props.children}</div>;
     }
     function Label(props) {
-      return <p style={Object.assign({ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8, letterSpacing: "0.01em" }, props.style)}>{props.children}</p>;
+      return <p style={Object.assign({ fontSize: 13, fontWeight: 600, color: "#374151", marginTop: 0, marginBottom: 8, letterSpacing: "0.01em" }, props.style)}>{props.children}</p>;
     }
     function Stripe() {
-      return <div style={{ width: 4, height: 20, borderRadius: 2, background: "linear-gradient(180deg,#667eea,#764ba2)", flexShrink: 0 }} />;
+      return <div style={{ width: 4, height: 20, borderRadius: 2, background: "linear-gradient(180deg," + PAARS + "," + CYAAN + ")", flexShrink: 0 }} />;
     }
     function Spinner() {
-      return <span style={{ width: 20, height: 20, border: "2px solid #e5e7eb", borderTopColor: "#667eea", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} />;
+      return <span style={{ width: 20, height: 20, border: "2px solid " + RAND, borderTopColor: PAARS, borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite", verticalAlign: "middle" }} />;
     }
     function Radio(props) {
       return (
-        <div style={{ width: 18, height: 18, borderRadius: "50%", border: props.selected ? "none" : "2px solid #d1d5db", background: props.selected ? "linear-gradient(135deg,#667eea,#764ba2)" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 18, height: 18, borderRadius: "50%", border: props.selected ? "none" : "2px solid #d1d5db", background: props.selected ? GRADIENT : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           {props.selected && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
         </div>
       );
     }
     function ModeCard(props) {
       return (
-        <div onClick={props.onClick} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 12, marginBottom: 8, cursor: "pointer", border: props.selected ? "1.5px solid #667eea" : "1.5px solid #e5e7eb", background: props.selected ? "#f5f3ff" : "#fafafa" }}>
+        <div onClick={props.onClick} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 12, marginBottom: 8, cursor: "pointer", border: props.selected ? "1.5px solid " + PAARS : "1.5px solid #e5e7eb", background: props.selected ? SELECT_BG : "#fff" }}>
           <div style={{ paddingTop: 2 }}><Radio selected={props.selected} /></div>
           <div>
             <p style={{ fontSize: 14, fontWeight: 600, color: "#1f2937", margin: 0, fontStyle: props.labelItalic ? "italic" : "normal" }}>{props.label}</p>
@@ -564,38 +664,38 @@
     }
     function ExtraOption(props) {
       return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 14, border: props.done ? "1.5px solid #86efac" : "1.5px solid #e5e7eb", background: props.done ? "#f0fdf4" : "#fafafa" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderRadius: 14, border: props.done ? "1.5px solid #86efac" : "1.5px solid " + RAND, background: props.done ? "#f0fdf4" : "#fcfafb" }}>
           <div>
             <p style={{ fontSize: 14, fontWeight: 600, color: props.done ? "#16a34a" : "#1f2937", margin: 0 }}>{props.label}</p>
             <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>{props.desc}</p>
           </div>
           {props.done ? <span style={{ fontSize: 13, color: "#16a34a", fontWeight: 600 }}>Gegenereerd</span>
             : props.loading ? <Spinner />
-            : <button onClick={props.onYes} style={{ padding: "7px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", background: "linear-gradient(135deg,#667eea,#764ba2)", color: "#fff", border: "none" }}>Ja</button>}
+            : <button className="btn-primary" onClick={props.onYes} style={{ padding: "7px 16px", borderRadius: 10, fontSize: 13, fontWeight: 600 }}>Ja</button>}
         </div>
       );
     }
     function OutputBox(props) {
       return (
-        <div style={{ background: "#fafbff", border: "1.5px solid #c7d2fe", borderRadius: 12, padding: "1rem 1.25rem", fontSize: 14, color: "#1f2937", whiteSpace: "pre-wrap", lineHeight: 1.8 }}>
+        <div style={{ background: "#fcfafb", border: "1.5px solid " + RAND, borderRadius: 12, padding: "1rem 1.25rem", fontSize: 14, color: "#1f2937", whiteSpace: "pre-wrap", lineHeight: 1.8 }}>
           {props.text.split("\n").map(function(line, i) {
             const match = line.match(/^([KLACHT])\s*:(.*)$/);
-            if (match) return <div key={i}><span style={{ fontWeight: 700, color: "#667eea" }}>{match[1]}:</span><span>{match[2]}</span></div>;
+            if (match) return <div key={i}><span style={{ fontWeight: 700, color: PAARS }}>{match[1]}:</span><span>{match[2]}</span></div>;
             return <div key={i}>{line || <br />}</div>;
           })}
         </div>
       );
     }
     function TField(props) {
-      const s = { fontSize: 14, padding: "9px 11px", borderRadius: 10, fontFamily: "system-ui", border: props.error ? "1.5px solid #f87171" : "1.5px solid #e5e7eb", background: props.error ? "#fff7f7" : "#fff", color: "#1f2937", outline: "none", boxSizing: "border-box", width: "100%" };
+      const s = { fontSize: 14, padding: "9px 11px", borderRadius: 12, border: props.error ? "1.5px solid #f87171" : "1.5px solid #e5e7eb", background: props.error ? "#fff7f7" : "#fff", color: "#1f2937", outline: "none", boxSizing: "border-box", width: "100%" };
       return (
         <div>
           <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 5 }}>{props.label} <span style={{ color: "#f87171" }}>*</span></p>
           {props.isArea
-            ? <textarea value={props.value} onChange={function(e) { props.onChange(e.target.value); }} placeholder={props.placeholder} style={Object.assign({}, s, { minHeight: 72, resize: "vertical", lineHeight: 1.5 })} />
+            ? <textarea className="ft-input" value={props.value} onChange={function(e) { props.onChange(e.target.value); }} placeholder={props.placeholder} style={Object.assign({}, s, { minHeight: 72, resize: "vertical", lineHeight: 1.5 })} />
             : <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {props.prefix && <span style={{ fontSize: 12, color: "#9ca3af", whiteSpace: "nowrap" }}>{props.prefix}</span>}
-                <input type="text" value={props.value} onChange={function(e) { props.onChange(e.target.value); }} placeholder={props.placeholder} style={Object.assign({}, s, { flex: 1 })} />
+                <input className="ft-input" type="text" value={props.value} onChange={function(e) { props.onChange(e.target.value); }} placeholder={props.placeholder} style={Object.assign({}, s, { flex: 1, minWidth: 0 })} />
                 {props.suffix && <span style={{ fontSize: 12, color: "#9ca3af", whiteSpace: "nowrap" }}>{props.suffix}</span>}
               </div>}
           {props.error && <p style={{ fontSize: 11, color: "#f87171", marginTop: 3 }}>Dit veld is verplicht.</p>}
@@ -604,13 +704,13 @@
     }
     function PrimaryBtn(props) {
       return (
-        <button onClick={props.onClick} disabled={props.disabled} style={{ padding: "11px 24px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: props.disabled ? "default" : "pointer", background: props.disabled ? "#e5e7eb" : "linear-gradient(135deg,#667eea,#764ba2)", color: props.disabled ? "#9ca3af" : "#fff", border: "none", boxShadow: props.disabled ? "none" : "0 2px 12px rgba(102,126,234,0.35)", display: "flex", alignItems: "center", gap: 8 }}>
+        <button className="btn-primary" onClick={props.onClick} disabled={props.disabled} style={{ padding: "11px 24px", borderRadius: 12, fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
           {props.loading ? <span><Spinner /> {props.loadingText}</span> : props.children}
         </button>
       );
     }
     function GhostBtn(props) {
-      return <button onClick={props.onClick} style={{ padding: "11px 18px", borderRadius: 12, fontSize: 14, fontWeight: 500, cursor: "pointer", background: "transparent", color: "#6b7280", border: "1.5px solid #e5e7eb" }}>{props.children}</button>;
+      return <button className="btn-ghost" onClick={props.onClick} style={{ padding: "11px 18px", borderRadius: 12, fontSize: 14, fontWeight: 500 }}>{props.children}</button>;
     }
 
     ReactDOM.createRoot(document.getElementById("root")).render(<App />);
