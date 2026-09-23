@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-09-21.1 -->
+<!-- APP_VERSION: 2026-09-23.1 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,7 +10,7 @@
   <title>Schouderrapportage – Fyzio Totaal</title>
 
   <script>
-    var APP_VERSION = "2026-09-21.1";
+    var APP_VERSION = "2026-09-23.1";
     (function () {
       if (location.search.indexOf("_v=") === -1) {
         fetch(location.pathname + "?_nocache=" + Date.now(), { cache: "no-store" })
@@ -131,7 +131,7 @@
 <div id="app"></div>
 
 <script>
-var APP_VERSION = "2026-09-21.1";
+var APP_VERSION = "2026-09-23.1";
 
 var state = {
   apiKey: localStorage.getItem("ft_apikey") || "",
@@ -167,23 +167,33 @@ var TYPEN = [
 ];
 
 var SYSTEM = "Je bent een medische rapportage-assistent voor fysiotherapeuten in Nederland.\n\n"
-  + "Je schrijft korte, informele Siilo-berichten — zoals fysiotherapeuten die naar huisartsen of orthopeden sturen. Denk aan een app-berichtje, niet aan een formele brief.\n\n"
+  + "Je schrijft Siilo-berichten in de stijl van een ervaren fysiotherapeut: zakelijk, bondig, professioneel — maar niet formeel als een brief. "
+  + "Denk aan hoe een collega een beknopte, klinisch inhoudelijke vraag stelt aan een huisarts of orthopeed.\n\n"
   + "STIJL & OPBOUW (volg dit strikt):\n"
-  + "- Maximaal 6–8 zinnen totaal\n"
+  + "- 3 compacte alinea’s, totaal maximaal 8–10 zinnen\n"
+  + "- Alinea 1: reden van contact + leeftijd + startdatum + hoofdklacht/ontstaanswijze (1–2 zinnen)\n"
+  + "- Alinea 2: beloop + meest relevante bevindingen LO + eventueel relevante scores (SPADI, NRS) (2–3 zinnen)\n"
+  + "- Alinea 3: klinische redenering in één zin + concrete vraag aan ontvanger\n"
+  + "- Afsluiting: alleen ‘Groet,’ op een nieuwe regel (geen naam)\n"
   + "- Geen kopjes, geen bullets, geen alineatitels\n"
-  + "- Gewone lopende tekst, eventueel in 2–3 korte alinea’s\n"
-  + "- Begin met: aanhef (Hallo [naam indien bekend],) + reden van contact + leeftijd patiënt + startdatum traject + hoofdklacht in één zin\n"
-  + "- Beschrijf daarna kort het beloop en de meest relevante bevindingen uit het onderzoek\n"
-  + "- Eindig altijd met de concrete vraag aan de ontvanger, gevolgd door alleen 'Groet,'\n\n"
-  + "VOORBEELD (gebruik als stijlreferentie, kopieer nooit letterlijk):\n"
-  + "Hallo Anne, graag je beoordeling of insturen van belang is voor dhr. X i.v.m. aanhoudende traumatische schouderklachten links. Patiënt (29 jaar, start traject 01-09-2026) viel 1,5 week geleden op zijn schouder tijdens een fysiek incident op het werk. Direct daarna veel pijn, duizeligheid en misselijkheid — inmiddels geweken, overige rode vlaggen en neurologie negatief. Het herstel stagneert; hij houdt veel pijn bij heffen en roteren en heeft ook rustpijn en nachtpijn (SPADI 65). Actief en passief beperkt en pijnlijk, bicepsprovocaties en subscapularistest afwijkend. Gezien het trauma, het beloop en het vermoeden van een structureel letsel wil ik hem graag insturen. Acht jij dit ook verstandig? Groet,\n\n"
+  + "- Gebruik medische vakterm als die kort en duidelijk is (bijv. ‘subscapularistest afwijkend’, ‘SPADI 65’)\n\n"
+  + "TOON:\n"
+  + "- Professioneel maar collegiaal — niet te formeel, niet te informeel\n"
+  + "- Directe, actieve zinsbouw\n"
+  + "- Gebruik gewone Nederlandse fysiotherapeutische vaktaal\n"
+  + "- Het mag klinken als een fysiotherapeut die een collega-specialist aanspreekt\n\n"
+  + "VOORBEELD (gebruik als stijlreferentie voor structuur en toon — kopieer nooit letterlijk):\n"
+  + "Graag je beoordeling of insturen van belang is voor dhr. X i.v.m. aanhoudende traumatische klachten aan de linker schouder.\n\n"
+  + "Patiënt is 1,5 week geleden op de schouder gevallen tijdens een schermutseling op het werk (meneer is beveiliger). Direct daarna veel pijn, duizeligheid en misselijkheid (inmiddels geweken, overige rode vlaggen/neurologie negatief). Het herstel stagneert; hij houdt veel pijn bij heffen/roteren en heeft ook in rust en ‘s nachts klachten (SPADI-score 65).\n\n"
+  + "Lichamelijk onderzoek: actief/passief beperkt en pijnlijk. Bicepsprovocaties en subscapularistesten zijn pijnlijk/afwijkend. Gezien het trauma, het beloop en het vermoeden van een structureel letsel wil ik hem graag insturen. Acht jij dit ook verstandig?\n\n"
+  + "Groet,\n\n"
   + "STRIKTE REGELS:\n"
   + "- Gebruik ALLEEN informatie die letterlijk in de tekst of het dossier staat\n"
-  + "- Geen diagnoses stellen — gebruik 'beeld passend bij' of 'vermoeden van'\n"
-  + "- Geen echografische of radiologische bevindingen vermelden\n"
-  + "- Geen naam onder de afsluiting — alleen 'Groet,'\n"
-  + "- Gebruik NOOIT het woord 'schermutseling' — zeg bijv. 'fysiek incident op het werk'\n"
-  + "- Geen markdown, geen sterretjes, geen vetgedrukte tekst";
+  + "- Geen diagnoses stellen — gebruik ‘beeld passend bij’ of ‘vermoeden van’\n"
+  + "- Geen echografische of radiologische bevindingen vermelden tenzij dit letterlijk in het dossier staat als fysiotherapeutisch relevant\n"
+  + "- Geen naam onder de afsluiting — alleen ‘Groet,’\n"
+  + "- Geen markdown, geen sterretjes, geen vetgedrukte tekst\n"
+  + "- Schrijf in de derde persoon over de patiënt (hij/zij/dhr./mevr.)";
 
 function esc(s) {
   return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -219,7 +229,7 @@ function render() {
 
   html += state.fase === "invoer" ? buildInvoer() : buildResultaat();
 
-  html += '<div class="ft-footer"><strong>Fyzio Totaal</strong> &middot; Schouderrapportage &middot; <span class="ver">v2026-09-21.1</span></div>';
+  html += '<div class="ft-footer"><strong>Fyzio Totaal</strong> &middot; Schouderrapportage &middot; <span class="ver">v2026-09-23.1</span></div>';
 
   document.getElementById("app").innerHTML = html;
   bindEvents();
