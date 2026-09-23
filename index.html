@@ -134,7 +134,14 @@
       <span class="section-title">Beschikbare tools</span>
       <span class="rule"></span>
     </div>
-    <div class="tools-grid">
+
+    <!--
+      AFSPRAAK: tools staan op ALFABETISCHE volgorde (op .tool-name).
+      Voeg een nieuwe tool dus op de juiste alfabetische plek toe.
+      Het script onderaan de pagina sorteert de kaarten ook automatisch,
+      als vangnet voor het geval een tool op de verkeerde plek wordt gezet.
+    -->
+    <div class="tools-grid" id="tools-grid">
 
       <a class="tool-card" href="klacht.html" target="_blank" style="--accent: #00728e;">
         <span class="tool-icon">📋</span>
@@ -144,27 +151,27 @@
         <span class="open-link">Openen →</span>
       </a>
 
+      <a class="tool-card" href="afhandelformulier.html" target="_blank" style="--accent: #82176D;">
+        <span class="tool-icon">✅</span>
+        <div class="tool-name">Afhandelformulier</div>
+        <div class="tool-desc">Maandelijkse checklist en urenopgave, met persoonlijk overzicht en beheer voor extra uren.</div>
+        <div class="tool-tags"><span class="tag blue">Administratie</span><span class="tag purple">Personeel</span></div>
+        <span class="open-link">Openen →</span>
+      </a>
+
+      <a class="tool-card" href="testen-fyziofit.html" target="_blank" style="--accent: #00728e;">
+        <span class="tool-icon">💪</span>
+        <div class="tool-name">Fitheidstest</div>
+        <div class="tool-desc">Testregistratie, scoring en rapportage voor deelnemers van de fyziotraining.</div>
+        <div class="tool-tags"><span class="tag purple">Fyziotraining</span><span class="tag blue">Scoring</span><span class="tag purple">Rapport</span></div>
+        <span class="open-link">Openen →</span>
+      </a>
+
       <a class="tool-card" href="groepsbeheer.html" target="_blank" style="--accent: #82176D;">
         <span class="tool-icon">🏃</span>
         <div class="tool-name">Fyziotraining & Balance</div>
         <div class="tool-desc">Beheer deelnemers, wachtlijsten, tijdelijke stops en reserveringen voor alle trainingsgroepen.</div>
         <div class="tool-tags"><span class="tag purple">Fyziotraining</span><span class="tag blue">Balance</span><span class="tag purple">Wachtlijst</span></div>
-        <span class="open-link">Openen →</span>
-      </a>
-
-      <a class="tool-card" href="vkb-planning.html" target="_blank" style="--accent: #00728e;">
-        <span class="tool-icon">🦵</span>
-        <div class="tool-name">VKB Testen & Planning</div>
-        <div class="tool-desc">Testprotocol, scoringsoverzicht én testplanning voor VKB-revalidaties. Inclusief urgentieoverzicht.</div>
-        <div class="tool-tags"><span class="tag blue">Revalidatie</span><span class="tag purple">Planning</span><span class="tag blue">Klinisch</span></div>
-        <span class="open-link">Openen →</span>
-      </a>
-
-      <a class="tool-card" href="testen-fyziofit.html" target="_blank" style="--accent: #82176D;">
-        <span class="tool-icon">💪</span>
-        <div class="tool-name">Fitheidstest</div>
-        <div class="tool-desc">Testregistratie, scoring en rapportage voor deelnemers van de fyziotraining.</div>
-        <div class="tool-tags"><span class="tag purple">Fyziotraining</span><span class="tag blue">Scoring</span><span class="tag purple">Rapport</span></div>
         <span class="open-link">Openen →</span>
       </a>
 
@@ -184,7 +191,7 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="fyzio-verlof-app.html" target="_blank" style="--accent: #82176D;">
+      <a class="tool-card" href="fyzio-verlof-app.html" target="_blank" style="--accent: #00728e;">
         <span class="tool-icon">🗓️</span>
         <div class="tool-name">Verlof & Uren</div>
         <div class="tool-desc">Verlof aanvragen en gewerkte uren bijhouden voor het hele team.</div>
@@ -192,15 +199,15 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="afhandelformulier.html" target="_blank" style="--accent: #00728e;">
-        <span class="tool-icon">✅</span>
-        <div class="tool-name">Afhandelformulier</div>
-        <div class="tool-desc">Maandelijkse checklist en urenopgave, met persoonlijk overzicht en beheer voor extra uren.</div>
-        <div class="tool-tags"><span class="tag blue">Administratie</span><span class="tag purple">Personeel</span></div>
+      <a class="tool-card" href="vkb-planning.html" target="_blank" style="--accent: #82176D;">
+        <span class="tool-icon">🦵</span>
+        <div class="tool-name">VKB Testen & Planning</div>
+        <div class="tool-desc">Testprotocol, scoringsoverzicht én testplanning voor VKB-revalidaties. Inclusief urgentieoverzicht.</div>
+        <div class="tool-tags"><span class="tag blue">Revalidatie</span><span class="tag purple">Planning</span><span class="tag blue">Klinisch</span></div>
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="zorgverzekeraars.html" target="_blank" style="--accent: #82176D;">
+      <a class="tool-card" href="zorgverzekeraars.html" target="_blank" style="--accent: #00728e;">
         <span class="tool-icon">🛡️</span>
         <div class="tool-name">Zorgverzekeraars</div>
         <div class="tool-desc">Per verzekeraar zien welke eisen gelden voor verwijzing en eigen risico, met kant-en-klare uitleg voor patiënten.</div>
@@ -233,6 +240,25 @@
   <footer>
     <strong>Fyzio Totaal</strong> · Nijverheidsstraat 7, Wierden · Intern gebruik
   </footer>
+
+  <script>
+    // Sorteer de tool-kaarten altijd alfabetisch op naam (Nederlandse sortering, hoofdletterongevoelig)
+    (function () {
+      var grid = document.getElementById('tools-grid');
+      if (!grid) return;
+      var cards = Array.prototype.slice.call(grid.querySelectorAll('.tool-card'));
+      cards.sort(function (a, b) {
+        var na = a.querySelector('.tool-name').textContent.trim();
+        var nb = b.querySelector('.tool-name').textContent.trim();
+        return na.localeCompare(nb, 'nl', { sensitivity: 'base' });
+      });
+      // Accentkleuren om en om: blauw, paars, blauw, ...
+      cards.forEach(function (c, i) {
+        c.style.setProperty('--accent', i % 2 === 0 ? '#00728e' : '#82176D');
+        grid.appendChild(c);
+      });
+    })();
+  </script>
 
 </body>
 </html>
