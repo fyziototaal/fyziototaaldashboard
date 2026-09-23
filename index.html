@@ -1,12 +1,49 @@
+<!-- APP_VERSION: 2026-09-23.1 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+  <!--
+    AUTOMATISCHE VERSIECHECK — moet het allereerste script blijven.
+    Verhoog APP_VERSION bij ELKE wijziging, op beide plekken:
+    1) de HTML-comment op regel 1, 2) de constante hieronder.
+  -->
+  <script>
+    (function () {
+      var APP_VERSION = "2026-09-23.1";
+      window.APP_VERSION = APP_VERSION;
+
+      var params = new URLSearchParams(location.search);
+      var alGeherladen = params.has("_v");
+
+      fetch(location.pathname, { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+          if (!html) return;
+          var m = html.match(/<!--\s*APP_VERSION:\s*([^\s]+)\s*-->/);
+          if (!m) return;
+          var liveVersie = m[1];
+          if (liveVersie !== APP_VERSION && !alGeherladen) {
+            // Eén keer herladen met cache-doorbrekende parameter
+            location.replace(location.pathname + "?_v=" + Date.now());
+          } else if (alGeherladen && history.replaceState) {
+            // Adresbalk weer opschonen, zodat bladwijzers netjes blijven
+            history.replaceState(null, "", location.pathname + location.hash);
+          }
+        })
+        .catch(function () { /* offline of fout: gewoon de huidige versie gebruiken */ });
+    })();
+  </script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Fyzio Totaal — Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
     body { font-family: 'Poppins', 'Segoe UI', sans-serif; background: #f3eef2; min-height: 100vh; color: #1a1a1a; }
 
     .hero {
@@ -52,9 +89,41 @@
 
     .container { max-width: 860px; margin: 0 auto; padding: 32px 1rem 60px; }
 
+    /* Zoekveld */
+    .search-wrap { position: relative; margin-bottom: 28px; }
+    .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; opacity: 0.6; }
+    .search-input {
+      width: 100%;
+      font-family: inherit; font-size: 15px; color: #1a1a1a;
+      background: #fff;
+      border: 1.5px solid #e2d5df; border-radius: 14px;
+      padding: 14px 44px 14px 44px;
+      box-shadow: 0 2px 14px rgba(130,23,109,0.06);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    .search-input::placeholder { color: #a99aa5; }
+    .search-input:focus { border-color: #82176D; box-shadow: 0 0 0 4px rgba(130,23,109,0.12); }
+    .search-input::-webkit-search-cancel-button { display: none; }
+    .search-clear {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: #f3eef2; color: #82176D;
+      font-size: 16px; line-height: 1; cursor: pointer;
+    }
+    .no-results {
+      background: #fff; border-radius: 16px; padding: 22px;
+      text-align: center; font-size: 13px; color: #777;
+      border: 1.5px dashed #d8c7d4;
+      margin-bottom: 32px;
+    }
+    .no-results strong { color: #82176D; }
+
     .section-title-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
     .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; color: #82176D; white-space: nowrap; }
     .section-title-row .rule { flex: 1; height: 1px; background: #e2d5df; }
+    .result-count { font-size: 11px; color: #999; white-space: nowrap; }
 
     .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
     @media (max-width: 640px) { .tools-grid { grid-template-columns: 1fr 1fr; } }
@@ -72,6 +141,7 @@
       .tool-card:hover { box-shadow: 0 8px 28px rgba(130,23,109,0.16); transform: translateY(-2px); }
     }
     .tool-card:active { transform: scale(0.98); }
+    .tool-card:focus-visible { outline: 3px solid #00B6E8; outline-offset: 2px; }
 
     .tool-icon { font-size: 26px; margin-bottom: 10px; display: block; }
     .tool-name { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; line-height: 1.3; }
@@ -94,6 +164,7 @@
 
     footer { background: #4a0f42; color: rgba(255,255,255,0.5); text-align: center; padding: 18px 1rem; font-size: 12px; }
     footer strong { color: rgba(255,255,255,0.85); }
+    footer .version { display: block; margin-top: 4px; font-size: 10.5px; color: rgba(255,255,255,0.4); letter-spacing: 0.4px; }
 
     .tool-card.disabled {
       cursor: default;
@@ -130,9 +201,19 @@
   </div>
 
   <div class="container">
+
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="search" id="tool-search" class="search-input"
+             placeholder="Zoek een tool, bijv. 'verlof' of 'schouder'"
+             aria-label="Zoek een tool" autocomplete="off" spellcheck="false">
+      <button type="button" class="search-clear" id="search-clear" aria-label="Zoekopdracht wissen" hidden>×</button>
+    </div>
+
     <div class="section-title-row">
       <span class="section-title">Beschikbare tools</span>
       <span class="rule"></span>
+      <span class="result-count" id="result-count" hidden></span>
     </div>
 
     <!--
@@ -140,10 +221,15 @@
       Voeg een nieuwe tool dus op de juiste alfabetische plek toe.
       Het script onderaan de pagina sorteert de kaarten ook automatisch,
       als vangnet voor het geval een tool op de verkeerde plek wordt gezet.
+
+      ZOEKEN: de zoekfunctie doorzoekt naam, omschrijving, tags én het
+      attribuut data-keywords. Geef elke nieuwe tool dus ook data-keywords
+      mee met woorden waarop collega's zouden zoeken (synoniemen, afkortingen).
     -->
     <div class="tools-grid" id="tools-grid">
 
-      <a class="tool-card" href="klacht.html" target="_blank" style="--accent: #00728e;">
+      <a class="tool-card" href="klacht.html" target="_blank" style="--accent: #00728e;"
+         data-keywords="klacht klachten administratie verslaglegging dossier epd documenteren rapporteren anamnese">
         <span class="tool-icon">📋</span>
         <div class="tool-name">Administratiehulp KLACHT</div>
         <div class="tool-desc">Gestructureerde hulp bij het documenteren van klachten volgens de KLACHT-methode.</div>
@@ -151,7 +237,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="afhandelformulier.html" target="_blank" style="--accent: #82176D;">
+      <a class="tool-card" href="afhandelformulier.html" target="_blank" style="--accent: #82176D;"
+         data-keywords="afhandelen afhandeling maand maandafsluiting checklist uren urenopgave extra uren overuren afsluiten">
         <span class="tool-icon">✅</span>
         <div class="tool-name">Afhandelformulier</div>
         <div class="tool-desc">Maandelijkse checklist en urenopgave, met persoonlijk overzicht en beheer voor extra uren.</div>
@@ -159,7 +246,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="testen-fyziofit.html" target="_blank" style="--accent: #00728e;">
+      <a class="tool-card" href="testen-fyziofit.html" target="_blank" style="--accent: #00728e;"
+         data-keywords="fitheid fitheidstest fyziofit test testen meting conditie kracht rapport sportschool">
         <span class="tool-icon">💪</span>
         <div class="tool-name">Fitheidstest</div>
         <div class="tool-desc">Testregistratie, scoring en rapportage voor deelnemers van de fyziotraining.</div>
@@ -167,7 +255,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="groepsbeheer.html" target="_blank" style="--accent: #82176D;">
+      <a class="tool-card" href="groepsbeheer.html" target="_blank" style="--accent: #82176D;"
+         data-keywords="groep groepen groepsbeheer deelnemers wachtlijst training balans reservering reserveren stop pauze">
         <span class="tool-icon">🏃</span>
         <div class="tool-name">Fyziotraining & Balance</div>
         <div class="tool-desc">Beheer deelnemers, wachtlijsten, tijdelijke stops en reserveringen voor alle trainingsgroepen.</div>
@@ -175,7 +264,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="tendinopathie.html" target="_blank" style="--accent: #00728e;">
+      <a class="tool-card" href="tendinopathie.html" target="_blank" style="--accent: #00728e;"
+         data-keywords="pees pezen peesklacht tendinopathie tendinitis achillespees patellapees brief patiëntenbrief infographic folder">
         <span class="tool-icon">🩹</span>
         <div class="tool-name">Peesklachten Patiënteninformatie</div>
         <div class="tool-desc">Genereer fase-specifieke patiëntenbrieven en infographics voor tendinopathieën op basis van het Cook & Purdam model.</div>
@@ -183,7 +273,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="siilo_schouder_html.html" target="_blank" style="--accent: #82176D;">
+      <a class="tool-card" href="siilo_schouder_html.html" target="_blank" style="--accent: #82176D;"
+         data-keywords="schouder siilo huisarts orthopeed verslag brief rapportage terugrapportage verwijzer">
         <span class="tool-icon">📨</span>
         <div class="tool-name">Schouderrapportage</div>
         <div class="tool-desc">Genereer gestructureerde schouderrapportages voor huisarts of orthopeed via Siilo. Upload een PDF of plak EPD-tekst.</div>
@@ -191,7 +282,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="fyzio-verlof-app.html" target="_blank" style="--accent: #00728e;">
+      <a class="tool-card" href="fyzio-verlof-app.html" target="_blank" style="--accent: #00728e;"
+         data-keywords="verlof vakantie vrij vrije dag vrijedag afwezig afwezigheid uren rooster werkuren aanvragen">
         <span class="tool-icon">🗓️</span>
         <div class="tool-name">Verlof & Uren</div>
         <div class="tool-desc">Verlof aanvragen en gewerkte uren bijhouden voor het hele team.</div>
@@ -199,7 +291,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="vkb-planning.html" target="_blank" style="--accent: #82176D;">
+      <a class="tool-card" href="vkb-planning.html" target="_blank" style="--accent: #82176D;"
+         data-keywords="vkb voorste kruisband kruisband acl knie revalidatie test testen planning hop">
         <span class="tool-icon">🦵</span>
         <div class="tool-name">VKB Testen & Planning</div>
         <div class="tool-desc">Testprotocol, scoringsoverzicht én testplanning voor VKB-revalidaties. Inclusief urgentieoverzicht.</div>
@@ -207,7 +300,8 @@
         <span class="open-link">Openen →</span>
       </a>
 
-      <a class="tool-card" href="zorgverzekeraars.html" target="_blank" style="--accent: #00728e;">
+      <a class="tool-card" href="zorgverzekeraars.html" target="_blank" style="--accent: #00728e;"
+         data-keywords="verzekeraar verzekering zorgverzekering verwijzing verwijsbrief eigen risico vergoeding polis aanvullend">
         <span class="tool-icon">🛡️</span>
         <div class="tool-name">Zorgverzekeraars</div>
         <div class="tool-desc">Per verzekeraar zien welke eisen gelden voor verwijzing en eigen risico, met kant-en-klare uitleg voor patiënten.</div>
@@ -217,47 +311,116 @@
 
     </div>
 
-    <div class="divider"></div>
-
-    <div class="section-title-row">
-      <span class="section-title">Binnenkort</span>
-      <span class="rule"></span>
+    <div class="no-results" id="no-results" hidden>
+      Geen tool gevonden voor <strong id="no-results-term"></strong>. Probeer een ander woord.
     </div>
-    <div class="tools-grid">
-      <div class="soon-card">
-        <span class="tool-icon">➕</span>
-        <div class="tool-name" style="color:#aaa;">Meer tools</div>
-        <div class="tool-desc">Hier komen meer tools zodra ze beschikbaar zijn.</div>
+
+    <div id="rest-of-page">
+      <div class="divider"></div>
+
+      <div class="section-title-row">
+        <span class="section-title">Binnenkort</span>
+        <span class="rule"></span>
       </div>
-    </div>
+      <div class="tools-grid">
+        <div class="soon-card">
+          <span class="tool-icon">➕</span>
+          <div class="tool-name" style="color:#aaa;">Meer tools</div>
+          <div class="tool-desc">Hier komen meer tools zodra ze beschikbaar zijn.</div>
+        </div>
+      </div>
 
-    <div class="info-bar">
-      <span>💡</span>
-      <div>Sla op als bladwijzer: <code>fyziototaal.github.io/fyziototaaldashboard</code></div>
+      <div class="info-bar">
+        <span>💡</span>
+        <div>Sla op als bladwijzer: <code>fyziototaal.github.io/fyziototaaldashboard</code></div>
+      </div>
     </div>
   </div>
 
   <footer>
     <strong>Fyzio Totaal</strong> · Nijverheidsstraat 7, Wierden · Intern gebruik
+    <span class="version">Versie <span id="app-version"></span></span>
   </footer>
 
   <script>
+    // Versienummer zichtbaar maken in de footer
+    document.getElementById('app-version').textContent = window.APP_VERSION || '';
+
     // Sorteer de tool-kaarten altijd alfabetisch op naam (Nederlandse sortering, hoofdletterongevoelig)
-    (function () {
-      var grid = document.getElementById('tools-grid');
-      if (!grid) return;
-      var cards = Array.prototype.slice.call(grid.querySelectorAll('.tool-card'));
-      cards.sort(function (a, b) {
-        var na = a.querySelector('.tool-name').textContent.trim();
-        var nb = b.querySelector('.tool-name').textContent.trim();
-        return na.localeCompare(nb, 'nl', { sensitivity: 'base' });
-      });
-      // Accentkleuren om en om: blauw, paars, blauw, ...
-      cards.forEach(function (c, i) {
+    var grid = document.getElementById('tools-grid');
+    var cards = Array.prototype.slice.call(grid.querySelectorAll('.tool-card'));
+    cards.sort(function (a, b) {
+      var na = a.querySelector('.tool-name').textContent.trim();
+      var nb = b.querySelector('.tool-name').textContent.trim();
+      return na.localeCompare(nb, 'nl', { sensitivity: 'base' });
+    });
+    cards.forEach(function (c) { grid.appendChild(c); });
+
+    // Accentkleuren om en om (blauw, paars, ...) over de ZICHTBARE kaarten
+    function kleurKaarten() {
+      var i = 0;
+      cards.forEach(function (c) {
+        if (c.hidden) return;
         c.style.setProperty('--accent', i % 2 === 0 ? '#00728e' : '#82176D');
-        grid.appendChild(c);
+        i++;
       });
-    })();
+    }
+
+    // ---------- Zoekfunctie ----------
+    function normaliseer(t) {
+      return (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+    cards.forEach(function (c) {
+      c._zoektekst = normaliseer([
+        c.querySelector('.tool-name').textContent,
+        c.querySelector('.tool-desc') ? c.querySelector('.tool-desc').textContent : '',
+        c.querySelector('.tool-tags') ? c.querySelector('.tool-tags').textContent : '',
+        c.getAttribute('data-keywords') || '',
+        c.getAttribute('href') || ''
+      ].join(' '));
+    });
+
+    var zoekveld   = document.getElementById('tool-search');
+    var wisKnop    = document.getElementById('search-clear');
+    var geenRes    = document.getElementById('no-results');
+    var geenResTxt = document.getElementById('no-results-term');
+    var telling    = document.getElementById('result-count');
+    var restPagina = document.getElementById('rest-of-page');
+
+    function filter() {
+      var ruw = zoekveld.value.trim();
+      var woorden = normaliseer(ruw).split(/\s+/).filter(Boolean);
+      var zichtbaar = 0;
+
+      cards.forEach(function (c) {
+        var match = woorden.every(function (w) { return c._zoektekst.indexOf(w) !== -1; });
+        c.hidden = !match;
+        if (match) zichtbaar++;
+      });
+
+      var actief = woorden.length > 0;
+      wisKnop.hidden = !actief;
+      restPagina.hidden = actief;
+      grid.hidden = actief && zichtbaar === 0;
+      geenRes.hidden = !(actief && zichtbaar === 0);
+      geenResTxt.textContent = '"' + ruw + '"';
+      telling.hidden = !actief;
+      telling.textContent = zichtbaar === 1 ? '1 resultaat' : zichtbaar + ' resultaten';
+      kleurKaarten();
+    }
+
+    zoekveld.addEventListener('input', filter);
+    zoekveld.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { zoekveld.value = ''; filter(); }
+      if (e.key === 'Enter') {
+        // Precies één resultaat? Dan meteen openen.
+        var zicht = cards.filter(function (c) { return !c.hidden; });
+        if (zicht.length === 1) { e.preventDefault(); window.open(zicht[0].href, '_blank'); }
+      }
+    });
+    wisKnop.addEventListener('click', function () { zoekveld.value = ''; filter(); zoekveld.focus(); });
+
+    kleurKaarten();
   </script>
 
 </body>
