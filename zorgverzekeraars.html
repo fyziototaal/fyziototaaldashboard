@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache">
-<title>Zorgverzekeraars — Fyzio Totaal</title>
+<title>Zorgverzekeraars · Fyzio Totaal</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -95,8 +95,8 @@
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-// v1.1.0 — verhoog dit nummer bij elke wijziging (zichtbaar in de footer, handig om GitHub Pages-deploys te checken)
-const VERSION = "1.1.0";
+// v1.2.0: verhoog dit nummer bij elke wijziging (zichtbaar in de footer, handig om GitHub Pages-deploys te checken)
+const VERSION = "1.2.0";
 const SB_URL = "https://szunargvsmtzbbnmnghc.supabase.co/rest/v1/fyzio_zorgverzekeraars";
 const SB_KEY = "sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
 const HDR = { apikey: SB_KEY, "Content-Type": "application/json" };
@@ -124,12 +124,12 @@ const SEED = [
   mk("a.s.r.", ["Ditzo", "Ik kies zelf van a.s.r."], true, true),
   mk("ONVZ", ["PNOzorg", "VvAA"], true, true),
   mk("DSW", ["Stad Holland", "inTwente"], true, true),
-  // Geen gewone Zvw-basisverzekeraars, maar aparte regelingen — zie de opmerking bij elke kaart.
+  // Geen gewone Zvw-basisverzekeraars, maar aparte regelingen. Zie de opmerking bij elke kaart.
   {
     id: "ins_szvk", name: "SZVK (Defensie)", aliases: ["Stichting Ziektekostenverzekering Krijgsmacht"],
     topics: { [TOPIC.id]: {
       verwijzing: true, eigenRisico: true,
-      opmerking: "Aparte regeling voor actief dienende militairen (geen gewone Zvw-basisverzekering), sinds 2022 uitgevoerd door DSW. Onduidelijk of het gewone eigen risico en de gewone verwijsregels 1-op-1 gelden — vraag dit na bij de patiënt of check szvk.nl voordat je dit als uitleg gebruikt.",
+      opmerking: "Aparte regeling voor actief dienende militairen (geen gewone Zvw-basisverzekering), sinds 2022 uitgevoerd door DSW. Onduidelijk of het gewone eigen risico en de gewone verwijsregels 1 op 1 gelden. Vraag dit na bij de patiënt of check szvk.nl voordat je dit als uitleg gebruikt.",
       gecontroleerd: null,
     } },
   },
@@ -147,17 +147,22 @@ const DEFAULT_TEMPLATES = {
   verwijzing_ja: "Voor artrosezorg aan je knie of heup heb je bij {verzekeraar} een verwijzing nodig van je huisarts of specialist. Regel die dus voordat we starten met je traject.",
   verwijzing_nee: "Bij {verzekeraar} heb je geen verwijzing nodig voor artrosezorg. Je kunt dus gewoon direct bij ons terecht.",
   verwijzing_algemeen: "Of je een verwijzing nodig hebt voor artrosezorg aan je knie of heup, hangt af van je zorgverzekeraar. Sommige verzekeraars vragen om een verwijzing van je huisarts of specialist, andere niet. Laat ons weten bij welke verzekeraar je zit, dan vertellen we je precies wat je moet regelen.",
-  er_ja: "De behandelingen voor artrosezorg vallen bij {verzekeraar} onder je eigen risico. Dat betekent dat je de kosten eerst zelf betaalt, totdat je eigen risico van dit jaar op is. Het verplichte eigen risico is in {jaar} minimaal €{bedragMin} — je kunt er zelf voor kiezen dit vrijwillig te verhogen tot maximaal €{bedragMax} in ruil voor een lagere premie, dus check in je polis welk bedrag voor jou geldt. De rekening krijg je overigens niet van ons, maar van je zorgverzekeraar. Heb je je eigen risico dit jaar al (deels) gebruikt voor andere zorg? Dan betaal je voor onze behandelingen minder of niks meer.",
+  er_ja: "De behandelingen voor artrosezorg vallen bij {verzekeraar} onder je eigen risico. Dat betekent dat je de kosten eerst zelf betaalt, totdat je eigen risico van dit jaar op is. Het verplichte eigen risico is in {jaar} minimaal €{bedragMin}. Je kunt er zelf voor kiezen dit vrijwillig te verhogen tot maximaal €{bedragMax} in ruil voor een lagere premie, dus check in je polis welk bedrag voor jou geldt. De rekening krijg je overigens niet van ons, maar van je zorgverzekeraar. Heb je je eigen risico dit jaar al (deels) gebruikt voor andere zorg? Dan betaal je voor onze behandelingen minder of niks meer.",
   er_nee: "Bij {verzekeraar} vallen de behandelingen voor artrosezorg niet onder je eigen risico. Je betaalt hiervoor dus niks van je eigen risico, en het gaat er ook niet vanaf.",
-  er_algemeen: "Je eigen risico is het bedrag dat je elk jaar eerst zelf betaalt, voordat je zorgverzekeraar de zorgkosten vergoedt. Het verplichte eigen risico is in {jaar} minimaal €{bedragMin}; je kunt zelf kiezen om dit vrijwillig te verhogen tot maximaal €{bedragMax} — hoe hoger je eigen risico, hoe lager je premie. Of onze behandelingen voor artrose aan de knie of heup hieronder vallen, hangt af van je zorgverzekeraar: sommige rekenen dit niet mee. Check dit in je polis of vraag het na bij je verzekeraar. De rekening voor je eigen risico krijg je overigens van je zorgverzekeraar, niet van ons.",
-  jaar_ja: "Let op: zit je in een chronisch traject dat over de jaarwisseling heen loopt — bijvoorbeeld na een knie- of heupoperatie (THP/TKP) of een VKB-reconstructie? Dan begint je eigen risico in januari gewoon weer opnieuw. Behandelingen die je in {volgendjaar} krijgt, tellen mee voor het eigen risico van {volgendjaar}, ook als je traject al in {jaar} is gestart en je toen je eigen risico al had volgemaakt. Je kunt in het nieuwe jaar dus opnieuw een rekening van je zorgverzekeraar krijgen voor hetzelfde traject.",
-  jaar_nee: "Ook als je traject over de jaarwisseling heen loopt — bijvoorbeeld na een knie- of heupoperatie (THP/TKP) of een VKB-reconstructie — verandert er voor jou niks: bij {verzekeraar} betaal je geen eigen risico voor artrosezorg. Verzekeraars kunnen dit wel jaarlijks aanpassen, dus check bij de jaarwisseling even of dit nog steeds zo is.",
-  jaar_algemeen: "Loopt je chronische traject over de jaarwisseling heen — bijvoorbeeld na een knie- of heupoperatie (THP/TKP) of een VKB-reconstructie? Dan begint je eigen risico in januari gewoon weer opnieuw. Valt artrosezorg bij jouw verzekeraar onder het eigen risico, dan betaal je in het nieuwe jaar dus opnieuw, ook al ben je al in het vorige jaar gestart met je traject en had je toen je eigen risico al volgemaakt. Rekent jouw verzekeraar er geen eigen risico voor, dan verandert er niks.",
+  er_algemeen: "Je eigen risico is het bedrag dat je elk jaar eerst zelf betaalt, voordat je zorgverzekeraar de zorgkosten vergoedt. Het verplichte eigen risico is in {jaar} minimaal €{bedragMin}; je kunt zelf kiezen om dit vrijwillig te verhogen tot maximaal €{bedragMax}, hoe hoger je eigen risico, hoe lager je premie. Of onze behandelingen voor artrose aan de knie of heup hieronder vallen, hangt af van je zorgverzekeraar: sommige rekenen dit niet mee. Check dit in je polis, vraag het na bij je verzekeraar, of vraag het gewoon aan ons: wij zoeken het graag voor je uit. De rekening voor je eigen risico krijg je overigens van je zorgverzekeraar, niet van ons.",
+  gladjaar_ja: "Let op: zit je in een GLA:D-traject dat over de jaarwisseling heen loopt? Dan begint je eigen risico in januari gewoon weer opnieuw. Behandelingen die je in {volgendjaar} krijgt, tellen mee voor het eigen risico van {volgendjaar}, ook als je traject al in {jaar} is gestart en je toen je eigen risico al had volgemaakt. Je kunt in het nieuwe jaar dus opnieuw een rekening van je zorgverzekeraar krijgen voor hetzelfde traject.",
+  gladjaar_nee: "Ook als je GLA:D-traject over de jaarwisseling heen loopt, verandert er voor jou niks: bij {verzekeraar} betaal je geen eigen risico voor artrosezorg. Verzekeraars kunnen dit wel jaarlijks aanpassen, dus check bij de jaarwisseling even of dit nog steeds zo is.",
+  gladjaar_algemeen: "Loopt je GLA:D-traject over de jaarwisseling heen? Dan begint je eigen risico in januari gewoon weer opnieuw. Valt artrosezorg bij jouw verzekeraar onder het eigen risico, dan betaal je in het nieuwe jaar dus opnieuw, ook al ben je al in het vorige jaar gestart met je traject en had je toen je eigen risico al volgemaakt. Rekent jouw verzekeraar er geen eigen risico voor, dan verandert er niks.",
+  postop_menzis: "Bij {verzekeraar} met een aanvullende verzekering worden alle 20 behandelingen fysiotherapie na je operatie vergoed vanuit je aanvullende pakket, ongeacht hoeveel behandelingen daar precies in staan. Je betaalt dus niks zelf van deze eerste 20 behandelingen. Vanaf behandeling 21 val je onder de basisverzekering; daar wordt eerst je eigen risico van dit jaar aangesproken (zie hierboven).",
+  postop_standaard: "Na een operatie worden de eerste 20 behandelingen fysiotherapie nooit vergoed vanuit de basisverzekering. Jouw aanvullende pakket bij {verzekeraar} dekt {aantalPakket} behandeling(en), dus je betaalt {zelfBetalen} behandeling(en) zelf (behandeling {vanafZelf} t/m 20). Vanaf behandeling 21 val je onder de basisverzekering; daar wordt eerst je eigen risico van dit jaar aangesproken (zie hierboven).",
+  postop_geen: "Je hebt (nog) geen aanvullende verzekering die fysiotherapie na een operatie dekt, dus je betaalt de eerste 20 behandelingen na je operatie volledig zelf. Vanaf behandeling 21 val je onder de basisverzekering; daar wordt eerst je eigen risico van dit jaar aangesproken (zie hierboven).",
+  postop_algemeen: "Na een operatie (bijvoorbeeld een knie- of heupprothese, THP/TKP, of een VKB-reconstructie) worden de eerste 20 behandelingen fysiotherapie nooit vergoed vanuit de basisverzekering. Of en hoeveel je hiervan zelf betaalt, hangt af van je aanvullende verzekering en van je zorgverzekeraar. Bij de meeste verzekeraars dekt je aanvullende pakket een deel van deze 20 behandelingen; bij Menzis worden ze (mét een aanvullende verzekering) allemaal vergoed. Vraag ons gerust hoe dit voor jouw polis werkt. Vanaf behandeling 21 val je in alle gevallen onder de basisverzekering, waar eerst je eigen risico van dit jaar wordt aangesproken.",
 };
 const TEMPLATE_LABELS = {
   verwijzing_ja: "Verwijzing: wel nodig", verwijzing_nee: "Verwijzing: niet nodig", verwijzing_algemeen: "Verwijzing: algemeen (onbekende verzekeraar)",
   er_ja: "Eigen risico: wel van toepassing", er_nee: "Eigen risico: niet van toepassing", er_algemeen: "Eigen risico: algemeen (onbekende verzekeraar)",
-  jaar_ja: "Nieuw jaar: eigen risico begint opnieuw", jaar_nee: "Nieuw jaar: geen eigen risico van toepassing", jaar_algemeen: "Nieuw jaar: algemeen (onbekende verzekeraar)",
+  gladjaar_ja: "GLA:D & nieuw jaar: eigen risico begint opnieuw", gladjaar_nee: "GLA:D & nieuw jaar: geen eigen risico van toepassing", gladjaar_algemeen: "GLA:D & nieuw jaar: algemeen (onbekende verzekeraar)",
+  postop_menzis: "Na een operatie: Menzis met aanvullende verzekering", postop_standaard: "Na een operatie: standaardformule", postop_geen: "Na een operatie: geen aanvullende verzekering", postop_algemeen: "Na een operatie: algemeen (onbekende verzekeraar)",
 };
 const DEFAULT_SETTINGS = { bedragMin: 385, bedragMax: 885, templates: {} };
 
@@ -264,7 +269,7 @@ function TemplateModal({ settings, onSave, onClose }) {
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal wide">
         <h2>Uitlegteksten aanpassen</h2>
-        <div className="hint">Gebruik {"{verzekeraar}"}, {"{bedragMin}"}, {"{bedragMax}"}, {"{jaar}"} en {"{volgendjaar}"} als invulvelden — die worden automatisch ingevuld.</div>
+        <div className="hint">Gebruik {"{verzekeraar}"}, {"{bedragMin}"}, {"{bedragMax}"}, {"{jaar}"} en {"{volgendjaar}"} als invulvelden voor de eerste blokken. Bij de "Na een operatie"-teksten kun je ook {"{aantalPakket}"}, {"{zelfBetalen}"} en {"{vanafZelf}"} gebruiken. Die worden berekend op basis van wat je invult bij het genereren van de uitleg.</div>
         <label className="l">Verplicht eigen risico (minimum, €)</label>
         <input className="field" type="number" style={{ maxWidth: 160 }} value={bedragMin} onChange={(e) => setBedragMin(e.target.value)} />
         <label className="l">Eigen risico bij maximale vrijwillige verhoging (€)</label>
@@ -355,8 +360,12 @@ function Overzicht({ insurers, onEdit, onNew }) {
   );
 }
 
+const POSTOP_DREMPEL = 20; // aantal behandelingen dat na een operatie nooit uit de basisverzekering wordt vergoed
+
 function Uitleg({ insurers, settings, onEditTemplates, toast }) {
   const [sel, setSel] = useState("");
+  const [aanvullend, setAanvullend] = useState(true);
+  const [aantalPakket, setAantalPakket] = useState(12);
   const ins = insurers.find((i) => i.id === sel);
   const tpl = { ...DEFAULT_TEMPLATES, ...settings.templates };
   const vars = {
@@ -370,14 +379,25 @@ function Uitleg({ insurers, settings, onEditTemplates, toast }) {
   const blocks = ins ? [
     ["Verwijzing", tpl[t.verwijzing ? "verwijzing_ja" : "verwijzing_nee"]],
     ["Eigen risico", tpl[t.eigenRisico ? "er_ja" : "er_nee"]],
-    ["Chronisch traject & nieuw jaar", tpl[t.eigenRisico ? "jaar_ja" : "jaar_nee"]],
+    ["GLA:D-traject & nieuw jaar", tpl[t.eigenRisico ? "gladjaar_ja" : "gladjaar_nee"]],
   ] : [
     ["Verwijzing", tpl.verwijzing_algemeen],
     ["Eigen risico", tpl.er_algemeen],
-    ["Chronisch traject & nieuw jaar", tpl.jaar_algemeen],
+    ["GLA:D-traject & nieuw jaar", tpl.gladjaar_algemeen],
   ];
   const texts = blocks.map(([h, x]) => [h, fill(x, vars)]);
+
+  // Post-OK-blok: gepersonaliseerd op basis van verzekeraar + wat je hier invult, telkens opnieuw per patiënt.
+  const isMenzis = ins && norm(ins.name) === norm("Menzis");
+  const pakketAantal = Math.max(0, Number(aantalPakket) || 0);
+  const zelfBetalen = Math.max(0, POSTOP_DREMPEL - pakketAantal);
+  const postopVars = { ...vars, aantalPakket: String(pakketAantal), zelfBetalen: String(zelfBetalen), vanafZelf: String(POSTOP_DREMPEL - zelfBetalen + 1) };
+  let postopKey = "postop_algemeen";
+  if (ins) postopKey = !aanvullend ? "postop_geen" : isMenzis ? "postop_menzis" : "postop_standaard";
+  const postopText = fill(tpl[postopKey], postopVars);
+
   const copy = (txt, msg) => copyText(txt).then(() => toast(msg));
+  const alles = [...texts.map(([, x]) => x), postopText].join("\n\n");
 
   return (
     <div className="card">
@@ -390,7 +410,7 @@ function Uitleg({ insurers, settings, onEditTemplates, toast }) {
           </select>
         </div>
         <button className="btn2" onClick={onEditTemplates}>Teksten aanpassen</button>
-        <button className="btn" onClick={() => copy(texts.map(([, x]) => x).join("\n\n"), "Alles gekopieerd")}>Kopieer alles</button>
+        <button className="btn" onClick={() => copy(alles, "Alles gekopieerd")}>Kopieer alles</button>
       </div>
       <div style={{ height: 16 }} />
       {texts.map(([h, x]) => (
@@ -400,6 +420,26 @@ function Uitleg({ insurers, settings, onEditTemplates, toast }) {
           <button className="btn2 btn-sm" onClick={() => copy(x, "Gekopieerd")}>Kopieer</button>
         </div>
       ))}
+      <div className="block">
+        <h4>Na een operatie (THP/TKP/VKB)</h4>
+        {ins && (
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
+            <div>
+              <label className="l" style={{ marginTop: 0 }}>Heeft de patiënt een aanvullende verzekering?</label>
+              <Seg value={aanvullend} onChange={setAanvullend} yes="Ja" no="Nee" />
+            </div>
+            {aanvullend && !isMenzis && (
+              <div>
+                <label className="l" style={{ marginTop: 0 }}>Aantal behandelingen in het pakket</label>
+                <input className="field" type="number" min="0" style={{ maxWidth: 120 }} value={aantalPakket} onChange={(e) => setAantalPakket(e.target.value)} />
+              </div>
+            )}
+            {aanvullend && isMenzis && <div className="hint" style={{ maxWidth: 260 }}>Bij Menzis maakt het aantal behandelingen in het pakket niet uit: met een aanvullende verzekering worden alle 20 behandelingen vergoed.</div>}
+          </div>
+        )}
+        <p>{postopText}</p>
+        <button className="btn2 btn-sm" onClick={() => copy(postopText, "Gekopieerd")}>Kopieer</button>
+      </div>
       {ins && t.opmerking && <div className="note"><b>Interne opmerking:</b> {t.opmerking}</div>}
       {ins && !t.gecontroleerd && <div className="banner warn" style={{ marginTop: 12, marginBottom: 0 }}>De gegevens van {ins.name} zijn nog niet gecontroleerd. Check ze even voordat je de uitleg deelt met een patiënt.</div>}
     </div>
@@ -443,7 +483,7 @@ function App() {
     setInsurers((l) => sortIns(isEdit ? l.map((i) => (i.id === ins.id ? ins : i)) : [...l, ins]));
     setEditing(null);
     try { await sbPost([toRow(ins)]); toast("Opgeslagen"); }
-    catch (e) { toast("Opslaan mislukt — check je internetverbinding", true); }
+    catch (e) { toast("Opslaan mislukt, check je internetverbinding", true); }
   };
   const remove = async (ins) => {
     if (!window.confirm("Weet je zeker dat je " + ins.name + " wilt verwijderen?")) return;
