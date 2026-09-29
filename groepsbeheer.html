@@ -1,37 +1,119 @@
 <!DOCTYPE html>
+<!-- APP_VERSION: 2026-09-29.1 -->
 <html lang="nl">
 <head>
+  <script>
+    /* ── VERSIECHECK: altijd de nieuwste versie laden ──
+       Verhoog APP_VERSION bij élke wijziging, zowel hier als in de HTML-comment bovenaan. */
+    var APP_VERSION = "2026-09-29.1";
+    (function () {
+      try {
+        if (location.protocol === "file:") return;
+        fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
+          .then(function (r) { return r.ok ? r.text() : null; })
+          .then(function (html) {
+            if (!html) return;
+            var m = html.match(/<!--\s*APP_VERSION:\s*([^\s]+)\s*-->/);
+            if (!m || m[1] === APP_VERSION) return;
+            // Vangnet tegen herlaadlus: per live-versie maximaal één keer herladen
+            var key = "gb_reloaded_" + m[1];
+            try {
+              if (sessionStorage.getItem(key)) return;
+              sessionStorage.setItem(key, "1");
+            } catch (e) {}
+            location.replace(location.pathname + "?_v=" + Date.now() + location.hash);
+          })
+          .catch(function () {});
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Fyzio Totaal — Groepsbeheer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f0ee;color:#1a1a1a;}
+    html,body{min-height:100%;}
+    body{
+      font-family:'Poppins','Segoe UI',sans-serif;background:#f3eef2;color:#1f1a1e;
+      display:flex;flex-direction:column;min-height:100vh;
+    }
     button{cursor:pointer;font-family:inherit;}
     input,select{font-family:inherit;}
-    #root{max-width:1000px;margin:0 auto;padding-bottom:40px;}
+    #root{width:100%;max-width:1000px;margin:0 auto;padding-bottom:32px;flex:1;}
 
     /* ── RESPONSIVE BASE ── */
     button { min-height: 38px; }
     input, select { min-height: 38px; }
 
+    /* ── FORMULIERVELDEN (huisstijl) ── */
+    input:focus, select:focus {
+      outline:none;
+      border-color:#82176D !important;
+      box-shadow:0 0 0 3px #f3e3ef !important;
+    }
+    input[type=checkbox]{accent-color:#82176D;}
+
+    /* ── KNOPPEN (huisstijl) ── */
+    .btn-primary{
+      background:linear-gradient(120deg,#82176D,#a8368f);
+      color:#fff;border:none;font-weight:600;
+      box-shadow:0 2px 8px rgba(130,23,109,0.18);
+      transition:background .15s, box-shadow .15s;
+    }
+    .btn-primary:hover{
+      background:linear-gradient(120deg,#6b1259,#8f2d78);
+      box-shadow:0 4px 14px rgba(130,23,109,0.28);
+    }
+    .btn-primary:focus-visible{outline:none;box-shadow:0 0 0 3px #f3e3ef;}
+    .btn-secondary{
+      background:#fff;color:#555;border:1px solid #d6cdd3;
+      transition:background .15s;
+    }
+    .btn-secondary:hover{background:#faf7f9;}
+
+    /* ── HEADER ── */
+    .hdr{
+      background:linear-gradient(120deg,#4a0f42 0%,#82176D 45%,#a8368f 100%);
+      color:#fff;padding:16px 16px 0;
+      border-bottom:4px solid #00B6E8;
+    }
+    .logo{
+      width:40px;height:40px;border-radius:50%;background:#fff;
+      border:2px solid #00B6E8;color:#82176D;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:14px;flex-shrink:0;
+    }
+    .hdr-badge{
+      display:inline-block;background:rgba(255,255,255,0.14);
+      border:1px solid rgba(255,255,255,0.35);border-radius:999px;
+      padding:3px 10px;font-size:10px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;
+    }
+
     /* ── BOTTOM TAB BAR (mobiel) ── */
     .mob-tabs {
       display: none;
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: #1a4a3a; z-index: 200;
-      box-shadow: 0 -2px 14px rgba(0,0,0,0.2);
+      background: #4a0f42; z-index: 200;
+      box-shadow: 0 -2px 14px rgba(74,15,66,0.35);
     }
     .mob-tabs-inner { display: flex; }
     .mob-tab-btn {
       flex: 1; background: transparent; border: none;
-      color: rgba(255,255,255,0.55); padding: 9px 4px 14px;
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      border-top: 3px solid transparent;
+      color: rgba(255,255,255,0.55); padding: 7px 4px 14px;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
       font-size: 11px; font-weight: 600; cursor: pointer;
       display: flex; flex-direction: column; align-items: center;
       gap: 3px; min-height: 58px; transition: color .15s;
     }
-    .mob-tab-btn.active { color: #fff; }
+    .mob-tab-btn.active { color: #fff; border-top-color: #00B6E8; }
     .mob-tab-btn .ticon { font-size: 22px; line-height: 1; }
 
     /* ── STAT BAR ── */
@@ -45,13 +127,12 @@
     }
 
     /* ── DESKTOP TABS ── */
-    .desktop-tabs { display: flex; gap: 4px; }
+    .desktop-tabs { display: flex; gap: 4px; margin-top: 4px; }
 
     /* ── DAGKOLOMMEN: swipe-scroll ── */
     .days-scroll-wrap {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      /* Zachte scroll-snapping per dag */
       scroll-snap-type: x mandatory;
       cursor: grab;
       padding-bottom: 6px;
@@ -60,27 +141,22 @@
     .days-grid {
       display: grid;
       gap: 10px;
-      /* Elke kolom minimaal 200px breed, nooit breder dan 260px */
       grid-auto-columns: clamp(200px, 22vw, 260px);
       grid-auto-flow: column;
       width: max-content;
       min-width: 100%;
     }
-    /* Op brede schermen: vul gewoon de breedte */
     @media (min-width: 900px) {
       .days-scroll-wrap { overflow-x: visible; cursor: default; }
       .days-grid { grid-auto-columns: 1fr; width: 100%; }
     }
-    /* Scroll-hint: outer wrapper is relatief, pseudo-element staat vast */
-    .days-scroll-outer {
-      position: relative;
-    }
+    .days-scroll-outer { position: relative; }
     .days-scroll-outer::after {
       content: '';
       position: absolute;
       top: 0; right: 0; bottom: 6px;
       width: 36px;
-      background: linear-gradient(to right, transparent, rgba(240,240,238,0.92));
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.95));
       pointer-events: none;
       border-radius: 0 8px 8px 0;
       transition: opacity .3s;
@@ -90,106 +166,85 @@
     @media (min-width: 900px) {
       .days-scroll-outer::after { display: none; }
     }
-
-    /* Snap per kolom */
-    .days-grid > div {
-      scroll-snap-align: start;
-    }
+    .days-grid > div { scroll-snap-align: start; }
 
     /* ── FILTER ROW ── */
     .filter-row {
       display: flex; align-items: center; gap: 8px;
       flex-wrap: wrap; margin-bottom: 10px;
     }
-    .filter-row-count {
-      margin-left: auto;
-      font-size: 12px; color: #666;
-    }
+    .filter-row-count { margin-left: auto; font-size: 12px; color: #6b6470; }
     @media (max-width: 480px) {
       .filter-row-count { margin-left: 0; width: 100%; }
     }
 
     /* ── GROEP TOEVOEGEN FORMULIER ── */
-    .add-group-row {
-      display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;
-    }
+    .add-group-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
     @media (max-width: 520px) {
       .add-group-row > div { width: 100%; flex: none !important; min-width: unset !important; }
       .add-group-row > button { width: 100%; }
     }
 
-    /* ── KAART PANEL ── */
-    .member-row {
-      display: flex; align-items: center; gap: 5px;
-      padding: 6px 0; border-bottom: 1px solid #ddd;
-    }
-    .member-row .naam { flex: 1; font-size: 13px; font-weight: 500; }
-
     /* ── DEELNEMER TOEVOEGEN ── */
-    .add-member-row {
-      display: flex; gap: 5px; margin-bottom: 6px;
-      align-items: center; flex-wrap: wrap;
-    }
+    .add-member-row { display: flex; gap: 5px; margin-bottom: 6px; align-items: center; flex-wrap: wrap; }
     .add-member-row input { flex: 1; min-width: 80px; }
     @media (max-width: 400px) {
       .add-member-row { flex-direction: column; }
-      .add-member-row input,
-      .add-member-row select,
-      .add-member-row button { width: 100%; }
+      .add-member-row input, .add-member-row select, .add-member-row button { width: 100%; }
     }
 
     /* ── RESERVEER ROW ── */
-    .reserveer-row {
-      display: flex; gap: 5px; align-items: center; flex-wrap: wrap;
-    }
+    .reserveer-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
     .reserveer-row input { flex: 1; min-width: 80px; }
     @media (max-width: 400px) {
       .reserveer-row { flex-direction: column; }
-      .reserveer-row input,
-      .reserveer-row label,
-      .reserveer-row button { width: 100%; }
+      .reserveer-row input, .reserveer-row label, .reserveer-row button { width: 100%; }
     }
 
     /* ── WACHTLIJST FORMULIER ── */
-    .wl-form-row1 {
-      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
-    }
+    .wl-form-row1 { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
     .wl-form-row1 > div { flex: 1; min-width: 130px; }
-    @media (max-width: 480px) {
-      .wl-form-row1 > div { min-width: 100%; }
-    }
+    @media (max-width: 480px) { .wl-form-row1 > div { min-width: 100%; } }
 
     /* ── BESCHIKBAARHEID GRID ── */
-    .avail-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 7px;
-    }
-    @media (max-width: 400px) {
-      .avail-grid { grid-template-columns: repeat(2, 1fr); }
-    }
+    .avail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 7px; }
+    @media (max-width: 400px) { .avail-grid { grid-template-columns: repeat(2, 1fr); } }
 
-    /* ── WACHTLIJST KNOPPEN ── */
     .wl-btns { display: flex; gap: 7px; margin-top: 6px; flex-wrap: wrap; }
-
-    /* ── NOTIFICATION BLOKKEN ── */
     .notif-wrap { padding: 10px 16px 0; }
+
+    /* ── FOOTER ── */
+    .site-footer{
+      background:#4a0f42;color:rgba(255,255,255,0.5);
+      font-size:12px;text-align:center;padding:14px 16px;
+    }
+    .site-footer strong{color:rgba(255,255,255,0.85);font-weight:700;}
+    .site-footer .ver{
+      display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;
+      border:1px solid rgba(0,182,232,0.6);color:#8fdcf2;font-size:11px;font-weight:600;
+    }
 
     /* ── MOBIEL: desktop tabs verbergen, bottom bar tonen ── */
     @media (max-width: 640px) {
       .desktop-tabs { display: none !important; }
       .mob-tabs { display: block; }
-      #root { padding-bottom: 4.5rem; }
+      .hdr { padding-bottom: 14px; }
       .hdr-title { font-size: 16px !important; }
+      .hdr-badge { display: none; }
+      body { padding-bottom: 62px; }
     }
 
-    /* ── KAART HEADER: grotere tap area ── */
     .card-head-tap { padding: 10px 12px 8px; cursor: pointer; }
     .card-foot-tap { padding: 8px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
 <div id="root"></div>
+
+<footer class="site-footer">
+  <strong>Fyzio Totaal</strong> · Groepsbeheer · alleen voor intern gebruik
+  <span class="ver" id="app-version"></span>
+</footer>
 
 <!-- Mobiele bottom tab bar -->
 <nav class="mob-tabs" id="mob-nav">
@@ -204,6 +259,8 @@
 </nav>
 
 <script>
+document.getElementById("app-version").textContent = "v" + APP_VERSION;
+
 function mobSwitchTab(tab) {
   document.querySelectorAll('.mob-tab-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('mob-' + tab).classList.add('active');
@@ -229,7 +286,19 @@ async function dbSet(key,value){
   }catch(e){return false;}
 }
 
-const G={green:"#1a4a3a",greenLight:"#e8f5f0",greenMid:"#2d6b55",orange:"#e8611a",orangeLight:"#fdf0e8",gray:"#e8e8e4",grayLight:"#f5f5f3",grayBorder:"#c8c8c4",grayText:"#666",successGreen:"#1e7e4e",successLight:"#e8f5ed",tempBorder:"#f5c842",tempBg:"#fffbe6",tempText:"#b08000",blue:"#1a3a5a",blueLight:"#e8f0f8",purple:"#6b3fa0",purpleLight:"#f3eeff",red:"#c0392b",border:"#ddd",text:"#1a1a1a",textMuted:"#666"};
+/* Huisstijlkleuren + universele statuskleuren (groen/amber/rood blijven functioneel) */
+const G={
+  purple:"#82176D",purpleDark:"#4a0f42",purpleLight:"#f3e3ef",
+  cyan:"#00B6E8",blue:"#00728e",blueLight:"#dcf4fb",
+  border:"#e2d5df",bg:"#f3eef2",
+  gray:"#eeeaed",grayLight:"#faf7f9",grayBorder:"#cbc1c8",grayText:"#6b6470",
+  successGreen:"#1e7e4e",successLight:"#e8f5ed",successBorder:"#b7e4c7",successText:"#14532d",
+  tempBorder:"#f5c842",tempBg:"#fffbe6",tempText:"#8a6400",
+  orange:"#d9730d",orangeLight:"#fdf0e8",
+  red:"#c0392b",redLight:"#fdecea",
+  text:"#1f1a1e",textMuted:"#6b6470"
+};
+const SHADOW="0 2px 14px rgba(130,23,109,0.08)";
 const DAY_ORDER=["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag"];
 const COLLEAGUES=["Rob","Lars","Mayke","Jan Willem","Nikita","Laura","Lonneke","Julia","Jesper","Thomas","Ellen","Lynn"];
 
@@ -327,10 +396,15 @@ function el(tag,attrs,children){
   return e;
 }
 
+/* Standaard invoerveld-stijl (huisstijl: afgerond, dunne rand, paarse focus via CSS) */
+function inp(extra){return Object.assign({padding:"8px 10px",border:"1px solid "+G.border,borderRadius:"10px",fontSize:"13px",background:"#fff",minHeight:"38px"},extra||{});}
+function lblStyle(){return{fontSize:"12px",fontWeight:"600",color:G.textMuted,marginBottom:"4px",display:"block"};}
+
 function bStyle(b){
-  if(b==="incasso")return{fontSize:"11px",padding:"3px 8px",borderRadius:"10px",cursor:"pointer",background:"#e8f5f0",color:"#1e7e4e",border:"1px solid #1e7e4e",fontWeight:"600",minHeight:"30px"};
-  if(b==="contant")return{fontSize:"11px",padding:"3px 8px",borderRadius:"10px",cursor:"pointer",background:"#fff8e1",color:"#b07800",border:"1px solid #f0c040",fontWeight:"600",minHeight:"30px"};
-  return{fontSize:"11px",padding:"3px 8px",borderRadius:"10px",cursor:"pointer",background:"#f5f5f3",color:"#666",border:"1px solid #ddd",fontWeight:"600",minHeight:"30px"};
+  var base={fontSize:"11px",padding:"3px 8px",borderRadius:"10px",cursor:"pointer",fontWeight:"600",minHeight:"30px"};
+  if(b==="incasso")return Object.assign(base,{background:G.successLight,color:G.successGreen,border:"1px solid "+G.successGreen});
+  if(b==="contant")return Object.assign(base,{background:"#fff8e1",color:"#8a6400",border:"1px solid #f0c040"});
+  return Object.assign(base,{background:G.grayLight,color:G.textMuted,border:"1px solid "+G.border});
 }
 const BLAB={incasso:"✓ Incasso",contant:"💵 Contant",geen:"Geen betaling"};
 
@@ -366,9 +440,9 @@ function buildModule(mod,MAX,accent,accentLight){
   var tempN=notifs.filter(function(n){return n.onlyTemp;});
 
   var statText=totalActive+" actief"+(totalStopped>0?" · "+totalStopped+" gestopt":"")+(totalReserved>0?" · "+totalReserved+" gereserveerd":"")+" · "+waitlist.length+" wachtlijst";
-  var saveBtn=el("button",{style:{padding:"7px 14px",background:accent,color:"#fff",border:"none",borderRadius:"6px",fontSize:"13px",fontWeight:"600"},onClick:function(){saveModule(mod,mod==="ft"?KEYS.ftg:KEYS.bag,mod==="ft"?KEYS.ftw:KEYS.baw);}},"💾 Opslaan");
+  var saveBtn=el("button",{className:"btn-primary",style:{padding:"7px 16px",borderRadius:"12px",fontSize:"13px"},onClick:function(){saveModule(mod,mod==="ft"?KEYS.ftg:KEYS.bag,mod==="ft"?KEYS.ftw:KEYS.baw);}},"💾 Opslaan");
 
-  var statBarWrap=el("div",{style:{padding:"10px 16px",background:accentLight,borderBottom:"1px solid #ddd"}});
+  var statBarWrap=el("div",{style:{padding:"10px 16px",background:accentLight,borderBottom:"1px solid "+G.border}});
   var statBar=el("div",{className:"stat-bar"});
   statBar.appendChild(el("span",{style:{fontSize:"13px",color:accent,fontWeight:"600"}},statText));
   var statBtns=el("div",{className:"stat-bar-btns",style:{display:"flex",alignItems:"center",gap:"8px"}});
@@ -381,13 +455,13 @@ function buildModule(mod,MAX,accent,accentLight){
   if(permN.length>0||tempN.length>0){
     var nb=el("div",{className:"notif-wrap"});
     if(permN.length>0){
-      var pb=el("div",{style:{background:G.successLight,border:"1px solid "+G.successGreen,borderRadius:"8px",padding:"9px 14px",marginBottom:"7px"}});
+      var pb=el("div",{style:{background:G.successLight,border:"1px solid "+G.successGreen,borderRadius:"12px",padding:"9px 14px",marginBottom:"7px"}});
       pb.appendChild(el("div",{style:{fontWeight:"600",color:G.successGreen,marginBottom:"3px",fontSize:"13px"}},"✅ Vaste plekken vrij — wachtlijst-matches"));
-      permN.forEach(function(n){pb.appendChild(el("div",{style:{fontSize:"12px",color:G.green,marginBottom:"2px"}},[el("strong",{},n.group)," ("+n.plekInfo+") — "+n.matches.join(", ")]));});
+      permN.forEach(function(n){pb.appendChild(el("div",{style:{fontSize:"12px",color:G.successText,marginBottom:"2px"}},[el("strong",{},n.group)," ("+n.plekInfo+") — "+n.matches.join(", ")]));});
       nb.appendChild(pb);
     }
     if(tempN.length>0){
-      var tb=el("div",{style:{background:G.tempBg,border:"1px solid "+G.tempBorder,borderRadius:"8px",padding:"9px 14px",marginBottom:"7px"}});
+      var tb=el("div",{style:{background:G.tempBg,border:"1px solid "+G.tempBorder,borderRadius:"12px",padding:"9px 14px",marginBottom:"7px"}});
       tb.appendChild(el("div",{style:{fontWeight:"600",color:G.tempText,marginBottom:"3px",fontSize:"13px"}},"🕐 Tijdelijke plekken vrij — wachtlijst-matches"));
       tempN.forEach(function(n){tb.appendChild(el("div",{style:{fontSize:"12px",color:G.tempText,marginBottom:"2px"}},[el("strong",{},n.group)," ("+n.plekInfo+") — "+n.matches.join(", ")]));});
       nb.appendChild(tb);
@@ -395,42 +469,41 @@ function buildModule(mod,MAX,accent,accentLight){
     wrap.appendChild(nb);
   }
 
-  var tabBar=el("div",{style:{display:"flex",gap:"8px",padding:"10px 16px 0"}});
+  var tabBar=el("div",{style:{display:"flex",gap:"8px",padding:"12px 16px 0"}});
   ["groups","waitlist"].forEach(function(t){
     var active=S.tab===t;
-    tabBar.appendChild(el("button",{style:{padding:"8px 18px",borderRadius:"20px",border:"none",fontSize:"13px",fontWeight:"500",background:active?accent:G.grayLight,color:active?"#fff":"#1a1a1a",minHeight:"38px"},onClick:function(){S.tab=t;render();}},t==="groups"?"Groepen":"Wachtlijst ("+waitlist.length+")"));
+    tabBar.appendChild(el("button",{style:{padding:"8px 18px",borderRadius:"20px",border:"1px solid "+(active?accent:G.border),fontSize:"13px",fontWeight:active?"600":"500",background:active?accent:"#fff",color:active?"#fff":G.text,minHeight:"38px"},onClick:function(){S.tab=t;render();}},t==="groups"?"Groepen":"Wachtlijst ("+waitlist.length+")"));
   });
   wrap.appendChild(tabBar);
 
   if(S.tab==="groups"){
     var gWrap=el("div",{style:{padding:"12px 16px"}});
 
-    // Filter row
     var fRow=el("div",{className:"filter-row"});
     [false,true].forEach(function(val){
       var active=S.filterFree===val;
-      fRow.appendChild(el("button",{style:{padding:"6px 14px",borderRadius:"16px",border:"1px solid "+(active?accent:"#ddd"),background:active?accentLight:"#fff",color:active?accent:"#666",fontSize:"12px",fontWeight:active?"600":"400",minHeight:"34px"},onClick:function(){S.filterFree=val;render();}},val?"Alleen met plek":"Alle groepen"));
+      fRow.appendChild(el("button",{style:{padding:"6px 14px",borderRadius:"16px",border:"1px solid "+(active?accent:G.border),background:active?accentLight:"#fff",color:active?accent:G.textMuted,fontSize:"12px",fontWeight:active?"600":"400",minHeight:"34px"},onClick:function(){S.filterFree=val;render();}},val?"Alleen met plek":"Alle groepen"));
     });
     var freeCount=groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<MAX;}).length;
     fRow.appendChild(el("span",{className:"filter-row-count"},freeCount+" / "+groups.length+" groepen hebben plek"));
-    fRow.appendChild(el("button",{style:{padding:"6px 14px",background:G.orange,color:"#fff",border:"none",borderRadius:"16px",fontSize:"12px",fontWeight:"600",minHeight:"34px"},onClick:function(){S.showAddGroup=!S.showAddGroup;render();}},S.showAddGroup?"Annuleren":"+ Groep"));
+    fRow.appendChild(el("button",{className:S.showAddGroup?"btn-secondary":"btn-primary",style:{padding:"6px 14px",borderRadius:"16px",fontSize:"12px",fontWeight:"600",minHeight:"34px"},onClick:function(){S.showAddGroup=!S.showAddGroup;render();}},S.showAddGroup?"Annuleren":"+ Groep"));
     gWrap.appendChild(fRow);
 
     if(S.showAddGroup){
-      var agf=el("div",{style:{background:G.grayLight,border:"1px solid #ddd",borderRadius:"10px",padding:"12px 14px",marginBottom:"12px"}});
+      var agf=el("div",{style:{background:G.grayLight,border:"1px solid "+G.border,borderRadius:"16px",padding:"12px 14px",marginBottom:"12px"}});
       agf.appendChild(el("div",{style:{fontSize:"13px",fontWeight:"600",color:accent,marginBottom:"8px"}},"Nieuwe groep"));
       var agRow=el("div",{className:"add-group-row"});
-      var daySelect=el("select",{style:{padding:"7px 8px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px",minHeight:"38px"},onChange:function(e){S.newGroup.day=e.target.value;}});
+      var daySelect=el("select",{style:inp(),onChange:function(e){S.newGroup.day=e.target.value;}});
       DAY_ORDER.forEach(function(d){daySelect.appendChild(el("option",{value:d},d));});
       daySelect.value=S.newGroup.day;
-      var timeInp=el("input",{style:{width:"80px",padding:"7px 8px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px",minHeight:"38px"},placeholder:"19:00",value:S.newGroup.time,onInput:function(e){S.newGroup.time=e.target.value;}});
-      var collInp=el("input",{style:{flex:"1",minWidth:"120px",padding:"7px 8px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px",minHeight:"38px",width:"100%"},placeholder:"Fysiotherapeut",value:S.newGroup.colleague,onInput:function(e){S.newGroup.colleague=e.target.value;}});
-      var niveauInp=el("input",{style:{flex:"1",minWidth:"120px",padding:"7px 8px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px",minHeight:"38px",width:"100%"},placeholder:"Niveau",value:S.newGroup.niveau||"",onInput:function(e){S.newGroup.niveau=e.target.value;}});
-      agRow.appendChild(el("div",{},[el("div",{style:{fontSize:"12px",fontWeight:"600",color:"#666",marginBottom:"3px"}},"Dag"),daySelect]));
-      agRow.appendChild(el("div",{},[el("div",{style:{fontSize:"12px",fontWeight:"600",color:"#666",marginBottom:"3px"}},"Tijd"),timeInp]));
-      agRow.appendChild(el("div",{style:{flex:"1",minWidth:"120px"}},[el("div",{style:{fontSize:"12px",fontWeight:"600",color:"#666",marginBottom:"3px"}},"Fysiotherapeut"),collInp]));
-      agRow.appendChild(el("div",{style:{flex:"1",minWidth:"120px"}},[el("div",{style:{fontSize:"12px",fontWeight:"600",color:"#666",marginBottom:"3px"}},"Niveau"),niveauInp]));
-      agRow.appendChild(el("button",{style:{padding:"7px 14px",background:G.orange,color:"#fff",border:"none",borderRadius:"6px",fontSize:"13px",fontWeight:"600",alignSelf:"flex-end",minHeight:"38px"},onClick:function(){
+      var timeInp=el("input",{style:inp({width:"80px"}),placeholder:"19:00",value:S.newGroup.time,onInput:function(e){S.newGroup.time=e.target.value;}});
+      var collInp=el("input",{style:inp({flex:"1",minWidth:"120px",width:"100%"}),placeholder:"Fysiotherapeut",value:S.newGroup.colleague,onInput:function(e){S.newGroup.colleague=e.target.value;}});
+      var niveauInp=el("input",{style:inp({flex:"1",minWidth:"120px",width:"100%"}),placeholder:"Niveau",value:S.newGroup.niveau||"",onInput:function(e){S.newGroup.niveau=e.target.value;}});
+      agRow.appendChild(el("div",{},[el("div",{style:lblStyle()},"Dag"),daySelect]));
+      agRow.appendChild(el("div",{},[el("div",{style:lblStyle()},"Tijd"),timeInp]));
+      agRow.appendChild(el("div",{style:{flex:"1",minWidth:"120px"}},[el("div",{style:lblStyle()},"Fysiotherapeut"),collInp]));
+      agRow.appendChild(el("div",{style:{flex:"1",minWidth:"120px"}},[el("div",{style:lblStyle()},"Niveau"),niveauInp]));
+      agRow.appendChild(el("button",{className:"btn-primary",style:{padding:"7px 14px",borderRadius:"12px",fontSize:"13px",alignSelf:"flex-end",minHeight:"38px"},onClick:function(){
         if(!S.newGroup.time.trim()||!S.newGroup.colleague.trim())return;
         groups.push({id:stamp(),day:S.newGroup.day,time:S.newGroup.time.trim(),colleague:S.newGroup.colleague.trim(),niveau:S.newGroup.niveau||"",members:[]});
         STATE[mod].groups=sortG(groups);
@@ -442,14 +515,12 @@ function buildModule(mod,MAX,accent,accentLight){
 
     var displayed=S.filterFree?groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<MAX;}):groups;
 
-    // Dagen grid met swipe-scroll wrapper
     var outerWrap=el("div",{className:"days-scroll-outer"});
     var scrollWrap=el("div",{className:"days-scroll-wrap"});
     var grid=el("div",{className:"days-grid"});
     scrollWrap.appendChild(grid);
     outerWrap.appendChild(scrollWrap);
 
-    // Schaduw op outerWrap (staat vast), listener op scrollWrap
     setTimeout(function(){
       scrollWrap.addEventListener("scroll",function(){
         var atEnd=scrollWrap.scrollLeft+scrollWrap.clientWidth>=scrollWrap.scrollWidth-4;
@@ -461,9 +532,9 @@ function buildModule(mod,MAX,accent,accentLight){
 
     activeDays.forEach(function(day){
       var col=el("div",{});
-      col.appendChild(el("div",{style:{fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px",color:accent,marginBottom:"6px",paddingBottom:"4px",borderBottom:"2px solid "+accent,position:"sticky",top:"0",background:"#f0f0ee",zIndex:"10",paddingTop:"4px"}},day));
+      col.appendChild(el("div",{style:{fontSize:"11px",fontWeight:"700",textTransform:"uppercase",letterSpacing:"1px",color:accent,marginBottom:"8px",paddingBottom:"4px",borderBottom:"2px solid "+accent,position:"sticky",top:"0",background:"#fff",zIndex:"10",paddingTop:"4px"}},day));
       var dayGroups=displayed.filter(function(g){return g.day===day;});
-      if(dayGroups.length===0)col.appendChild(el("div",{style:{fontSize:"11px",color:"#666",fontStyle:"italic"}},"Geen groepen"));
+      if(dayGroups.length===0)col.appendChild(el("div",{style:{fontSize:"11px",color:G.textMuted,fontStyle:"italic"}},"Geen groepen"));
 
       dayGroups.forEach(function(g){
         var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;
@@ -472,20 +543,20 @@ function buildModule(mod,MAX,accent,accentLight){
         var st=gStatus(ac,sc,rc,MAX);
         var bc=st==="full"?G.grayBorder:st==="temp"?G.tempBorder:G.successGreen;
         var hbg=st==="full"?G.gray:st==="temp"?G.tempBg:G.successLight;
-        var hb=st==="full"?G.grayBorder:st==="temp"?G.tempBorder:"#b7e4c7";
-        var tc=st==="full"?G.grayText:st==="temp"?G.tempText:G.green;
+        var hb=st==="full"?G.grayBorder:st==="temp"?G.tempBorder:G.successBorder;
+        var tc=st==="full"?G.grayText:st==="temp"?G.tempText:G.successText;
         var pb=st==="full"?G.grayBorder:st==="temp"?G.tempBorder:G.successGreen;
-        var pc=st==="full"?G.grayText:st==="temp"?G.tempText:"#fff";
+        var pc=st==="full"?"#fff":st==="temp"?G.tempText:"#fff";
         var lc=st==="full"?G.grayText:st==="temp"?G.tempText:G.successGreen;
         var open=S.expandedGroup===g.id;
 
-        var card=el("div",{style:{background:"#fff",border:"1.5px solid "+bc,borderRadius:"10px",overflow:"hidden",marginBottom:"8px"}});
+        var card=el("div",{style:{background:"#fff",border:"1.5px solid "+bc,borderRadius:"16px",overflow:"hidden",marginBottom:"10px",boxShadow:SHADOW}});
 
         var cardHead=el("div",{className:"card-head-tap",style:{background:hbg,borderBottom:"1px solid "+hb},onClick:function(){S.expandedGroup=open?null:g.id;S.expandedEdit=null;render();}});
         var headRow=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"4px"}});
         var headLeft=el("div",{});
         headLeft.appendChild(el("div",{style:{fontSize:"16px",fontWeight:"700",color:tc,marginBottom:"1px"}},g.time));
-        headLeft.appendChild(el("div",{style:{fontSize:"12px",color:"#666"}},g.colleague));
+        headLeft.appendChild(el("div",{style:{fontSize:"12px",color:G.textMuted}},g.colleague));
         headRow.appendChild(headLeft);
         if(g.niveau){
           headRow.appendChild(el("div",{style:{fontSize:"10px",color:tc,fontWeight:"600",textAlign:"right",maxWidth:"55%",lineHeight:"1.3",wordBreak:"break-word",flexShrink:"0"}},g.niveau));
@@ -499,65 +570,63 @@ function buildModule(mod,MAX,accent,accentLight){
         plekDiv.appendChild(el("span",{style:{fontSize:"11px",color:lc,fontWeight:"600",textAlign:"right"}},st==="full"?"Vol":plekLabel(ac,sc,rc,MAX)));
         if(sc>0)plekDiv.appendChild(el("span",{style:{fontSize:"10px",color:G.orange}},"⏸ "+sc+" gestopt"));
         cardFoot.appendChild(plekDiv);
-        cardFoot.appendChild(el("span",{style:{fontSize:"14px",color:"#666",marginLeft:"6px"}},open?"▲":"▼"));
+        cardFoot.appendChild(el("span",{style:{fontSize:"14px",color:G.textMuted,marginLeft:"6px"}},open?"▲":"▼"));
         card.appendChild(cardFoot);
 
         if(open){
-          var panel=el("div",{style:{background:G.grayLight,borderTop:"1px solid #ddd",padding:"12px"}});
+          var panel=el("div",{style:{background:G.grayLight,borderTop:"1px solid "+G.border,padding:"12px"}});
 
           if(S.expandedEdit===g.id){
             var eDiv=el("div",{style:{marginBottom:"10px"}});
-            eDiv.appendChild(el("div",{style:{fontSize:"12px",fontWeight:"600",color:"#666",marginBottom:"3px"}},"Fysiotherapeut"));
-            var eInp=el("input",{style:{width:"100%",padding:"7px 9px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px",marginBottom:"6px",boxSizing:"border-box"},value:S.editColleague,onInput:function(e){S.editColleague=e.target.value;}});
-            eDiv.appendChild(eInp);
-            eDiv.appendChild(el("div",{style:{fontSize:"12px",fontWeight:"600",color:"#666",marginBottom:"3px"}},"Niveau"));
+            eDiv.appendChild(el("div",{style:lblStyle()},"Fysiotherapeut"));
+            eDiv.appendChild(el("input",{style:inp({width:"100%",marginBottom:"6px"}),value:S.editColleague,onInput:function(e){S.editColleague=e.target.value;}}));
+            eDiv.appendChild(el("div",{style:lblStyle()},"Niveau"));
             var eRow=el("div",{style:{display:"flex",gap:"6px"}});
-            var eNivInp=el("input",{style:{flex:"1",padding:"7px 9px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px"},value:S.editNiveau||"",onInput:function(e){S.editNiveau=e.target.value;}});
-            eRow.appendChild(eNivInp);
-            eRow.appendChild(el("button",{style:{padding:"7px 10px",background:accent,color:"#fff",border:"none",borderRadius:"6px",fontSize:"13px",minHeight:"38px"},onClick:function(){g.colleague=S.editColleague;g.niveau=S.editNiveau;S.expandedEdit=null;render();}},"✓"));
+            eRow.appendChild(el("input",{style:inp({flex:"1"}),value:S.editNiveau||"",onInput:function(e){S.editNiveau=e.target.value;}}));
+            eRow.appendChild(el("button",{className:"btn-primary",style:{padding:"7px 12px",borderRadius:"10px",fontSize:"13px",minHeight:"38px"},onClick:function(){g.colleague=S.editColleague;g.niveau=S.editNiveau;S.expandedEdit=null;render();}},"✓"));
             eRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",minHeight:"38px"},onClick:function(){S.expandedEdit=null;render();}},"✕"));
             eDiv.appendChild(eRow);
             panel.appendChild(eDiv);
           } else {
             var hRow=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}});
-            hRow.appendChild(el("span",{style:{fontSize:"10px",color:"#666",fontWeight:"600"}},"DEELNEMERS"));
+            hRow.appendChild(el("span",{style:{fontSize:"10px",color:G.textMuted,fontWeight:"600",letterSpacing:".5px"}},"DEELNEMERS"));
             var btnRow=el("div",{style:{display:"flex",gap:"6px"}});
-            btnRow.appendChild(el("button",{style:{fontSize:"12px",padding:"4px 8px",background:accentLight,color:accent,border:"1px solid "+accent,borderRadius:"6px",minHeight:"32px"},onClick:function(){S.expandedEdit=g.id;S.editColleague=g.colleague;S.editNiveau=g.niveau||"";render();}},"✏ Bewerk"));
-            btnRow.appendChild(el("button",{style:{fontSize:"12px",padding:"4px 8px",background:"#fdecea",color:G.red,border:"1px solid "+G.red,borderRadius:"6px",minHeight:"32px"},onClick:function(){if(confirm("Groep verwijderen?")){STATE[mod].groups=sortG(groups.filter(function(x){return x.id!==g.id;}));S.expandedGroup=null;render();}}},"🗑"));
+            btnRow.appendChild(el("button",{style:{fontSize:"12px",padding:"4px 10px",background:accentLight,color:accent,border:"1px solid "+accent,borderRadius:"10px",minHeight:"32px",fontWeight:"600"},onClick:function(){S.expandedEdit=g.id;S.editColleague=g.colleague;S.editNiveau=g.niveau||"";render();}},"✏ Bewerk"));
+            btnRow.appendChild(el("button",{style:{fontSize:"12px",padding:"4px 8px",background:G.redLight,color:G.red,border:"1px solid "+G.red,borderRadius:"10px",minHeight:"32px"},onClick:function(){if(confirm("Groep verwijderen?")){STATE[mod].groups=sortG(groups.filter(function(x){return x.id!==g.id;}));S.expandedGroup=null;render();}}},"🗑"));
             hRow.appendChild(btnRow);
             panel.appendChild(hRow);
           }
 
-          if(g.members.length===0)panel.appendChild(el("div",{style:{fontSize:"12px",color:"#666",marginBottom:"6px"}},"Nog geen deelnemers."));
+          if(g.members.length===0)panel.appendChild(el("div",{style:{fontSize:"12px",color:G.textMuted,marginBottom:"6px"}},"Nog geen deelnemers."));
 
           g.members.forEach(function(m){
             if(m.reserved){
-              var rRow=el("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"6px 0",borderBottom:"1px solid #ddd",background:"#f8f4ff",flexWrap:"wrap"}});
+              var rRow=el("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"6px 4px",borderBottom:"1px solid "+G.border,background:"#eefafd",flexWrap:"wrap"}});
               rRow.appendChild(el("span",{style:{fontSize:"13px"}},"📌"));
-              rRow.appendChild(el("span",{style:{flex:"1",fontSize:"13px",fontWeight:"500",color:G.purple,fontStyle:"italic",minWidth:"80px"}},m.naam+(m.reservedFrom?" (v.a. "+fmtDate(m.reservedFrom)+")":"")));
-              rRow.appendChild(el("span",{style:{fontSize:"10px",padding:"2px 7px",borderRadius:"8px",background:G.purpleLight,color:G.purple,border:"1px solid "+G.purple,fontWeight:"600"}},"Gereserveerd"));
+              rRow.appendChild(el("span",{style:{flex:"1",fontSize:"13px",fontWeight:"500",color:G.blue,fontStyle:"italic",minWidth:"80px"}},m.naam+(m.reservedFrom?" (v.a. "+fmtDate(m.reservedFrom)+")":"")));
+              rRow.appendChild(el("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"8px",background:G.blueLight,color:G.blue,fontWeight:"600"}},"Gereserveerd"));
               rRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",padding:"0 4px",minHeight:"34px"},onClick:function(){g.members=g.members.filter(function(x){return x.id!==m.id;});render();}},"✕"));
               panel.appendChild(rRow);
               return;
             }
-            var mRow=el("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"7px 0",borderBottom:"1px solid #ddd",opacity:m.stopped?"0.65":"1",flexWrap:"wrap"}});
+            var mRow=el("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"7px 0",borderBottom:"1px solid "+G.border,opacity:m.stopped?"0.65":"1",flexWrap:"wrap"}});
             mRow.appendChild(el("span",{style:{flex:"1",fontSize:"13px",fontWeight:"500",textDecoration:m.stopped?"line-through":"none",minWidth:"80px"}},m.naam));
             mRow.appendChild(el("button",{style:bStyle(m.betaling||"incasso"),onClick:function(){var c={incasso:"contant",contant:"geen",geen:"incasso"};m.betaling=c[m.betaling||"incasso"];render();}},BLAB[m.betaling||"incasso"]));
-            mRow.appendChild(el("button",{style:{fontSize:"11px",padding:"3px 7px",borderRadius:"8px",cursor:"pointer",background:m.stopped?G.orangeLight:"#f5f5f3",color:m.stopped?G.orange:"#666",border:"1px solid "+(m.stopped?G.orange:"#ddd"),fontWeight:"600",minHeight:"30px"},onClick:function(){m.stopped=!m.stopped;if(!m.stopped){m.stopReason="";m.stopUntil="";m.stopUnknown=false;}render();}},"⏸"));
+            mRow.appendChild(el("button",{style:{fontSize:"11px",padding:"3px 7px",borderRadius:"8px",cursor:"pointer",background:m.stopped?G.orangeLight:G.grayLight,color:m.stopped?G.orange:G.textMuted,border:"1px solid "+(m.stopped?G.orange:G.border),fontWeight:"600",minHeight:"30px"},onClick:function(){m.stopped=!m.stopped;if(!m.stopped){m.stopReason="";m.stopUntil="";m.stopUnknown=false;}render();}},"⏸"));
             mRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",padding:"0 4px",minHeight:"34px"},onClick:function(){g.members=g.members.filter(function(x){return x.id!==m.id;});render();}},"✕"));
             panel.appendChild(mRow);
 
             if(m.stopped){
-              var sp=el("div",{style:{background:G.orangeLight,border:"1px solid #f0c090",borderRadius:"6px",padding:"8px 10px",margin:"2px 0 4px"}});
+              var sp=el("div",{style:{background:G.orangeLight,border:"1px solid #f0c090",borderRadius:"10px",padding:"8px 10px",margin:"2px 0 4px"}});
               sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px"}},"REDEN *"));
-              sp.appendChild(el("input",{style:{width:"100%",padding:"5px 8px",border:"1px solid "+(m.stopReason&&m.stopReason.trim()?"#f0c090":G.red),borderRadius:"5px",fontSize:"13px",background:"#fff",boxSizing:"border-box"},placeholder:"verplicht",value:m.stopReason||"",onInput:function(e){m.stopReason=e.target.value;render();}}));
+              sp.appendChild(el("input",{style:inp({width:"100%",padding:"5px 8px",border:"1px solid "+(m.stopReason&&m.stopReason.trim()?"#f0c090":G.red)}),placeholder:"verplicht",value:m.stopReason||"",onInput:function(e){m.stopReason=e.target.value;render();}}));
               if(!m.stopReason||!m.stopReason.trim())sp.appendChild(el("div",{style:{fontSize:"11px",color:G.red,marginTop:"2px"}},"Verplicht"));
               sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px",marginTop:"6px"}},"TOT WANNEER *"));
               if(!m.stopUnknown){
-                sp.appendChild(el("input",{type:"date",style:{width:"100%",padding:"5px 8px",border:"1px solid "+(!m.stopUnknown&&!m.stopUntil?G.red:"#f0c090"),borderRadius:"5px",fontSize:"13px",background:"#fff",boxSizing:"border-box",marginBottom:"4px"},value:m.stopUntil||"",onChange:function(e){m.stopUntil=e.target.value;render();}}));
+                sp.appendChild(el("input",{type:"date",style:inp({width:"100%",padding:"5px 8px",marginBottom:"4px",border:"1px solid "+(!m.stopUnknown&&!m.stopUntil?G.red:"#f0c090")}),value:m.stopUntil||"",onChange:function(e){m.stopUntil=e.target.value;render();}}));
               }
               var ukLabel=el("label",{style:{display:"flex",alignItems:"center",gap:"6px",fontSize:"13px",cursor:"pointer",minHeight:"34px"}});
-              var ukCb=el("input",{type:"checkbox",style:{width:"18px",height:"18px"},onChange:function(e){m.stopUnknown=e.target.checked;if(e.target.checked)m.stopUntil="";render();}});
+              var ukCb=el("input",{type:"checkbox",style:{width:"18px",height:"18px",minHeight:"18px"},onChange:function(e){m.stopUnknown=e.target.checked;if(e.target.checked)m.stopUntil="";render();}});
               ukCb.checked=!!m.stopUnknown;
               ukLabel.appendChild(ukCb);
               ukLabel.appendChild(document.createTextNode("Onbekend tot wanneer"));
@@ -569,30 +638,27 @@ function buildModule(mod,MAX,accent,accentLight){
           });
 
           if(ac+rc<MAX){
-            var addWrap=el("div",{style:{marginTop:"10px",borderTop:"1px solid #ddd",paddingTop:"10px"}});
+            var addWrap=el("div",{style:{marginTop:"10px",borderTop:"1px solid "+G.border,paddingTop:"10px"}});
             var rf=S.reserveForm[g.id]||{naam:"",from:""};
 
-            // Deelnemer toevoegen
             var addRow=el("div",{className:"add-member-row"});
-            var nmInp=el("input",{style:{flex:"1",minWidth:"80px",padding:"7px 9px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"14px"},placeholder:"Naam deelnemer",value:S.newMember.naam,onInput:function(e){S.newMember.naam=e.target.value;}});
-            var betSel=el("select",{style:{padding:"7px 8px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px"},onChange:function(e){S.newMember.betaling=e.target.value;}});
+            var nmInp=el("input",{style:inp({flex:"1",minWidth:"80px",fontSize:"14px"}),placeholder:"Naam deelnemer",value:S.newMember.naam,onInput:function(e){S.newMember.naam=e.target.value;}});
+            var betSel=el("select",{style:inp(),onChange:function(e){S.newMember.betaling=e.target.value;}});
             ["incasso","contant","geen"].forEach(function(b){betSel.appendChild(el("option",{value:b},b==="incasso"?"Incasso":b==="contant"?"Contant":"Geen"));});
             betSel.value=S.newMember.betaling;
             addRow.appendChild(nmInp);addRow.appendChild(betSel);
-            addRow.appendChild(el("button",{style:{padding:"7px 10px",background:G.orange,color:"#fff",border:"none",borderRadius:"6px",fontSize:"12px",fontWeight:"600"},onClick:function(){
+            addRow.appendChild(el("button",{className:"btn-primary",style:{padding:"7px 12px",borderRadius:"10px",fontSize:"12px"},onClick:function(){
               if(!S.newMember.naam.trim())return;
               g.members.push({id:stamp(),naam:S.newMember.naam.trim(),betaling:S.newMember.betaling,stopped:false,stopReason:"",stopUntil:"",stopUnknown:false,reserved:false,reservedFrom:""});
               S.newMember={naam:"",betaling:"incasso"};render();
             }},"+ Toevoegen"));
             addWrap.appendChild(addRow);
 
-            // Reservering
             var resRow=el("div",{className:"reserveer-row",style:{marginTop:"6px"}});
-            var rnInp=el("input",{style:{flex:"1",minWidth:"80px",padding:"7px 9px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"14px"},placeholder:"📌 Naam reservering",value:rf.naam,onInput:function(e){if(!S.reserveForm[g.id])S.reserveForm[g.id]={naam:"",from:""};S.reserveForm[g.id].naam=e.target.value;}});
-            resRow.appendChild(rnInp);
-            resRow.appendChild(el("label",{style:{fontSize:"12px",color:"#666",whiteSpace:"nowrap"}},"Instroom:"));
-            resRow.appendChild(el("input",{type:"date",style:{padding:"7px 8px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"13px"},value:rf.from,onChange:function(e){if(!S.reserveForm[g.id])S.reserveForm[g.id]={naam:"",from:""};S.reserveForm[g.id].from=e.target.value;}}));
-            resRow.appendChild(el("button",{style:{padding:"7px 10px",background:G.purple,color:"#fff",border:"none",borderRadius:"6px",fontSize:"12px",fontWeight:"600"},onClick:function(){
+            resRow.appendChild(el("input",{style:inp({flex:"1",minWidth:"80px",fontSize:"14px"}),placeholder:"📌 Naam reservering",value:rf.naam,onInput:function(e){if(!S.reserveForm[g.id])S.reserveForm[g.id]={naam:"",from:""};S.reserveForm[g.id].naam=e.target.value;}}));
+            resRow.appendChild(el("label",{style:{fontSize:"12px",color:G.textMuted,whiteSpace:"nowrap"}},"Instroom:"));
+            resRow.appendChild(el("input",{type:"date",style:inp(),value:rf.from,onChange:function(e){if(!S.reserveForm[g.id])S.reserveForm[g.id]={naam:"",from:""};S.reserveForm[g.id].from=e.target.value;}}));
+            resRow.appendChild(el("button",{style:{padding:"7px 12px",background:G.blue,color:"#fff",border:"none",borderRadius:"10px",fontSize:"12px",fontWeight:"600"},onClick:function(){
               var rff=S.reserveForm[g.id]||{naam:"",from:""};
               if(!rff.naam.trim())return;
               g.members.push({id:stamp(),naam:rff.naam.trim(),betaling:"incasso",stopped:false,stopReason:"",stopUntil:"",stopUnknown:false,reserved:true,reservedFrom:rff.from});
@@ -601,7 +667,7 @@ function buildModule(mod,MAX,accent,accentLight){
             addWrap.appendChild(resRow);
             panel.appendChild(addWrap);
           } else {
-            panel.appendChild(el("div",{style:{fontSize:"11px",color:"#666",marginTop:"6px",fontWeight:"600"}},"Groep is vol."));
+            panel.appendChild(el("div",{style:{fontSize:"11px",color:G.textMuted,marginTop:"6px",fontWeight:"600"}},"Groep is vol."));
           }
           card.appendChild(panel);
         }
@@ -615,31 +681,31 @@ function buildModule(mod,MAX,accent,accentLight){
 
   if(S.tab==="waitlist"){
     var wWrap=el("div",{style:{padding:"12px 16px"}});
-    var wForm=el("div",{style:{background:G.grayLight,border:"1px solid #ddd",borderRadius:"10px",padding:"14px 16px",marginBottom:"14px"}});
+    var wForm=el("div",{style:{background:G.grayLight,border:"1px solid "+G.border,borderRadius:"16px",padding:"14px 16px",marginBottom:"14px"}});
     wForm.appendChild(el("p",{style:{fontSize:"15px",fontWeight:"700",color:accent,margin:"0 0 10px"}},S.wlEditId!==null?"Bewerken":"Nieuwe aanmelding"));
 
     var wfRow1=el("div",{className:"wl-form-row1"});
     var nmWrap=el("div",{style:{flex:"1",minWidth:"130px"}});
-    nmWrap.appendChild(el("label",{style:{fontSize:"13px",fontWeight:"600",color:"#666",marginBottom:"4px",display:"block"}},"Naam *"));
-    nmWrap.appendChild(el("input",{style:{width:"100%",padding:"8px 10px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"14px",boxSizing:"border-box"},placeholder:"Voornaam",value:S.wlForm.naam,onInput:function(e){S.wlForm.naam=e.target.value;}}));
+    nmWrap.appendChild(el("label",{style:lblStyle()},"Naam *"));
+    nmWrap.appendChild(el("input",{style:inp({width:"100%",fontSize:"14px"}),placeholder:"Voornaam",value:S.wlForm.naam,onInput:function(e){S.wlForm.naam=e.target.value;}}));
     wfRow1.appendChild(nmWrap);
 
     var refWrap=el("div",{style:{flex:"1",minWidth:"180px"}});
-    refWrap.appendChild(el("label",{style:{fontSize:"13px",fontWeight:"600",color:"#666",marginBottom:"4px",display:"block"}},"Via wie aangemeld"));
-    var refSel=el("select",{style:{width:"100%",padding:"8px 10px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"14px",boxSizing:"border-box"},onChange:function(e){S.wlForm.referrer=e.target.value;if(e.target.value!=="anders")S.wlForm.referrerOther="";render();}});
+    refWrap.appendChild(el("label",{style:lblStyle()},"Via wie aangemeld"));
+    var refSel=el("select",{style:inp({width:"100%",fontSize:"14px"}),onChange:function(e){S.wlForm.referrer=e.target.value;if(e.target.value!=="anders")S.wlForm.referrerOther="";render();}});
     refSel.appendChild(el("option",{value:""},"— Kies collega —"));
     COLLEAGUES.forEach(function(c){refSel.appendChild(el("option",{value:c},c));});
     refSel.appendChild(el("option",{value:"anders"},"Anders..."));
     refSel.value=S.wlForm.referrer;
     refWrap.appendChild(refSel);
     if(S.wlForm.referrer==="anders"){
-      refWrap.appendChild(el("input",{style:{width:"100%",padding:"8px 10px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"14px",boxSizing:"border-box",marginTop:"6px"},placeholder:"Naam",value:S.wlForm.referrerOther||"",onInput:function(e){S.wlForm.referrerOther=e.target.value;}}));
+      refWrap.appendChild(el("input",{style:inp({width:"100%",fontSize:"14px",marginTop:"6px"}),placeholder:"Naam",value:S.wlForm.referrerOther||"",onInput:function(e){S.wlForm.referrerOther=e.target.value;}}));
     }
     wfRow1.appendChild(refWrap);
     wForm.appendChild(wfRow1);
 
     var avWrap=el("div",{style:{marginBottom:"10px"}});
-    avWrap.appendChild(el("div",{style:{fontSize:"13px",fontWeight:"600",color:"#666",marginBottom:"6px"}},"Beschikbaarheid"));
+    avWrap.appendChild(el("div",{style:lblStyle()},"Beschikbaarheid"));
     var dpRow=el("div",{style:{display:"flex",gap:"7px",marginBottom:"8px",flexWrap:"wrap"}});
     [["vroeg","🌅 Ochtend vroeg"],["ochtend","☀️ Ochtend"],["avond","🌙 Avond"]].forEach(function(opt){
       dpRow.appendChild(el("button",{style:{padding:"6px 12px",borderRadius:"16px",border:"1px solid "+accent,background:accentLight,color:accent,fontSize:"12px",fontWeight:"500",minHeight:"34px"},onClick:function(){
@@ -651,19 +717,19 @@ function buildModule(mod,MAX,accent,accentLight){
         S.wlForm.availability=avail;render();
       }},opt[1]));
     });
-    dpRow.appendChild(el("button",{style:{padding:"6px 12px",borderRadius:"16px",border:"1px solid #ddd",background:"#fff",color:"#666",fontSize:"12px",minHeight:"34px"},onClick:function(){S.wlForm.availability={};render();}},"Wis alles"));
+    dpRow.appendChild(el("button",{className:"btn-secondary",style:{padding:"6px 12px",borderRadius:"16px",fontSize:"12px",minHeight:"34px"},onClick:function(){S.wlForm.availability={};render();}},"Wis alles"));
     avWrap.appendChild(dpRow);
 
     var cbGrid=el("div",{className:"avail-grid"});
     activeDays.forEach(function(day){
       var dg=groups.filter(function(gg){return gg.day===day;}).sort(function(a,b){return a.time.localeCompare(b.time);});
       if(dg.length===0)return;
-      var dc=el("div",{style:{background:"#fff",border:"1px solid #ddd",borderRadius:"8px",padding:"8px 10px"}});
+      var dc=el("div",{style:{background:"#fff",border:"1px solid "+G.border,borderRadius:"12px",padding:"8px 10px"}});
       dc.appendChild(el("div",{style:{fontSize:"12px",fontWeight:"600",color:accent,marginBottom:"5px"}},day));
       dg.forEach(function(gg){
         var checked=S.wlForm.availability[day]&&S.wlForm.availability[day][gg.time];
         var lbl=el("label",{style:{display:"flex",alignItems:"center",gap:"7px",fontSize:"13px",marginBottom:"5px",cursor:"pointer",minHeight:"30px"}});
-        var cb=el("input",{type:"checkbox",style:{width:"18px",height:"18px"},onChange:function(e){if(!S.wlForm.availability[day])S.wlForm.availability[day]={};S.wlForm.availability[day][gg.time]=e.target.checked;render();}});
+        var cb=el("input",{type:"checkbox",style:{width:"18px",height:"18px",minHeight:"18px"},onChange:function(e){if(!S.wlForm.availability[day])S.wlForm.availability[day]={};S.wlForm.availability[day][gg.time]=e.target.checked;render();}});
         cb.checked=!!checked;
         lbl.appendChild(cb);lbl.appendChild(document.createTextNode(gg.time));
         dc.appendChild(lbl);
@@ -674,43 +740,43 @@ function buildModule(mod,MAX,accent,accentLight){
     wForm.appendChild(avWrap);
 
     var noteWrap=el("div",{style:{marginBottom:"12px"}});
-    noteWrap.appendChild(el("label",{style:{fontSize:"13px",fontWeight:"600",color:"#666",marginBottom:"4px",display:"block"}},"Notitie"));
-    noteWrap.appendChild(el("input",{style:{width:"100%",padding:"8px 10px",border:"1px solid #ddd",borderRadius:"6px",fontSize:"14px",boxSizing:"border-box"},placeholder:"opmerkingen",value:S.wlForm.note,onInput:function(e){S.wlForm.note=e.target.value;}}));
+    noteWrap.appendChild(el("label",{style:lblStyle()},"Notitie"));
+    noteWrap.appendChild(el("input",{style:inp({width:"100%",fontSize:"14px"}),placeholder:"opmerkingen",value:S.wlForm.note,onInput:function(e){S.wlForm.note=e.target.value;}}));
     wForm.appendChild(noteWrap);
 
     var wfBtns=el("div",{style:{display:"flex",gap:"8px",flexWrap:"wrap"}});
-    wfBtns.appendChild(el("button",{style:{padding:"8px 16px",background:G.orange,color:"#fff",border:"none",borderRadius:"6px",fontSize:"14px",fontWeight:"600"},onClick:function(){
+    wfBtns.appendChild(el("button",{className:"btn-primary",style:{padding:"8px 18px",borderRadius:"12px",fontSize:"14px"},onClick:function(){
       if(!S.wlForm.naam.trim())return;
       var entry={naam:S.wlForm.naam.trim(),availability:S.wlForm.availability,referrer:S.wlForm.referrer,referrerOther:S.wlForm.referrerOther,note:S.wlForm.note};
       if(S.wlEditId!==null){STATE[mod].waitlist=waitlist.map(function(w){if(w.id!==S.wlEditId)return w;return Object.assign({},w,entry);});S.wlEditId=null;}
       else{waitlist.push(Object.assign({id:stamp(),date:stamp()},entry));}
       S.wlForm={naam:"",availability:{},referrer:"",referrerOther:"",note:""};render();
     }},S.wlEditId!==null?"Opslaan":"+ Toevoegen"));
-    if(S.wlEditId!==null)wfBtns.appendChild(el("button",{style:{padding:"7px 14px",background:accentLight,color:accent,border:"1px solid "+accent,borderRadius:"6px",fontSize:"13px"},onClick:function(){S.wlEditId=null;S.wlForm={naam:"",availability:{},referrer:"",referrerOther:"",note:""};render();}},"Annuleren"));
+    if(S.wlEditId!==null)wfBtns.appendChild(el("button",{className:"btn-secondary",style:{padding:"7px 14px",borderRadius:"12px",fontSize:"13px"},onClick:function(){S.wlEditId=null;S.wlForm={naam:"",availability:{},referrer:"",referrerOther:"",note:""};render();}},"Annuleren"));
     wForm.appendChild(wfBtns);
     wWrap.appendChild(wForm);
 
     wWrap.appendChild(el("p",{style:{fontSize:"15px",fontWeight:"700",color:accent,margin:"0 0 8px"}},"Wachtlijst ("+waitlist.length+")"));
-    if(waitlist.length===0)wWrap.appendChild(el("div",{style:{color:"#666",fontSize:"13px"}},"Wachtlijst is leeg."));
+    if(waitlist.length===0)wWrap.appendChild(el("div",{style:{color:G.textMuted,fontSize:"13px"}},"Wachtlijst is leeg."));
 
     var sorted=waitlist.slice().sort(function(a,b){return a.date-b.date;});
     sorted.forEach(function(w,i){
       var ref=w.referrer==="anders"?(w.referrerOther||"anders"):w.referrer;
       var avail=availSummary(w.availability);
-      var wCard=el("div",{style:{background:"#fff",border:"1px solid #ddd",borderRadius:"10px",marginBottom:"8px",padding:"12px 14px"}});
+      var wCard=el("div",{style:{background:"#fff",border:"1px solid "+G.border,borderRadius:"16px",marginBottom:"10px",padding:"12px 14px",boxShadow:SHADOW}});
       var wHead=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"5px",flexWrap:"wrap",gap:"4px"}});
       var wLeft=el("div",{});
-      wLeft.appendChild(el("span",{style:{fontSize:"12px",color:"#666",marginRight:"6px"}},"#"+(i+1)));
+      wLeft.appendChild(el("span",{style:{fontSize:"12px",color:G.textMuted,marginRight:"6px"}},"#"+(i+1)));
       wLeft.appendChild(el("span",{style:{fontWeight:"600",fontSize:"15px",color:accent}},w.naam));
-      if(ref)wLeft.appendChild(el("span",{style:{fontSize:"12px",color:"#666",marginLeft:"8px"}},"via "+ref));
+      if(ref)wLeft.appendChild(el("span",{style:{fontSize:"11px",marginLeft:"8px",padding:"2px 8px",borderRadius:"8px",background:G.purpleLight,color:G.purple,fontWeight:"600"}},"via "+ref));
       wHead.appendChild(wLeft);
-      wHead.appendChild(el("span",{style:{fontSize:"12px",color:"#666"}},dateStr(w.date)));
+      wHead.appendChild(el("span",{style:{fontSize:"12px",color:G.textMuted}},dateStr(w.date)));
       wCard.appendChild(wHead);
-      if(avail)wCard.appendChild(el("div",{style:{fontSize:"13px",color:"#666",marginBottom:"3px"}},"📅 "+avail));
-      if(w.note)wCard.appendChild(el("div",{style:{fontSize:"13px",color:"#666",fontStyle:"italic"}},"💬 "+w.note));
+      if(avail)wCard.appendChild(el("div",{style:{fontSize:"13px",color:G.textMuted,marginBottom:"3px"}},"📅 "+avail));
+      if(w.note)wCard.appendChild(el("div",{style:{fontSize:"13px",color:G.textMuted,fontStyle:"italic"}},"💬 "+w.note));
       var wBtns=el("div",{className:"wl-btns"});
-      wBtns.appendChild(el("button",{style:{padding:"6px 14px",background:accentLight,color:accent,border:"1px solid "+accent,borderRadius:"6px",fontSize:"13px",minHeight:"36px"},onClick:function(){S.wlEditId=w.id;S.wlForm={naam:w.naam||"",availability:w.availability||{},referrer:w.referrer||"",referrerOther:w.referrerOther||"",note:w.note||""};render();}},"✏ Bewerken"));
-      wBtns.appendChild(el("button",{style:{padding:"6px 14px",background:"#fdecea",color:G.red,border:"1px solid "+G.red,borderRadius:"6px",fontSize:"13px",minHeight:"36px"},onClick:function(){STATE[mod].waitlist=waitlist.filter(function(x){return x.id!==w.id;});render();}},"✕ Verwijderen"));
+      wBtns.appendChild(el("button",{style:{padding:"6px 14px",background:accentLight,color:accent,border:"1px solid "+accent,borderRadius:"10px",fontSize:"13px",minHeight:"36px",fontWeight:"600"},onClick:function(){S.wlEditId=w.id;S.wlForm={naam:w.naam||"",availability:w.availability||{},referrer:w.referrer||"",referrerOther:w.referrerOther||"",note:w.note||""};render();window.scrollTo({top:0,behavior:"smooth"});}},"✏ Bewerken"));
+      wBtns.appendChild(el("button",{style:{padding:"6px 14px",background:G.redLight,color:G.red,border:"1px solid "+G.red,borderRadius:"10px",fontSize:"13px",minHeight:"36px"},onClick:function(){STATE[mod].waitlist=waitlist.filter(function(x){return x.id!==w.id;});render();}},"✕ Verwijderen"));
       wCard.appendChild(wBtns);
       wWrap.appendChild(wCard);
     });
@@ -721,23 +787,30 @@ function buildModule(mod,MAX,accent,accentLight){
 }
 
 function buildApp(){
-  var app=el("div",{style:{fontFamily:"'Segoe UI',system-ui,sans-serif",color:"#1a1a1a"}});
+  var app=el("div",{style:{color:G.text}});
 
-  var hdr=el("div",{style:{background:G.green,color:"#fff",padding:"14px 16px 0",borderRadius:"0 0 12px 12px"}});
-  var hdrTop=el("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"10px"}});
-  hdrTop.appendChild(el("h1",{className:"hdr-title",style:{margin:"0",fontSize:"18px",fontWeight:"600"}},"Fyzio Totaal — Groepsbeheer"));
+  var hdr=el("div",{className:"hdr"});
+  var hdrTop=el("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"12px",marginBottom:"12px"}});
+  var brand=el("div",{style:{display:"flex",alignItems:"center",gap:"12px"}});
+  brand.appendChild(el("div",{className:"logo"},"FT"));
+  var titles=el("div",{});
+  titles.appendChild(el("div",{style:{fontSize:"11px",opacity:"0.8",fontWeight:"500",letterSpacing:".4px"}},"Fyzio Totaal"));
+  titles.appendChild(el("h1",{className:"hdr-title",style:{margin:"0",fontSize:"20px",fontWeight:"700",lineHeight:"1.2"}},"Groepsbeheer"));
+  brand.appendChild(titles);
+  hdrTop.appendChild(brand);
+  hdrTop.appendChild(el("span",{className:"hdr-badge"},"🔒 Alleen voor intern gebruik"));
   hdr.appendChild(hdrTop);
 
   var tabRow=el("div",{className:"desktop-tabs"});
   [["ft","🏃 Fyziotraining"],["ba","⚖️ Balance"]].forEach(function(t){
     var active=STATE.mainTab===t[0];
-    tabRow.appendChild(el("button",{style:{padding:"9px 24px",borderRadius:"10px 10px 0 0",border:"none",fontSize:"14px",fontWeight:"600",background:active?"#fff":G.greenMid,color:active?(t[0]==="ft"?G.green:G.blue):"rgba(255,255,255,0.8)",minHeight:"42px"},onClick:function(){STATE.mainTab=t[0];render();}},t[1]));
+    tabRow.appendChild(el("button",{style:{padding:"9px 24px",borderRadius:"12px 12px 0 0",border:"none",fontSize:"14px",fontWeight:"600",background:active?"#fff":"rgba(255,255,255,0.14)",color:active?(t[0]==="ft"?G.purple:G.blue):"rgba(255,255,255,0.85)",minHeight:"42px"},onClick:function(){STATE.mainTab=t[0];render();}},t[1]));
   });
   hdr.appendChild(tabRow);
   app.appendChild(hdr);
 
-  var body=el("div",{style:{border:"1px solid #ddd",borderTop:"none",borderRadius:"0 0 12px 12px",overflow:"hidden",background:"#fff"}});
-  if(STATE.mainTab==="ft")body.appendChild(buildModule("ft",FT_MAX,G.green,G.greenLight));
+  var body=el("div",{style:{margin:"14px 12px 0",border:"1px solid "+G.border,borderRadius:"20px",overflow:"hidden",background:"#fff",boxShadow:SHADOW}});
+  if(STATE.mainTab==="ft")body.appendChild(buildModule("ft",FT_MAX,G.purple,G.purpleLight));
   else body.appendChild(buildModule("ba",BA_MAX,G.blue,G.blueLight));
   app.appendChild(body);
   return app;
