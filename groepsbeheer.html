@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-09-29.2 -->
+<!-- APP_VERSION: 2026-09-29.3 -->
 <html lang="nl">
 <head>
   <script>
     /* ── VERSIECHECK: altijd de nieuwste versie laden ──
        Verhoog APP_VERSION bij élke wijziging, zowel hier als in de HTML-comment bovenaan. */
-    var APP_VERSION = "2026-09-29.2";
+    var APP_VERSION = "2026-09-29.3";
     (function () {
       try {
         if (location.protocol === "file:") return;
@@ -454,7 +454,11 @@ function bStyle(b){
 }
 const BLAB={incasso:"✓ Incasso",contant:"💵 Contant",geen:"Geen betaling"};
 
-function plekLabel(ac,sc,rc,MAX){var t=MAX-ac-rc,tmp=sc>t?t:sc,p=t-tmp;if(p>0&&tmp>0)return p+" plek"+(p!==1?"ken":"")+" vrij + "+tmp+" tijdelijk";if(tmp>0)return tmp+" tijdelijk vrij";if(p>0)return p+" plek"+(p!==1?"ken":"")+" vrij";return"Vol";}
+/* Vaste plek = direct en blijvend vrij. Tijdelijke plek = vrij zolang een deelnemer gepauzeerd is. */
+function plekParts(ac,sc,rc,MAX){var t=Math.max(0,MAX-ac-rc),tmp=Math.min(sc,t);return{perm:t-tmp,tmp:tmp};}
+function txtVast(n){return n+" vaste plek"+(n!==1?"ken":"")+" vrij";}
+function txtTijd(n){return n+" tijdelijke plek"+(n!==1?"ken":"")+" vrij";}
+function plekLabel(ac,sc,rc,MAX){var p=plekParts(ac,sc,rc,MAX);var a=[];if(p.perm>0)a.push(txtVast(p.perm));if(p.tmp>0)a.push(txtTijd(p.tmp));return a.length?a.join(" + "):"Vol";}
 function gStatus(ac,sc,rc,MAX){var t=MAX-ac-rc,tmp=sc>t?t:sc,p=t-tmp;if(ac+rc>=MAX)return"full";if(p>0)return"free";return"temp";}
 function calcNotifs(groups,waitlist,MAX){
   var n=[];
@@ -464,7 +468,7 @@ function calcNotifs(groups,waitlist,MAX){
     if(ac+rc<MAX){
       var matches=[];
       for(var k=0;k<waitlist.length;k++){var w=waitlist[k];if(w.availability&&w.availability[g.day]&&w.availability[g.day][g.time])matches.push(w.naam||"");}
-      if(matches.length>0){var tf=MAX-ac-rc,tmp=sc>tf?tf:sc,perm=tf-tmp;var pi=perm>0&&tmp>0?perm+" plek"+(perm!==1?"ken":"")+" vrij + "+tmp+" tijdelijk":perm>0?perm+" plek"+(perm!==1?"ken":"")+" vrij":tmp+" tijdelijk vrij";n.push({group:g.day+" "+g.time,matches:matches,plekInfo:pi,onlyTemp:perm===0});}
+      if(matches.length>0){var pp=plekParts(ac,sc,rc,MAX);n.push({group:g.day+" "+g.time,matches:matches,plekInfo:plekLabel(ac,sc,rc,MAX),onlyTemp:pp.perm===0});}
     }
   }
   return n;
@@ -485,7 +489,7 @@ function buildModule(mod,MAX,accent,accentLight){
   var permN=notifs.filter(function(n){return !n.onlyTemp;});
   var tempN=notifs.filter(function(n){return n.onlyTemp;});
 
-  var statText=totalActive+" actief"+(totalStopped>0?" · "+totalStopped+" gestopt":"")+(totalReserved>0?" · "+totalReserved+" gereserveerd":"")+" · "+waitlist.length+" wachtlijst";
+  var statText=totalActive+" actief"+(totalStopped>0?" · "+totalStopped+" gepauzeerd":"")+(totalReserved>0?" · "+totalReserved+" gereserveerd":"")+" · "+waitlist.length+" wachtlijst";
   var dirty=snapshot(mod)!==LAST_SAVED[mod];
   var stState=S.saveStatus==="saving"?"saving":S.saveStatus==="error"?"error":dirty?"dirty":"saved";
   var stMap={
@@ -541,6 +545,10 @@ function buildModule(mod,MAX,accent,accentLight){
     fRow.appendChild(el("span",{className:"filter-row-count"},freeCount+" / "+groups.length+" groepen hebben plek"));
     fRow.appendChild(el("button",{className:S.showAddGroup?"btn-secondary":"btn-primary",style:{padding:"6px 14px",borderRadius:"16px",fontSize:"12px",fontWeight:"600",minHeight:"34px"},onClick:function(){S.showAddGroup=!S.showAddGroup;render();}},S.showAddGroup?"Annuleren":"+ Groep"));
     gWrap.appendChild(fRow);
+    gWrap.appendChild(el("div",{style:{fontSize:"11px",color:G.textMuted,margin:"-2px 0 12px",display:"flex",gap:"14px",flexWrap:"wrap"}},[
+      el("span",{},[el("strong",{style:{color:G.successGreen}},"Vaste plek")," = direct en blijvend beschikbaar"]),
+      el("span",{},[el("strong",{style:{color:G.tempText}},"⏸ Tijdelijke plek")," = vrij zolang iemand gepauzeerd is"])
+    ]));
 
     if(S.showAddGroup){
       var agf=el("div",{style:{background:G.grayLight,border:"1px solid "+G.border,borderRadius:"16px",padding:"12px 14px",marginBottom:"12px"}});
@@ -620,8 +628,10 @@ function buildModule(mod,MAX,accent,accentLight){
         var cardFoot=el("div",{className:"card-foot-tap",style:{background:"#fff"},onClick:function(){S.expandedGroup=open?null:g.id;S.expandedEdit=null;render();}});
         cardFoot.appendChild(el("span",{style:{fontSize:"12px",fontWeight:"600",padding:"3px 8px",borderRadius:"10px",background:pb,color:pc}},ac+"/"+MAX+(rc>0?" (+"+rc+"📌)":"")));
         var plekDiv=el("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"1px",flex:"1",marginLeft:"6px"}});
-        plekDiv.appendChild(el("span",{style:{fontSize:"11px",color:lc,fontWeight:"600",textAlign:"right"}},st==="full"?"Vol":plekLabel(ac,sc,rc,MAX)));
-        if(sc>0)plekDiv.appendChild(el("span",{style:{fontSize:"10px",color:G.orange}},"⏸ "+sc+" gestopt"));
+        var pp=plekParts(ac,sc,rc,MAX);
+        if(st==="full")plekDiv.appendChild(el("span",{style:{fontSize:"11px",color:G.grayText,fontWeight:"600"}},"Vol"));
+        if(pp.perm>0)plekDiv.appendChild(el("span",{style:{fontSize:"11px",color:G.successGreen,fontWeight:"600",textAlign:"right"}},txtVast(pp.perm)));
+        if(pp.tmp>0)plekDiv.appendChild(el("span",{title:"Vrij zolang "+(pp.tmp===1?"een deelnemer":"deelnemers")+" gepauzeerd "+(pp.tmp===1?"is":"zijn"),style:{fontSize:"11px",color:G.tempText,fontWeight:"600",textAlign:"right"}},"⏸ "+txtTijd(pp.tmp)));
         cardFoot.appendChild(plekDiv);
         cardFoot.appendChild(el("span",{style:{fontSize:"14px",color:G.textMuted,marginLeft:"6px"}},open?"▲":"▼"));
         card.appendChild(cardFoot);
@@ -658,23 +668,23 @@ function buildModule(mod,MAX,accent,accentLight){
               rRow.appendChild(el("span",{style:{fontSize:"13px"}},"📌"));
               rRow.appendChild(el("span",{style:{flex:"1",fontSize:"13px",fontWeight:"500",color:G.blue,fontStyle:"italic",minWidth:"80px"}},m.naam+(m.reservedFrom?" (v.a. "+fmtDate(m.reservedFrom)+")":"")));
               rRow.appendChild(el("span",{style:{fontSize:"10px",padding:"2px 8px",borderRadius:"8px",background:G.blueLight,color:G.blue,fontWeight:"600"}},"Gereserveerd"));
-              rRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",padding:"0 4px",minHeight:"34px"},onClick:function(){g.members=g.members.filter(function(x){return x.id!==m.id;});render();}},"✕"));
+              rRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",padding:"0 4px",minHeight:"34px"},onClick:function(){if(!confirm("Reservering van "+m.naam+" verwijderen?"))return;g.members=g.members.filter(function(x){return x.id!==m.id;});render();}},"✕"));
               panel.appendChild(rRow);
               return;
             }
-            var mRow=el("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"7px 0",borderBottom:"1px solid "+G.border,opacity:m.stopped?"0.65":"1",flexWrap:"wrap"}});
-            mRow.appendChild(el("span",{style:{flex:"1",fontSize:"13px",fontWeight:"500",textDecoration:m.stopped?"line-through":"none",minWidth:"80px"}},m.naam));
+            var mRow=el("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"7px 0",borderBottom:"1px solid "+G.border,flexWrap:"wrap"}});
+            mRow.appendChild(el("span",{style:{flex:"1",fontSize:"13px",fontWeight:"500",fontStyle:m.stopped?"italic":"normal",color:m.stopped?G.textMuted:G.text,minWidth:"80px"}},[m.naam,m.stopped?el("span",{style:{marginLeft:"6px",fontSize:"10px",fontStyle:"normal",padding:"1px 7px",borderRadius:"8px",background:G.tempBg,color:G.tempText,border:"1px solid "+G.tempBorder,fontWeight:"600",whiteSpace:"nowrap"}},"⏸ Gepauzeerd"+(m.stopUntil&&!m.stopUnknown?" t/m "+fmtDate(m.stopUntil):"")):null]));
             mRow.appendChild(el("button",{style:bStyle(m.betaling||"incasso"),onClick:function(){var c={incasso:"contant",contant:"geen",geen:"incasso"};m.betaling=c[m.betaling||"incasso"];render();}},BLAB[m.betaling||"incasso"]));
-            mRow.appendChild(el("button",{style:{fontSize:"11px",padding:"3px 7px",borderRadius:"8px",cursor:"pointer",background:m.stopped?G.orangeLight:G.grayLight,color:m.stopped?G.orange:G.textMuted,border:"1px solid "+(m.stopped?G.orange:G.border),fontWeight:"600",minHeight:"30px"},onClick:function(){m.stopped=!m.stopped;if(!m.stopped){m.stopReason="";m.stopUntil="";m.stopUnknown=false;}render();}},"⏸"));
-            mRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",padding:"0 4px",minHeight:"34px"},onClick:function(){g.members=g.members.filter(function(x){return x.id!==m.id;});render();}},"✕"));
+            mRow.appendChild(el("button",{style:{fontSize:"11px",padding:"3px 7px",borderRadius:"8px",cursor:"pointer",background:m.stopped?G.orangeLight:G.grayLight,color:m.stopped?G.orange:G.textMuted,border:"1px solid "+(m.stopped?G.orange:G.border),fontWeight:"600",minHeight:"30px"},onClick:function(){m.stopped=!m.stopped;if(!m.stopped){m.stopReason="";m.stopUntil="";m.stopUnknown=false;}render();},title:m.stopped?"Pauze beëindigen":"Tijdelijk pauzeren"},m.stopped?"▶ Hervat":"⏸ Pauzeer"));
+            mRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",padding:"0 4px",minHeight:"34px"},title:"Definitief uit de groep",onClick:function(){if(!confirm(m.naam+" definitief uit de groep halen?\n\nGaat het om een tijdelijke stop? Gebruik dan '⏸ Pauzeer'."))return;g.members=g.members.filter(function(x){return x.id!==m.id;});render();}},"✕"));
             panel.appendChild(mRow);
 
             if(m.stopped){
               var sp=el("div",{style:{background:G.orangeLight,border:"1px solid #f0c090",borderRadius:"10px",padding:"8px 10px",margin:"2px 0 4px"}});
-              sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px"}},"REDEN *"));
+              sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px"}},"REDEN PAUZE *"));
               sp.appendChild(el("input",{style:inp({width:"100%",padding:"5px 8px",border:"1px solid "+(m.stopReason&&m.stopReason.trim()?"#f0c090":G.red)}),placeholder:"verplicht",value:m.stopReason||"",onInput:function(e){m.stopReason=e.target.value;render();}}));
               if(!m.stopReason||!m.stopReason.trim())sp.appendChild(el("div",{style:{fontSize:"11px",color:G.red,marginTop:"2px"}},"Verplicht"));
-              sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px",marginTop:"6px"}},"TOT WANNEER *"));
+              sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px",marginTop:"6px"}},"GEPAUZEERD TOT *"));
               if(!m.stopUnknown){
                 sp.appendChild(el("input",{type:"date",style:inp({width:"100%",padding:"5px 8px",marginBottom:"4px",border:"1px solid "+(!m.stopUnknown&&!m.stopUntil?G.red:"#f0c090")}),value:m.stopUntil||"",onChange:function(e){m.stopUntil=e.target.value;render();}}));
               }
@@ -685,7 +695,7 @@ function buildModule(mod,MAX,accent,accentLight){
               ukLabel.appendChild(document.createTextNode("Onbekend tot wanneer"));
               sp.appendChild(ukLabel);
               if(!m.stopUnknown&&!m.stopUntil)sp.appendChild(el("div",{style:{fontSize:"11px",color:G.red,marginTop:"2px"}},"Verplicht (of vink 'onbekend' aan)"));
-              if(m.stopUntil&&!m.stopUnknown)sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,marginTop:"4px"}},"t/m "+fmtDate(m.stopUntil)));
+              if(m.stopUntil&&!m.stopUnknown)sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,marginTop:"4px"}},"Gepauzeerd t/m "+fmtDate(m.stopUntil)));
               panel.appendChild(sp);
             }
           });
