@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-09-29.1 -->
+<!-- APP_VERSION: 2026-09-29.2 -->
 <html lang="nl">
 <head>
   <script>
     /* ── VERSIECHECK: altijd de nieuwste versie laden ──
        Verhoog APP_VERSION bij élke wijziging, zowel hier als in de HTML-comment bovenaan. */
-    var APP_VERSION = "2026-09-29.1";
+    var APP_VERSION = "2026-09-29.2";
     (function () {
       try {
         if (location.protocol === "file:") return;
@@ -279,10 +279,18 @@ async function dbGet(key){
   }catch(e){return null;}
 }
 async function dbSet(key,value){
+  var H={"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json"};
   try{
-    await fetch(SUPABASE_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(key),{method:"DELETE",headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY}});
-    await fetch(SUPABASE_URL+"/rest/v1/storage",{method:"POST",headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({key:key,value:value})});
-    return true;
+    // 1) Probeer een echte upsert (één stap, geen moment waarop de data weg is)
+    var up=await fetch(SUPABASE_URL+"/rest/v1/storage?on_conflict=key",{method:"POST",headers:Object.assign({"Prefer":"resolution=merge-duplicates,return=minimal"},H),body:JSON.stringify({key:key,value:value})});
+    if(up.ok)return true;
+    // 2) Fallback als 'key' geen unieke kolom is: bijwerken, en alleen invoegen als er nog niets was
+    var pa=await fetch(SUPABASE_URL+"/rest/v1/storage?key=eq."+encodeURIComponent(key),{method:"PATCH",headers:Object.assign({"Prefer":"return=representation"},H),body:JSON.stringify({value:value})});
+    if(!pa.ok)return false;
+    var rows=await pa.json();
+    if(rows&&rows.length>0)return true;
+    var ins=await fetch(SUPABASE_URL+"/rest/v1/storage",{method:"POST",headers:Object.assign({"Prefer":"return=minimal"},H),body:JSON.stringify({key:key,value:value})});
+    return ins.ok;
   }catch(e){return false;}
 }
 
@@ -356,7 +364,52 @@ var STATE={
   ba:{groups:null,waitlist:null,loading:true,saveStatus:"",tab:"groups",filterFree:false,expandedGroup:null,expandedEdit:null,newMember:{naam:"",betaling:"incasso"},editColleague:"",editNiveau:"",wlForm:{naam:"",availability:{},referrer:"",referrerOther:"",note:""},wlEditId:null,showAddGroup:false,newGroup:{day:"Maandag",time:"",colleague:"",niveau:""},reserveForm:{}}
 };
 
-function render(){document.getElementById("root").innerHTML="";document.getElementById("root").appendChild(buildApp());}
+function render(){document.getElementById("root").innerHTML="";document.getElementById("root").appendChild(buildApp());scheduleAutosave();}
+
+/* ── AUTOSAVE ──
+   Na elke render wordt gekeken of groepen/wachtlijst veranderd zijn t.o.v. de laatst opgeslagen stand.
+   Zo ja: na 1 seconde zonder nieuwe wijziging wordt automatisch opgeslagen. */
+var AUTOSAVE_DELAY=1000;
+var LAST_SAVED={ft:null,ba:null},SAVE_TIMERS={},SAVING={},PENDING={},RETRY_TIMERS={};
+function modKeys(mod){return mod==="ft"?{g:KEYS.ftg,w:KEYS.ftw}:{g:KEYS.bag,w:KEYS.baw};}
+function snapshot(mod){return JSON.stringify({g:STATE[mod].groups,w:STATE[mod].waitlist});}
+function hasUnsaved(mod){return !STATE[mod].loading&&(SAVING[mod]||snapshot(mod)!==LAST_SAVED[mod]);}
+
+function scheduleAutosave(){
+  ["ft","ba"].forEach(function(mod){
+    if(STATE[mod].loading)return;
+    if(snapshot(mod)===LAST_SAVED[mod])return;
+    clearTimeout(SAVE_TIMERS[mod]);
+    SAVE_TIMERS[mod]=setTimeout(function(){saveModule(mod);},AUTOSAVE_DELAY);
+  });
+}
+
+async function saveModule(mod){
+  if(SAVING[mod]){PENDING[mod]=true;return;}
+  clearTimeout(RETRY_TIMERS[mod]);
+  var snap=snapshot(mod);
+  if(snap===LAST_SAVED[mod])return;
+  SAVING[mod]=true;
+  LAST_SAVED[mod]=snap;
+  STATE[mod].saveStatus="saving";render();
+  var data=JSON.parse(snap),k=modKeys(mod);
+  var ok1=await dbSet(k.g,JSON.stringify(data.g));
+  var ok2=await dbSet(k.w,JSON.stringify(data.w));
+  SAVING[mod]=false;
+  if(ok1&&ok2){
+    STATE[mod].saveStatus="saved";
+  }else{
+    LAST_SAVED[mod]=null; // markeer als niet-opgeslagen, zodat het opnieuw geprobeerd wordt
+    STATE[mod].saveStatus="error";
+    RETRY_TIMERS[mod]=setTimeout(function(){saveModule(mod);},5000);
+  }
+  if(PENDING[mod]){PENDING[mod]=false;}
+  render();
+}
+
+window.addEventListener("beforeunload",function(e){
+  if(hasUnsaved("ft")||hasUnsaved("ba")){e.preventDefault();e.returnValue="";}
+});
 
 async function loadModule(mod,gKey,wKey,init){
   try{
@@ -364,16 +417,9 @@ async function loadModule(mod,gKey,wKey,init){
     STATE[mod].groups=gv?mergeG(JSON.parse(gv),init):init.slice();
     STATE[mod].waitlist=wv?JSON.parse(wv):[];
   }catch(e){STATE[mod].groups=init.slice();STATE[mod].waitlist=[];}
-  STATE[mod].loading=false;render();
-}
-
-async function saveModule(mod,gKey,wKey){
-  STATE[mod].saveStatus="Opslaan…";render();
-  var ok1=await dbSet(gKey,JSON.stringify(STATE[mod].groups));
-  var ok2=await dbSet(wKey,JSON.stringify(STATE[mod].waitlist));
-  STATE[mod].saveStatus=ok1&&ok2?"✓ Opgeslagen":"⚠ Opslaan mislukt";
+  STATE[mod].loading=false;
+  LAST_SAVED[mod]=snapshot(mod); // geladen stand geldt als opgeslagen
   render();
-  setTimeout(function(){STATE[mod].saveStatus="";render();},2500);
 }
 
 function el(tag,attrs,children){
@@ -440,13 +486,20 @@ function buildModule(mod,MAX,accent,accentLight){
   var tempN=notifs.filter(function(n){return n.onlyTemp;});
 
   var statText=totalActive+" actief"+(totalStopped>0?" · "+totalStopped+" gestopt":"")+(totalReserved>0?" · "+totalReserved+" gereserveerd":"")+" · "+waitlist.length+" wachtlijst";
-  var saveBtn=el("button",{className:"btn-primary",style:{padding:"7px 16px",borderRadius:"12px",fontSize:"13px"},onClick:function(){saveModule(mod,mod==="ft"?KEYS.ftg:KEYS.bag,mod==="ft"?KEYS.ftw:KEYS.baw);}},"💾 Opslaan");
+  var dirty=snapshot(mod)!==LAST_SAVED[mod];
+  var stState=S.saveStatus==="saving"?"saving":S.saveStatus==="error"?"error":dirty?"dirty":"saved";
+  var stMap={
+    saving:{t:"⏳ Opslaan…",bg:"#fff",c:accent,b:G.border},
+    dirty:{t:"✎ Wijzigingen…",bg:"#fff",c:G.textMuted,b:G.border},
+    saved:{t:"✓ Automatisch opgeslagen",bg:G.successLight,c:G.successGreen,b:G.successBorder},
+    error:{t:"⚠ Opslaan mislukt — probeert opnieuw",bg:G.redLight,c:G.red,b:G.red}
+  }[stState];
+  var saveBtn=el("span",{style:{padding:"5px 12px",borderRadius:"999px",fontSize:"12px",fontWeight:"600",background:stMap.bg,color:stMap.c,border:"1px solid "+stMap.b,whiteSpace:"nowrap"}},stMap.t);
 
   var statBarWrap=el("div",{style:{padding:"10px 16px",background:accentLight,borderBottom:"1px solid "+G.border}});
   var statBar=el("div",{className:"stat-bar"});
   statBar.appendChild(el("span",{style:{fontSize:"13px",color:accent,fontWeight:"600"}},statText));
   var statBtns=el("div",{className:"stat-bar-btns",style:{display:"flex",alignItems:"center",gap:"8px"}});
-  if(S.saveStatus)statBtns.appendChild(el("span",{style:{fontSize:"12px",color:accent,fontStyle:"italic"}},S.saveStatus));
   statBtns.appendChild(saveBtn);
   statBar.appendChild(statBtns);
   statBarWrap.appendChild(statBar);
