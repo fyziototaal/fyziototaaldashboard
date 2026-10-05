@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- APP_VERSION: 2026-09-15.3 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-10-05.1 (ophogen bij elke update — hier én in de constante hieronder) -->
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -19,7 +19,7 @@
 // versie beschikbaar is. Na die ene herlaad komen de versies
 // overeen en gebeurt er niets meer — geen oneindige lus.
 (function () {
-  var APP_VERSION = "2026-09-15.3";
+  var APP_VERSION = "2026-10-05.1";
   try {
     fetch(location.pathname + "?_fresh=" + Date.now(), { cache: "no-store" })
       .then(function (res) { return res.text(); })
@@ -107,7 +107,7 @@ if (!window.storage) {
 "use strict";
 var STORAGE_KEY = "fyzio-verlof-v1";
 // Moet gelijk blijven aan de APP_VERSION in de <script> bovenaan de <head>.
-var APP_VERSION_DISPLAY = "2026-09-15.3";
+var APP_VERSION_DISPLAY = "2026-10-05.1";
 var h = React.createElement;
 var useState = React.useState, useEffect = React.useEffect, useCallback = React.useCallback, useMemo = React.useMemo, useRef = React.useRef;
 
@@ -798,6 +798,34 @@ function NotifyButton(props) {
   );
 }
 
+// Melding richting de medewerker zodra de beheerder een aanvraag goedkeurt.
+// Net als bij "Mail Lars" is dit geen stille, volautomatische e-mail (deze
+// tool heeft geen eigen mailserver) maar een kant-en-klare, met één klik te
+// versturen melding — zelfde Gmail-compose-patroon, nu richting de medewerker.
+function ApprovalNotifyButton(props) {
+  var emp = props.emp, req = props.req;
+  var _copied = useState(false), copied = _copied[0], setCopied = _copied[1];
+  var typeLabel = req.type === "verlof" ? "verlofaanvraag" : "overurenmelding";
+  var tekst = "Hoi " + emp.name + ",\n\nJe " + typeLabel + " voor " + fmtPeriode(req.startDate, req.endDate) +
+    " (" + fmtNum(req.hours) + " uur" + (req.days ? ", " + fmtNum(req.days) + " dag(en)" : "") + ") is goedgekeurd." +
+    (req.adminNote ? "\n\nToelichting: " + req.adminNote : "") +
+    "\n\nGroet";
+  var subject = "Je " + typeLabel + " is goedgekeurd";
+  var href = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(emp.email) +
+    "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(tekst);
+  var mailtoHref = "mailto:" + emp.email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(tekst);
+
+  function copy() {
+    navigator.clipboard.writeText(tekst).then(function () { setCopied(true); }).catch(function () { setCopied(false); });
+  }
+
+  return h("div", { className: "flex flex-wrap items-center gap-3" },
+    h("a", { className: "rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white no-underline hover:bg-emerald-700", href: href, target: "_blank", rel: "noreferrer", onClick: copy }, "📧 Mail " + emp.name),
+    h("a", { className: "text-xs font-medium text-emerald-700 hover:underline", href: mailtoHref }, "eigen mailapp"),
+    h("button", { className: "text-xs font-medium text-emerald-700 hover:underline", onClick: copy }, copied ? "✓ gekopieerd" : "kopieer tekst")
+  );
+}
+
 function OverurenForm(props) {
   var user = props.user, data = props.data, persist = props.persist, done = props.done;
   var _date = useState(todayISO()), date = _date[0], setDate = _date[1];
@@ -884,6 +912,7 @@ function AddOnBehalfForm(props) {
   var _note = useState(""), note = _note[0], setNote = _note[1];
   var _direct = useState(true), direct = _direct[0], setDirect = _direct[1];
   var _msg = useState(null), msg = _msg[0], setMsg = _msg[1];
+  var _notifyInfo = useState(null), notifyInfo = _notifyInfo[0], setNotifyInfo = _notifyInfo[1];
 
   var employee = data.employees.find(function (e) { return e.id === empId; });
   var berekening = useMemo(function () {
@@ -911,6 +940,7 @@ function AddOnBehalfForm(props) {
     persist(Object.assign({}, data, { requests: data.requests.concat([req]) }));
     setNote("");
     setMsg({ ok: true, text: (type === "verlof" ? "Verlof" : "Overuren") + " voor " + (employee ? employee.name : "") + " " + (direct ? "toegevoegd en direct goedgekeurd." : "toegevoegd, staat nu in behandeling.") });
+    setNotifyInfo(direct ? { req: req, emp: employee } : null);
   }
 
   return h(Card, null,
@@ -949,6 +979,8 @@ function AddOnBehalfForm(props) {
       "Direct goedkeuren (telt meteen mee in het saldo en de kalender)"
     ),
     msg && h("p", { className: "mt-3 text-sm " + (msg.ok ? "text-emerald-700" : "text-rose-600") }, msg.text),
+    notifyInfo && notifyInfo.emp && notifyInfo.emp.email && h("div", { className: "mt-3" }, h(ApprovalNotifyButton, { emp: notifyInfo.emp, req: notifyInfo.req })),
+    notifyInfo && notifyInfo.emp && !notifyInfo.emp.email && h("p", { className: "mt-3 text-xs text-slate-500" }, "Er is nog geen e-mailadres bekend voor " + notifyInfo.emp.name + " — voeg dit toe bij het tabblad Team om een melding te kunnen versturen."),
     h("button", { className: BTN_PRIMARY + " mt-4", onClick: submit }, "Toevoegen")
   );
 }
@@ -1089,18 +1121,41 @@ function SaldoOverzicht(props) {
 function Goedkeuren(props) {
   var user = props.user, data = props.data, persist = props.persist;
   var _notes = useState({}), notes = _notes[0], setNotes = _notes[1];
+  var _notifyInfo = useState(null), notifyInfo = _notifyInfo[0], setNotifyInfo = _notifyInfo[1];
   var pending = data.requests.filter(function (r) { return r.status === "pending"; })
     .sort(function (a, b) { return a.createdAt.localeCompare(b.createdAt); });
 
   function decide(req, status) {
-    var requests = data.requests.map(function (r) {
-      return r.id === req.id ? Object.assign({}, r, { status: status, adminNote: (notes[req.id] || "").trim(), decidedBy: user.name, decidedAt: new Date().toISOString() }) : r;
-    });
+    var decidedAt = new Date().toISOString();
+    var updatedReq = Object.assign({}, req, { status: status, adminNote: (notes[req.id] || "").trim(), decidedBy: user.name, decidedAt: decidedAt });
+    var requests = data.requests.map(function (r) { return r.id === req.id ? updatedReq : r; });
     persist(Object.assign({}, data, { requests: requests }));
+    if (status === "approved") {
+      var emp = data.employees.find(function (e) { return e.id === req.employeeId; });
+      setNotifyInfo({ req: updatedReq, emp: emp });
+    }
   }
   var name = function (id) { var e = data.employees.find(function (x) { return x.id === id; }); return e ? e.name : "Onbekend"; };
 
   return h("div", { className: "space-y-4" },
+    notifyInfo && h(Card, { className: "border-2 border-emerald-200 bg-emerald-50/50" },
+      h("div", { className: "flex flex-wrap items-start justify-between gap-3" },
+        h("div", null,
+          h("p", { className: "text-sm font-semibold text-emerald-800" },
+            "✅ Goedgekeurd: " + (notifyInfo.emp ? notifyInfo.emp.name : "Onbekend") + " · " + fmtPeriode(notifyInfo.req.startDate, notifyInfo.req.endDate)
+          ),
+          h("p", { className: "mt-1 text-xs text-emerald-700" },
+            notifyInfo.emp && notifyInfo.emp.email
+              ? "Laat " + notifyInfo.emp.name + " direct weten dat de aanvraag is goedgekeurd:"
+              : (notifyInfo.emp
+                  ? "Er is nog geen e-mailadres bekend voor " + notifyInfo.emp.name + " — voeg dit toe bij het tabblad Team om een melding te kunnen versturen."
+                  : "")
+          ),
+          notifyInfo.emp && notifyInfo.emp.email && h("div", { className: "mt-2" }, h(ApprovalNotifyButton, { emp: notifyInfo.emp, req: notifyInfo.req }))
+        ),
+        h("button", { className: "text-xs text-slate-400 hover:text-slate-600 hover:underline", onClick: function () { setNotifyInfo(null); } }, "Sluiten")
+      )
+    ),
     h("h3", { className: "text-base font-bold text-slate-900" }, "Openstaande aanvragen"),
     pending.length === 0
       ? h(Card, null, h("p", { className: "text-sm text-slate-500" }, "Alles is bijgewerkt: er staan geen aanvragen open. 🎉"))
@@ -1314,6 +1369,7 @@ function Team(props) {
   var _newPin = useState(""), newPin = _newPin[0], setNewPinStr = _newPin[1];
   var _delId = useState(null), delId = _delId[0], setDelId = _delId[1];
   var _baseEdits = useState({}), baseEdits = _baseEdits[0], setBaseEdits = _baseEdits[1];
+  var _empEmailEdits = useState({}), empEmailEdits = _empEmailEdits[0], setEmpEmailEdits = _empEmailEdits[1];
   var _schedEdit = useState(null), schedEditId = _schedEdit[0], setSchedEditId = _schedEdit[1];
   var _email = useState((data.settings && data.settings.notifyEmail) || ""), email = _email[0], setEmail = _email[1];
   var _notifyName = useState((data.settings && data.settings.notifyName) || ""), notifyNameInput = _notifyName[0], setNotifyNameInput = _notifyName[1];
@@ -1328,7 +1384,7 @@ function Team(props) {
     if (!trimmed) return;
     var schedule = knownScheduleFor(trimmed) || defaultSchedule();
     var baseSaldo = newBase.trim() ? Number(newBase) || 0 : suggestedAnnualLeaveHours(schedule);
-    var emp = { id: uid(), name: trimmed, pin: "0000", isAdmin: newAdmin, baseSaldo: baseSaldo, schedule: schedule };
+    var emp = { id: uid(), name: trimmed, pin: "0000", isAdmin: newAdmin, baseSaldo: baseSaldo, schedule: schedule, email: "" };
     persist(Object.assign({}, data, { employees: data.employees.concat([emp]) }));
     setNewName(""); setNewAdmin(false); setNewBase("");
   }
@@ -1351,6 +1407,7 @@ function Team(props) {
           h("thead", null,
             h("tr", { className: "border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500" },
               h("th", { className: "px-4 py-3" }, "Naam"),
+              h("th", { className: "px-4 py-3" }, "E-mail"),
               h("th", { className: "px-4 py-3" }, "Basissaldo (uren/jaar)"),
               h("th", { className: "px-4 py-3" }, "Huidig saldo"),
               h("th", { className: "px-4 py-3" }, "Beheerder"),
@@ -1366,6 +1423,24 @@ function Team(props) {
               return h(React.Fragment, { key: emp.id },
                 h("tr", null,
                   h("td", { className: "px-4 py-2.5 font-medium text-slate-800" }, emp.name),
+                  h("td", { className: "px-4 py-2.5" },
+                    h("div", { className: "flex items-center gap-2" },
+                      h("input", {
+                        className: INPUT_CLS + " !w-44 !py-1", type: "email",
+                        value: empEmailEdits[emp.id] !== undefined ? empEmailEdits[emp.id] : (emp.email || ""),
+                        placeholder: "naam@fyziototaal.nl",
+                        onChange: function (e) { setEmpEmailEdits(Object.assign({}, empEmailEdits, { [emp.id]: e.target.value })); }
+                      }),
+                      empEmailEdits[emp.id] !== undefined && empEmailEdits[emp.id].trim() !== (emp.email || "") &&
+                        h("button", {
+                          className: "text-xs font-semibold text-[#82176D] hover:underline",
+                          onClick: function () {
+                            updateEmployee(emp.id, { email: empEmailEdits[emp.id].trim() });
+                            var next = Object.assign({}, empEmailEdits); delete next[emp.id]; setEmpEmailEdits(next);
+                          }
+                        }, "Opslaan")
+                    )
+                  ),
                   h("td", { className: "px-4 py-2.5" },
                     h("div", { className: "flex items-center gap-2" },
                       h("input", {
@@ -1424,7 +1499,7 @@ function Team(props) {
                   )
                 ),
                 schedEditId === emp.id && h("tr", null,
-                  h("td", { colSpan: 7, className: "bg-slate-50 px-4 py-3" },
+                  h("td", { colSpan: 8, className: "bg-slate-50 px-4 py-3" },
                     h(RoosterEditor, {
                       employee: emp,
                       onSave: function (sched) { updateEmployee(emp.id, { schedule: sched }); setSchedEditId(null); },
