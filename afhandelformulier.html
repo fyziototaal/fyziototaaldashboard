@@ -1,8 +1,35 @@
+<!-- APP_VERSION: 2026-10-05.1 -->
 <!doctype html>
 <html lang="nl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>
+  // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
+  const APP_VERSION = "2026-10-05.1";
+  (function(){
+    var params = new URLSearchParams(location.search);
+    var alreadyReloaded = params.has("_v");
+    fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
+      .then(function(r){ return r.ok ? r.text() : null; })
+      .then(function(html){
+        if(!html) return;
+        var m = html.match(/<!--\s*APP_VERSION:\s*([^\s]+)\s*-->/);
+        if(!m || m[1] === APP_VERSION) return;
+        // Maximaal één automatische herlaad, zodat er nooit een lus ontstaat
+        // (bv. als GitHub Pages de nieuwe versie nog niet overal uitserveert).
+        if(alreadyReloaded){
+          console.warn("Versiecheck: live " + m[1] + ", geladen " + APP_VERSION + " — niet opnieuw herladen.");
+          return;
+        }
+        location.replace(location.pathname + "?_v=" + Date.now() + location.hash);
+      })
+      .catch(function(){ /* offline of fout: gewoon doorgaan met de geladen versie */ });
+  })();
+</script>
 <title>Afhandelformulier Fyzio Totaal</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
@@ -355,7 +382,7 @@
   alter publication supabase_realtime add table afhandelformulier_team;
   alter publication supabase_realtime add table afhandelformulier_submissions;
 
-  3. NIEUW in v1.1.0 — eenmalig draaien (voor aanpassingen-historie):
+  3. NIEUW in versie 2026-10-05.1 — eenmalig draaien (voor aanpassingen-historie):
 
   alter table afhandelformulier_submissions add column if not exists edits jsonb default '[]';
   alter table afhandelformulier_submissions add column if not exists edited_at bigint;
@@ -637,7 +664,7 @@
 
 </div>
 
-<footer class="app-footer"><strong>Fyzio Totaal</strong> &middot; Afhandelformulier &middot; v1.1.0</footer>
+<footer class="app-footer"><strong>Fyzio Totaal</strong> &middot; Afhandelformulier &middot; versie <span class="mono" id="app-version"></span></footer>
 
 </div><!-- /app-shell -->
 
@@ -1133,7 +1160,7 @@
     if(error){
       const missingCols = /edits|edited_at/.test(error.message || "");
       statusEl.textContent = missingCols
-        ? "Database mist de kolommen voor aanpassingen — draai de SQL-update uit v1.1.0 (zie bovenin het bestand)."
+        ? "Database mist de kolommen voor aanpassingen — draai de SQL-update voor aanpassingen (zie bovenin het bestand)."
         : "Opslaan mislukt, probeer het nog eens.";
       statusEl.style.color = "var(--critical)";
       return;
@@ -1868,6 +1895,7 @@
     }
   });
 
+  document.getElementById("app-version").textContent = APP_VERSION;
   populateLoginSelect();
   resetForm();
   populateAdminMonths();
