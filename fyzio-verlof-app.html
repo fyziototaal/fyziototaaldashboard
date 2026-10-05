@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- APP_VERSION: 2026-10-05.2 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-10-05.4 (ophogen bij elke update — hier én in de constante hieronder) -->
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -19,7 +19,7 @@
 // versie beschikbaar is. Na die ene herlaad komen de versies
 // overeen en gebeurt er niets meer — geen oneindige lus.
 (function () {
-  var APP_VERSION = "2026-10-05.2";
+  var APP_VERSION = "2026-10-05.4";
   try {
     fetch(location.pathname + "?_fresh=" + Date.now(), { cache: "no-store" })
       .then(function (res) { return res.text(); })
@@ -107,7 +107,7 @@ if (!window.storage) {
 "use strict";
 var STORAGE_KEY = "fyzio-verlof-v1";
 // Moet gelijk blijven aan de APP_VERSION in de <script> bovenaan de <head>.
-var APP_VERSION_DISPLAY = "2026-10-05.2";
+var APP_VERSION_DISPLAY = "2026-10-05.4";
 var h = React.createElement;
 var useState = React.useState, useEffect = React.useEffect, useCallback = React.useCallback, useMemo = React.useMemo, useRef = React.useRef;
 
@@ -727,8 +727,8 @@ function VerlofForm(props) {
   if (submitted) {
     return h(Card, { className: "mx-auto max-w-md text-center" },
       h("p", { className: "text-2xl" }, "✅"),
-      h("h3", { className: "mt-2 text-base font-bold text-slate-900" }, "Aanvraag ingediend"),
-      h("p", { className: "mt-1 text-sm text-slate-500" }, "Je aanvraag is opgeslagen. Bevestig hem nog even via de knop hieronder, zodat " + ((notifyName || "").trim() || "Lars") + " hem ziet."),
+      h("h3", { className: "mt-2 text-base font-bold text-slate-900" }, "Aanvraag is opgeslagen"),
+      h("p", { className: "mt-1 text-sm text-slate-500" }, "Bevestig hem nog even via de knop hieronder, zodat " + ((notifyName || "").trim() || "Lars") + " hem ziet."),
       notifyEmail
         ? h(NotifyButton, { email: notifyEmail, name: notifyName, user: user, req: submitted, done: done })
         : h("button", { className: BTN_PRIMARY + " mt-5", onClick: done }, "Naar mijn overzicht")
@@ -853,7 +853,7 @@ function OverurenForm(props) {
   if (submitted) {
     return h(Card, { className: "mx-auto max-w-md text-center" },
       h("p", { className: "text-2xl" }, "💪"),
-      h("h3", { className: "mt-2 text-base font-bold text-slate-900" }, "Overuren doorgegeven"),
+      h("h3", { className: "mt-2 text-base font-bold text-slate-900" }, "Overuren zijn opgeslagen"),
       h("p", { className: "mt-1 text-sm text-slate-500" }, "Na goedkeuring komen deze uren bij je verlofsaldo (tijd voor tijd)."),
       notifyEmail
         ? h(NotifyButton, { email: notifyEmail, name: notifyName, user: user, req: submitted, done: done })
