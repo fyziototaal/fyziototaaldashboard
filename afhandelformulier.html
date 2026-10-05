@@ -133,6 +133,7 @@
     width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--border);
     background:var(--bg); color:var(--text); font:inherit;
   }
+  select:disabled{ opacity:0.7; cursor:not-allowed; }
   select:focus, input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .field{ margin-bottom:16px; }
   fieldset{ border:none; padding:0; margin:0 0 16px; }
@@ -150,6 +151,8 @@
   .btn.secondary:hover{ background:var(--surface-2); box-shadow:none; }
   .btn.ghost{ background:transparent; color:var(--accent-strong); padding:6px 10px; box-shadow:none; }
   .btn.ghost:hover{ background:var(--accent-soft); box-shadow:none; }
+  .btn.danger{ background:var(--critical-soft); color:var(--critical); box-shadow:none; }
+  .btn.danger:hover{ background:var(--critical-soft); filter:brightness(0.96); box-shadow:none; }
   .btn.small{ padding:6px 10px; font-size:12px; }
   .btn:disabled{ opacity:0.5; cursor:not-allowed; }
 
@@ -196,13 +199,15 @@
   th{ text-align:left; color:var(--text-muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; padding:8px 10px; border-bottom:1px solid var(--border); }
   td{ padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
   tr:last-child td{ border-bottom:none; }
+  tr.edit-detail-row td{ background:var(--surface-2); }
   .table-wrap{ overflow-x:auto; }
 
-  .pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:12px; font-weight:600; }
+  .pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:12px; font-weight:600; white-space:nowrap; }
   .pill.good{ background:var(--good-soft); color:var(--good); }
   .pill.warn{ background:var(--warning-soft); color:var(--warning); }
   .pill.bad{ background:var(--critical-soft); color:var(--critical); }
   .pill.neutral{ background:var(--surface-2); color:var(--text-muted); }
+  button.pill{ border:none; cursor:pointer; font-family:inherit; }
 
   .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
   @media (max-width:800px){ .kpis{ grid-template-columns:repeat(2,1fr); } }
@@ -214,8 +219,48 @@
   .bar-row{ display:grid; grid-template-columns:140px 1fr 56px; align-items:center; gap:10px; margin-bottom:10px; }
   .bar-track{ background:var(--surface-2); border-radius:6px; height:14px; overflow:hidden; }
   .bar-fill{ height:100%; background:var(--accent); border-radius:6px; }
+  .bar-fill.muted{ background:var(--text-muted); opacity:0.5; }
   .bar-label{ font-size:12px; font-weight:600; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .bar-value{ font-size:12px; font-weight:700; text-align:right; }
+
+  /* Uitklapbare uren per collega */
+  .person-list{ display:flex; flex-direction:column; gap:6px; }
+  details.person-item{ border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  details.person-item[open]{ background:var(--surface-2); }
+  details.person-item > summary{
+    list-style:none; cursor:pointer; display:grid; grid-template-columns:12px minmax(64px,110px) 1fr 52px;
+    gap:10px; align-items:center; padding:9px 12px; border-radius:10px;
+  }
+  details.person-item > summary::-webkit-details-marker{ display:none; }
+  details.person-item > summary:hover{ background:var(--surface-2); }
+  details.person-item > summary .bar-label{ color:var(--text); }
+  .chev{ width:0; height:0; border-left:6px solid var(--text-muted); border-top:4px solid transparent; border-bottom:4px solid transparent; transition:transform 0.15s ease; }
+  details[open] > summary .chev{ transform:rotate(90deg); }
+  .person-body{ padding:4px 12px 12px 34px; }
+  .mini-row{ display:grid; grid-template-columns:minmax(0,1fr) 70px 46px; gap:8px; align-items:center; font-size:12px; margin-bottom:6px; }
+  .mini-row .mini-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mini-row .bar-track{ height:8px; }
+  .mini-sub{ font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700; margin:10px 0 6px; }
+
+  /* Aanpassingen */
+  .edit-banner{
+    display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    padding:12px 14px; border-radius:10px; background:var(--warning-soft); color:var(--warning);
+    font-weight:600; font-size:13px; margin-bottom:16px;
+  }
+  .change-entry{ border-left:3px solid var(--warning); padding:4px 0 4px 10px; margin-bottom:12px; }
+  .change-entry:last-child{ margin-bottom:0; }
+  .change-meta{ font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:4px; }
+  .change-entry ul{ margin:0; padding-left:16px; font-size:12.5px; }
+  .change-entry li{ margin-bottom:2px; }
+  .change-entry .old{ color:var(--critical); text-decoration:line-through; }
+  .change-entry .new{ color:var(--good); font-weight:600; }
+  details.inline-details > summary{ cursor:pointer; font-size:12px; font-weight:600; color:var(--accent); margin-top:8px; }
+  details.inline-details[open] > summary{ margin-bottom:8px; }
+  .alert-card{ border-left:4px solid var(--warning); }
+  .month-hint{ margin-top:8px; font-size:12.5px; color:var(--warning); font-weight:500; }
+  .month-hint:empty{ display:none; }
+  .history-actions{ display:flex; gap:6px; margin-top:10px; }
 
   .empty{ text-align:center; color:var(--text-muted); padding:32px 16px; }
   .section-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; gap:8px; flex-wrap:wrap; }
@@ -244,6 +289,7 @@
     position:fixed; bottom:calc(20px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%);
     background:var(--text); color:var(--bg); padding:10px 18px; border-radius:9px; font-weight:600; font-size:13px;
     box-shadow:var(--shadow); z-index:50; opacity:0; pointer-events:none; transition:opacity 0.2s ease;
+    max-width:calc(100% - 32px); text-align:center;
   }
   .toast.show{ opacity:1; }
   code.code-chip{
@@ -254,6 +300,7 @@
     display:flex; align-items:center; justify-content:center; padding:16px;
   }
   .modal-card{ width:100%; max-width:420px; max-height:90vh; overflow-y:auto; }
+  .row-actions{ display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
   [hidden]{ display:none !important; }
 </style>
 </head>
@@ -261,14 +308,11 @@
 
 <!--
   =====================================================================
-  DATABASE SETUP (Supabase) — eenmalig door te voeren
+  DATABASE SETUP (Supabase)
   =====================================================================
-  1. Vul hieronder in het script (zoek naar "SUPABASE_URL" en
-     "SUPABASE_ANON_KEY") de gegevens van jullie Supabase-project in.
-     Te vinden in Supabase onder Project Settings > API.
+  1. Supabase-gegevens staan in het script (SUPABASE_URL / SUPABASE_ANON_KEY).
 
-  2. Draai onderstaande SQL eenmalig in de Supabase SQL editor
-     (dit maakt drie nieuwe tabellen aan, los van de verlof-tabel):
+  2. Eenmalige basis-setup (al gedaan bij v1.0.0):
 
   create table if not exists afhandelformulier_team (
     id text primary key,
@@ -308,14 +352,23 @@
   create policy "anon full access" on afhandelformulier_submissions for all using (true) with check (true);
   create policy "anon full access" on afhandelformulier_meta for all using (true) with check (true);
 
-  -- Zet realtime updates aan (zodat iedereen live dezelfde data ziet)
   alter publication supabase_realtime add table afhandelformulier_team;
   alter publication supabase_realtime add table afhandelformulier_submissions;
 
-  Let op: net als bij de verlofapp is dit géén echte beveiliging — de
-  PIN-check gebeurt in de browser, niet op de server. Dat past bij een
-  klein intern team, maar zet er geen gevoelige data in die niet met
-  het hele team gedeeld mag worden.
+  3. NIEUW in v1.1.0 — eenmalig draaien (voor aanpassingen-historie):
+
+  alter table afhandelformulier_submissions add column if not exists edits jsonb default '[]';
+  alter table afhandelformulier_submissions add column if not exists edited_at bigint;
+
+  Let op: dit is géén echte beveiliging — de PIN-check gebeurt in de
+  browser. PIN's zijn in beheer verborgen, maar staan nog wel in de
+  database. Prima voor een klein intern team.
+  =====================================================================
+
+  DRIVE BACK-UP
+  Elke inzending en aanpassing wordt als PDF naar Drive gestuurd via
+  hetzelfde Apps Script endpoint als testen-fyziofit.html
+  (DRIVE_UPLOAD_URL). Aanpassingen krijgen een eigen PDF met tijdstempel.
   =====================================================================
 -->
 
@@ -389,12 +442,18 @@
     </div>
   </div>
 
-  <!-- ===================== TEAM TAB ===================== -->
+  <!-- ===================== FORMULIER TAB ===================== -->
   <section id="tab-form">
 
     <div class="grid grid-2" style="align-items:start;">
-      <div class="card">
+      <div class="card" id="form-card">
         <div class="section-title"><h2 id="form-title">Formulier invullen</h2></div>
+
+        <div class="edit-banner" id="edit-banner" hidden>
+          <span id="edit-banner-text"></span>
+          <button type="button" class="btn secondary small" onclick="cancelEdit()">Annuleren</button>
+        </div>
+
         <form id="submit-form" onsubmit="return false;">
 
           <input type="hidden" id="f-name">
@@ -404,8 +463,9 @@
           </div>
 
           <div class="field">
-            <label for="f-month">Maand *</label>
-            <input type="month" id="f-month" required>
+            <label for="f-month">Over welke maand gaat dit formulier? *</label>
+            <select id="f-month" required onchange="onMonthChange()"></select>
+            <div class="month-hint" id="f-month-hint"></div>
           </div>
 
           <fieldset>
@@ -420,7 +480,7 @@
           </fieldset>
 
           <div class="field">
-            <label for="f-intakes">Aantal intakes (1863, 1864 / 1870?) *</label>
+            <label for="f-intakes">Aantal intakes (1820, 1863, 1864 / 1870?) *</label>
             <input type="number" min="0" id="f-intakes" required>
           </div>
 
@@ -455,13 +515,16 @@
             <input type="text" id="f-dossiers" placeholder="Ja, alles verzonden / reden indien niet" required>
           </div>
 
-          <button class="btn" id="submit-btn" onclick="submitForm()">Versturen</button>
-          <span class="hint" id="form-status" style="margin-left:10px;"></span>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn" id="submit-btn" onclick="submitForm()">Versturen</button>
+            <button type="button" class="btn secondary" id="cancel-edit-btn" onclick="cancelEdit()" hidden>Annuleren</button>
+            <span class="hint" id="form-status"></span>
+          </div>
 
           <div id="post-submit-actions" class="notify-banner" hidden>
             <div class="notify-banner-text">
               <strong>Nog één ding!</strong>
-              <span>Laat Ellen weten dat je klaar bent.</span>
+              <span id="notify-text">Laat Ellen weten dat je klaar bent.</span>
             </div>
             <a id="mail-secretariaat-link" class="btn notify-btn" href="#" target="_blank" rel="noopener">&#128231;&nbsp; Mail Ellen</a>
             <button type="button" class="btn ghost small" onclick="copySecretariaatMessage()">Bericht kopiëren</button>
@@ -479,7 +542,7 @@
 
   </section>
 
-  <!-- ===================== ADMIN TAB ===================== -->
+  <!-- ===================== BEHEER TAB ===================== -->
   <section id="tab-admin" hidden>
 
     <div id="admin-content">
@@ -494,6 +557,17 @@
 
       <div class="kpis" id="admin-kpis"></div>
 
+      <div id="admin-edits-wrap" hidden>
+        <div class="divider"></div>
+        <div class="card alert-card">
+          <div class="section-title">
+            <h2>&#9888;&#65039; Aangepaste formulieren</h2>
+            <span class="hint" id="admin-edits-count"></span>
+          </div>
+          <div id="admin-edits"></div>
+        </div>
+      </div>
+
       <div class="divider"></div>
 
       <div class="grid grid-2" style="align-items:start;">
@@ -502,8 +576,11 @@
           <div id="admin-category-bars"></div>
         </div>
         <div class="card">
-          <div class="section-title"><h2>Extra uren per persoon</h2></div>
-          <div id="admin-person-bars"></div>
+          <div class="section-title">
+            <h2>Extra uren per collega</h2>
+            <span class="hint">Klik op een naam voor de uitsplitsing</span>
+          </div>
+          <div id="admin-person-details" class="person-list"></div>
         </div>
       </div>
 
@@ -517,10 +594,25 @@
       <div class="divider"></div>
 
       <div class="card">
+        <div class="section-title"><h2>Alle inzendingen</h2></div>
+        <div class="table-wrap">
+          <table id="admin-table">
+            <thead><tr>
+              <th>Maand</th><th>Naam</th><th>COV check</th><th>Codes</th><th>Intakes</th><th>Intakes +1000</th>
+              <th>Extra uren</th><th>Code 10005</th><th>ZorgTopics check</th><th>Dossiers/QDNA</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody id="admin-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="card">
         <div class="section-title"><h2>Teamleden beheren</h2></div>
         <div class="table-wrap">
           <table id="team-table">
-            <thead><tr><th>Naam</th><th>PIN</th><th>Beheerder</th><th></th></tr></thead>
+            <thead><tr><th>Naam</th><th>Beheerder</th><th></th></tr></thead>
             <tbody id="team-table-body"></tbody>
           </table>
         </div>
@@ -531,8 +623,8 @@
             <input type="text" id="team-new-name" placeholder="Voornaam (Achternaam)">
           </div>
           <div class="field" style="margin-bottom:0;">
-            <label for="team-new-pin">PIN (4 cijfers)</label>
-            <input type="text" inputmode="numeric" maxlength="4" id="team-new-pin" placeholder="0000">
+            <label for="team-new-pin">Start-PIN (4 cijfers)</label>
+            <input type="password" inputmode="numeric" maxlength="4" id="team-new-pin" placeholder="0000">
           </div>
           <label class="check-opt" style="margin-bottom:9px;"><input type="checkbox" id="team-new-admin"> Beheerder</label>
           <button class="btn" style="margin-bottom:0;" onclick="addTeamMember()">Toevoegen</button>
@@ -540,40 +632,29 @@
         <p class="hint" id="team-manager-status" style="min-height:16px;"></p>
       </div>
 
-      <div class="divider"></div>
-
-      <div class="card">
-        <div class="section-title"><h2>Alle inzendingen</h2></div>
-        <div class="table-wrap">
-          <table id="admin-table">
-            <thead><tr>
-              <th>Maand</th><th>Naam</th><th>COV check</th><th>Codes</th><th>Intakes</th><th>Intakes +1000</th>
-              <th>Extra uren</th><th>Code 10005</th><th>ZorgTopics check</th><th>Dossiers/QDNA</th>
-            </tr></thead>
-            <tbody id="admin-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-
     </div>
   </section>
 
 </div>
 
-<footer class="app-footer"><strong>Fyzio Totaal</strong> &middot; Afhandelformulier &middot; v1.0.0</footer>
+<footer class="app-footer"><strong>Fyzio Totaal</strong> &middot; Afhandelformulier &middot; v1.1.0</footer>
 
 </div><!-- /app-shell -->
 
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   // =====================================================================
-  // CONFIG — vul hier de gegevens van jullie Supabase-project in
-  // (Supabase dashboard > Project Settings > API)
+  // CONFIG
   // =====================================================================
-  const SUPABASE_URL = "https://szunargvsmtzbbnmnghc.supabase.co";       // bv. https://xxxxxxxx.supabase.co
-  const SUPABASE_ANON_KEY = "sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";     // de "anon" / "public" key
+  const SUPABASE_URL = "https://szunargvsmtzbbnmnghc.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
+
+  // Drive-upload endpoint — zelfde Apps Script Web App als testen-fyziofit.html
+  // (FyzioFit Rapport Ontvanger). Verwacht { bestandsnaam, pdfBase64 }.
+  const DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbzZZHNKhzSP8c51MnC9dwKOtQFsmsSuQQBjTqC21fqZyLkk5_gRXKQ9f1xZBqMAuAQmdw/exec";
 
   const TEAM_TABLE = "afhandelformulier_team";
   const SUBMISSIONS_TABLE = "afhandelformulier_submissions";
@@ -600,27 +681,40 @@
     { id: "001", label: "001 (chronische trajecten)" },
     { id: "008", label: "008 (eerste 20 behandelingen chronisch traject)" }
   ];
+  const MONTHS_BACK = 3; // huidige maand + 3 maanden terug in de keuzelijst
   const LOGIN_STORAGE_KEY = "fyzio-afhandelformulier-login";
+  const SECRETARIAAT_EMAIL = "secretariaat@fyziototaal.nl";
 
   let supabaseClient = null;
   let currentUser = null; // { id, name, admin }
   let team = []; // [{id, name, pin, admin}]
   let teamLoaded = false;
   let pendingAutoLogin = false;
-  let submissions = []; // {id, name, month, covCheck, covCheckAnders, codes[], intakes, intakes1000, extraHours, breakdown[], code10005, zorgtopics, dossiers, submittedAt}
+  let submissions = [];
 
+  // bewerk-modus
+  let editingId = null;
+  let editingOriginal = null;
+
+  // ---------- helpers ----------
+  function esc(v){
+    return String(v == null ? "" : v)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  function fmtH(v){ return String(parseFloat((Number(v)||0).toFixed(2))); }
+  function cap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function fmtDateTime(ts){
+    if(!ts) return "";
+    return new Date(ts).toLocaleString("nl-NL", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
+  }
   function teamSlug(name){
     return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   }
-  function findMember(name){
-    return team.find(t => t.name === name) || null;
-  }
-  function teamNames(){
-    return team.map(t => t.name);
-  }
-  function initials(name){
-    return name.split(" ").map(p => p[0]).join("").toUpperCase();
-  }
+  function findMember(name){ return team.find(t => t.name === name) || null; }
+  function teamNames(){ return team.map(t => t.name); }
+  function initials(name){ return name.split(" ").map(p => p[0]).join("").toUpperCase(); }
+
   function rowToSubmission(row){
     return {
       id: row.id, name: row.name, month: row.month,
@@ -628,10 +722,48 @@
       codes: row.codes || [], intakes: row.intakes, intakes1000: row.intakes_1000,
       extraHours: row.extra_hours, breakdown: row.breakdown || [],
       code10005: row.code_10005, zorgtopics: row.zorgtopics, dossiers: row.dossiers,
-      submittedAt: row.submitted_at
+      submittedAt: row.submitted_at, editedAt: row.edited_at || null, edits: row.edits || []
+    };
+  }
+  function submissionToRow(s){
+    return {
+      id: s.id, name: s.name, month: s.month,
+      cov_check: s.covCheck, cov_check_anders: s.covCheckAnders, codes: s.codes,
+      intakes: s.intakes, intakes_1000: s.intakes1000, extra_hours: s.extraHours,
+      breakdown: s.breakdown, code_10005: s.code10005, zorgtopics: s.zorgtopics,
+      dossiers: s.dossiers, submitted_at: s.submittedAt, edited_at: s.editedAt, edits: s.edits
     };
   }
 
+  // Velden die worden vergeleken bij een aanpassing
+  const yn = v => v==="ja" ? "Ja" : v==="nee" ? "Nee" : v==="nvt" ? "NVT" : v==="anders" ? "Anders" : (v || "-");
+  const num = v => (v==null || v==="") ? "-" : fmtH(v);
+  const FIELD_DEFS = [
+    { key:"covCheck",       label:"COV check",               fmt: yn },
+    { key:"covCheckAnders", label:"COV toelichting",         fmt: v => v || "-" },
+    { key:"codes",          label:"Codes gecheckt",          fmt: v => (v && v.length) ? v.slice().sort().join(", ") : "geen" },
+    { key:"intakes",        label:"Aantal intakes",          fmt: num },
+    { key:"intakes1000",    label:"Intakes +1000",           fmt: num },
+    { key:"extraHours",     label:"Extra uren",              fmt: num },
+    { key:"breakdown",      label:"Uitsplitsing extra uren", fmt: v => (v && v.length) ? v.map(b => `${b.category || "?"}: ${fmtH(b.hours)}u`).join(", ") : "geen" },
+    { key:"code10005",      label:"Code 10005",              fmt: yn },
+    { key:"zorgtopics",     label:"ZorgTopics check",        fmt: yn },
+    { key:"dossiers",       label:"Dossiers/QDNA",           fmt: v => v || "-" }
+  ];
+  function diffSubmissions(oldS, newS){
+    return FIELD_DEFS
+      .map(f => ({ field: f.key, label: f.label, old: f.fmt(oldS[f.key]), new: f.fmt(newS[f.key]) }))
+      .filter(c => c.old !== c.new);
+  }
+  function renderChangeList(edits){
+    return (edits || []).slice().sort((a,b) => b.at - a.at).map(e => `
+      <div class="change-entry">
+        <div class="change-meta">${esc(fmtDateTime(e.at))} &middot; door ${esc(e.by)}</div>
+        <ul>${(e.changes || []).map(c => `<li><strong>${esc(c.label)}:</strong> <span class="old">${esc(c.old)}</span> &rarr; <span class="new">${esc(c.new)}</span></li>`).join("")}</ul>
+      </div>`).join("");
+  }
+
+  // ---------- login ----------
   function populateLoginSelect(){
     const sel = document.getElementById("login-name");
     const cur = sel.value;
@@ -639,7 +771,7 @@
       sel.innerHTML = `<option>Laden&hellip;</option>`;
       return;
     }
-    sel.innerHTML = team.map(t => `<option value="${t.name}">${t.name}</option>`).join("");
+    sel.innerHTML = team.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join("");
     if(teamNames().includes(cur)) sel.value = cur;
   }
 
@@ -666,6 +798,7 @@
     document.getElementById("login-error").textContent = "";
     document.getElementById("pin-modal").hidden = true;
     document.getElementById("post-submit-actions").hidden = true;
+    resetForm();
     document.getElementById("app-shell").hidden = true;
     document.getElementById("login-screen").hidden = false;
   }
@@ -724,7 +857,7 @@
     document.getElementById("f-name-display").textContent = currentUser.name;
 
     document.getElementById("user-chip").innerHTML =
-      `<span class="avatar">${initials(currentUser.name)}</span> ${currentUser.name}${currentUser.admin ? ' <span class="tag tag-purple">beheer</span>' : ""}`;
+      `<span class="avatar">${esc(initials(currentUser.name))}</span> ${esc(currentUser.name)}${currentUser.admin ? ' <span class="tag tag-purple">beheer</span>' : ""}`;
 
     const adminTabBtn = document.getElementById("tab-btn-admin");
     adminTabBtn.hidden = !currentUser.admin;
@@ -736,9 +869,16 @@
     if(currentUser.admin) renderAdmin();
   }
 
-  function currentMonth(){
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+  // ---------- maanden ----------
+  function monthKey(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); }
+  function currentMonth(){ return monthKey(new Date()); }
+  function recentMonths(){
+    const now = new Date();
+    const out = [];
+    for(let i = 0; i <= MONTHS_BACK; i++){
+      out.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+    }
+    return out;
   }
   function monthLabel(m){
     if(!m) return "";
@@ -752,6 +892,24 @@
     const names = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
     return names[parseInt(mo,10)-1] + " " + y;
   }
+  function buildMonthOptions(selected){
+    const sel = document.getElementById("f-month");
+    const months = recentMonths();
+    if(selected && !months.includes(selected)) months.push(selected);
+    sel.innerHTML =
+      `<option value="" disabled ${selected ? "" : "selected"}>Kies een maand&hellip;</option>` +
+      months.map(m => `<option value="${m}" ${m===selected ? "selected" : ""}>${cap(monthLabelFull(m))}</option>`).join("");
+  }
+  function onMonthChange(){
+    const hint = document.getElementById("f-month-hint");
+    const m = document.getElementById("f-month").value;
+    if(editingId || !currentUser || !m){ hint.innerHTML = ""; return; }
+    const existing = submissions.find(s => s.id === docIdFor(currentUser.name, m));
+    hint.innerHTML = existing
+      ? `Je hebt voor ${monthLabelFull(m)} al een formulier ingediend. <button type="button" class="btn ghost small" onclick="loadForEdit('${existing.id}')">Dat formulier aanpassen</button>`
+      : "";
+  }
+
   function docIdFor(name, month){
     return (name + "_" + month).toLowerCase().replace(/[^a-z0-9_-]/g, "-");
   }
@@ -759,7 +917,8 @@
     const t = document.getElementById("toast");
     t.textContent = msg;
     t.classList.add("show");
-    setTimeout(()=>t.classList.remove("show"), 2200);
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>t.classList.remove("show"), 2600);
   }
 
   function switchTab(tab){
@@ -770,7 +929,7 @@
     if(tab === "admin" && currentUser && currentUser.admin) renderAdmin();
   }
 
-  // ---------- form building ----------
+  // ---------- formulier opbouwen ----------
   function buildRadios(containerId, name, options, defaultVal, onChangeExtra){
     const el = document.getElementById(containerId);
     el.innerHTML = "";
@@ -789,13 +948,21 @@
     const el = document.querySelector(`input[name="${name}"]:checked`);
     return el ? el.value : null;
   }
+  function setRadioValue(name, value){
+    const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+    if(el) el.checked = true;
+  }
+  function updateCovAndersVisibility(){
+    document.getElementById("f-cov-anders").style.display = getRadioValue("cov") === "anders" ? "block" : "none";
+  }
 
   function initFormOnce(){
-    document.getElementById("f-month").value = currentMonth();
+    buildMonthOptions(null);
+    document.getElementById("f-month").disabled = false;
+    document.getElementById("f-month-hint").innerHTML = "";
 
-    buildRadios("f-cov", "cov", [{value:"ja", label:"Ja"}, {value:"anders", label:"Anders"}], "ja", () => {
-      document.getElementById("f-cov-anders").style.display = getRadioValue("cov") === "anders" ? "block" : "none";
-    });
+    buildRadios("f-cov", "cov", [{value:"ja", label:"Ja"}, {value:"anders", label:"Anders"}], "ja", updateCovAndersVisibility);
+    updateCovAndersVisibility();
 
     const codesEl = document.getElementById("f-codes");
     codesEl.innerHTML = CODE_OPTIONS.map(c => `
@@ -814,92 +981,195 @@
     const row = document.createElement("div");
     row.className = "breakdown-row";
     row.innerHTML = `
-      <input type="text" placeholder="bv. extra administratie, overleg, scholing" class="bd-cat" value="${category||""}">
-      <input type="number" min="0" step="0.25" placeholder="uren" class="bd-hours" value="${hours!=null?hours:""}">
-      <button type="button" class="remove-row" onclick="this.parentElement.remove()">&times;</button>
+      <input type="text" placeholder="bv. extra administratie, overleg, scholing" class="bd-cat" value="${esc(category||"")}">
+      <input type="number" min="0" step="0.25" placeholder="uren" class="bd-hours" value="${hours!=null?esc(hours):""}">
+      <button type="button" class="remove-row" onclick="this.parentElement.remove()" aria-label="Verwijder categorie">&times;</button>
     `;
     wrap.appendChild(row);
   }
 
+  function setEditUI(on, s){
+    document.getElementById("form-title").textContent = on ? `Formulier aanpassen — ${cap(monthLabelFull(s.month))}` : "Formulier invullen";
+    document.getElementById("submit-btn").textContent = on ? "Wijzigingen opslaan" : "Versturen";
+    document.getElementById("cancel-edit-btn").hidden = !on;
+    document.getElementById("edit-banner").hidden = !on;
+    if(on){
+      document.getElementById("edit-banner-text").textContent =
+        `Je past je formulier van ${monthLabelFull(s.month)} aan. Beheer ziet welke velden je hebt gewijzigd.`;
+    }
+  }
+
   function resetForm(){
+    editingId = null;
+    editingOriginal = null;
     initFormOnce();
     document.getElementById("f-intakes").value = "";
     document.getElementById("f-intakes1000").value = "";
     document.getElementById("f-extrahours").value = "";
     document.getElementById("f-cov-anders").value = "";
     document.getElementById("f-dossiers").value = "";
+    setEditUI(false);
   }
 
+  function loadForEdit(id){
+    const s = submissions.find(x => x.id === id);
+    if(!s || !currentUser || s.name !== currentUser.name) return;
+
+    initFormOnce();
+    editingId = id;
+    editingOriginal = JSON.parse(JSON.stringify(s));
+
+    buildMonthOptions(s.month);
+    document.getElementById("f-month").disabled = true;
+    document.getElementById("f-month-hint").innerHTML = "";
+
+    setRadioValue("cov", s.covCheck || "ja");
+    document.getElementById("f-cov-anders").value = s.covCheckAnders || "";
+    updateCovAndersVisibility();
+
+    document.querySelectorAll(".f-code-check").forEach(c => { c.checked = (s.codes || []).includes(c.value); });
+
+    document.getElementById("f-intakes").value = s.intakes ?? "";
+    document.getElementById("f-intakes1000").value = s.intakes1000 ?? "";
+    document.getElementById("f-extrahours").value = s.extraHours ?? "";
+
+    document.getElementById("f-breakdown").innerHTML = "";
+    if(s.breakdown && s.breakdown.length){
+      s.breakdown.forEach(b => addBreakdownRow(b.category, b.hours));
+    } else {
+      addBreakdownRow();
+    }
+
+    setRadioValue("c10005", s.code10005 || "nvt");
+    setRadioValue("zorgtopics", s.zorgtopics || "ja");
+    document.getElementById("f-dossiers").value = s.dossiers || "";
+
+    document.getElementById("post-submit-actions").hidden = true;
+    document.getElementById("form-status").textContent = "";
+    setEditUI(true, s);
+    switchTab("form");
+    document.getElementById("form-card").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+
+  function cancelEdit(){
+    resetForm();
+    document.getElementById("form-status").textContent = "";
+  }
+
+  // ---------- versturen / aanpassen ----------
   async function submitForm(){
     document.getElementById("post-submit-actions").hidden = true;
+    const statusEl = document.getElementById("form-status");
     const name = document.getElementById("f-name").value;
     const month = document.getElementById("f-month").value;
-    const cov = getRadioValue("cov");
-    const covAnders = document.getElementById("f-cov-anders").value.trim();
-    const codes = Array.from(document.querySelectorAll(".f-code-check:checked")).map(c => c.value);
-    const intakes = document.getElementById("f-intakes").value;
-    const intakes1000 = document.getElementById("f-intakes1000").value;
-    const extraHours = document.getElementById("f-extrahours").value;
-    const c10005 = getRadioValue("c10005");
-    const zorgtopics = getRadioValue("zorgtopics");
-    const dossiers = document.getElementById("f-dossiers").value.trim();
-    const breakdown = Array.from(document.querySelectorAll("#f-breakdown .breakdown-row")).map(r => ({
-      category: r.querySelector(".bd-cat").value.trim(),
-      hours: parseFloat(r.querySelector(".bd-hours").value) || 0
-    })).filter(b => b.category || b.hours);
 
-    if(!name || !month || !cov || intakes==="" || intakes1000==="" || extraHours==="" || !zorgtopics || !dossiers){
-      document.getElementById("form-status").textContent = "Vul de verplichte velden in.";
-      document.getElementById("form-status").style.color = "var(--critical)";
+    const data = {
+      name, month,
+      covCheck: getRadioValue("cov"),
+      covCheckAnders: document.getElementById("f-cov-anders").value.trim(),
+      codes: Array.from(document.querySelectorAll(".f-code-check:checked")).map(c => c.value),
+      intakes: document.getElementById("f-intakes").value,
+      intakes1000: document.getElementById("f-intakes1000").value,
+      extraHours: document.getElementById("f-extrahours").value,
+      breakdown: Array.from(document.querySelectorAll("#f-breakdown .breakdown-row")).map(r => ({
+        category: r.querySelector(".bd-cat").value.trim(),
+        hours: parseFloat(r.querySelector(".bd-hours").value) || 0
+      })).filter(b => b.category || b.hours),
+      code10005: getRadioValue("c10005"),
+      zorgtopics: getRadioValue("zorgtopics"),
+      dossiers: document.getElementById("f-dossiers").value.trim()
+    };
+
+    if(!month){
+      statusEl.textContent = "Kies eerst over welke maand dit formulier gaat.";
+      statusEl.style.color = "var(--critical)";
+      document.getElementById("f-month").focus();
+      return;
+    }
+    if(!name || !data.covCheck || data.intakes==="" || data.intakes1000==="" || data.extraHours==="" || !data.zorgtopics || !data.dossiers){
+      statusEl.textContent = "Vul de verplichte velden in.";
+      statusEl.style.color = "var(--critical)";
+      return;
+    }
+    data.intakes = parseFloat(data.intakes);
+    data.intakes1000 = parseFloat(data.intakes1000);
+    data.extraHours = parseFloat(data.extraHours);
+
+    if(!supabaseClient){
+      statusEl.textContent = "Niet verbonden met de database — controleer de Supabase-instellingen bovenin het bestand.";
+      statusEl.style.color = "var(--critical)";
       return;
     }
 
-    const row = {
-      id: docIdFor(name, month), name, month,
-      cov_check: cov, cov_check_anders: covAnders, codes,
-      intakes: parseFloat(intakes), intakes_1000: parseFloat(intakes1000),
-      extra_hours: parseFloat(extraHours), breakdown, code_10005: c10005,
-      zorgtopics, dossiers, submitted_at: Date.now()
+    const id = editingId || docIdFor(name, month);
+    // Bestaat er al een formulier voor deze maand? Dan is dit een aanpassing.
+    const original = editingOriginal || submissions.find(s => s.id === id) || null;
+    let changes = null;
+    if(original){
+      changes = diffSubmissions(original, data);
+      if(changes.length === 0){
+        statusEl.textContent = "Geen wijzigingen ten opzichte van je eerdere inzending.";
+        statusEl.style.color = "var(--text-muted)";
+        return;
+      }
+    }
+
+    const now = Date.now();
+    const record = {
+      ...data, id,
+      submittedAt: original ? original.submittedAt : now,
+      editedAt: original ? now : null,
+      edits: original ? (original.edits || []).concat([{ at: now, by: currentUser.name, changes }]) : []
     };
 
     const btn = document.getElementById("submit-btn");
     btn.disabled = true;
-    const statusEl = document.getElementById("form-status");
     statusEl.style.color = "var(--text-muted)";
+    statusEl.textContent = "Opslaan…";
 
-    if(supabaseClient){
-      const { error } = await supabaseClient.from(SUBMISSIONS_TABLE).upsert(row);
-      if(!error){
-        statusEl.textContent = "Verstuurd. Bedankt!";
-        showToast(`Formulier van ${name} voor ${monthLabel(month)} opgeslagen`);
-        showPostSubmitActions(name, month);
-        resetForm();
-        fetchSubmissions();
-      } else {
-        statusEl.textContent = "Opslaan mislukt, probeer het nog eens.";
-        statusEl.style.color = "var(--critical)";
-      }
-    } else {
-      statusEl.textContent = "Niet verbonden met de database — controleer de Supabase-instellingen bovenin het bestand.";
-      statusEl.style.color = "var(--critical)";
-    }
+    const { error } = await supabaseClient.from(SUBMISSIONS_TABLE).upsert(submissionToRow(record));
     btn.disabled = false;
+
+    if(error){
+      const missingCols = /edits|edited_at/.test(error.message || "");
+      statusEl.textContent = missingCols
+        ? "Database mist de kolommen voor aanpassingen — draai de SQL-update uit v1.1.0 (zie bovenin het bestand)."
+        : "Opslaan mislukt, probeer het nog eens.";
+      statusEl.style.color = "var(--critical)";
+      return;
+    }
+
+    statusEl.textContent = original ? "Aanpassingen opgeslagen." : "Verstuurd. Bedankt!";
+    showToast(original
+      ? `Formulier ${monthLabel(month)} aangepast (${changes.length} wijziging${changes.length===1?"":"en"})`
+      : `Formulier van ${name} voor ${monthLabel(month)} opgeslagen`);
+    uploadNaarDrive(record, original ? "aangepast" : "nieuw", changes);
+    showPostSubmitActions(name, month, changes);
+    resetForm();
+    fetchSubmissions();
   }
 
-  const SECRETARIAAT_EMAIL = "secretariaat@fyziototaal.nl";
-
-  function secretariaatMessage(name, month){
+  function secretariaatMessage(name, month, changes){
+    if(changes && changes.length){
+      const subject = `Afhandelformulier ${monthLabelFull(month)} aangepast — ${name}`;
+      const list = changes.map(c => `- ${c.label}: ${c.old} → ${c.new}`).join("\n");
+      const body = `Hoi Ellen,\n\n${name} heeft het afhandelformulier van ${monthLabelFull(month)} aangepast.\n\nGewijzigd:\n${list}\n\nGroet,\n${name}`;
+      return { subject, body };
+    }
     const subject = `Afhandelformulier ${monthLabelFull(month)} — ${name}`;
     const body = `Hoi Ellen,\n\n${name} heeft het afhandelformulier van ${monthLabelFull(month)} ingevuld.\n\nGroet,\n${name}`;
     return { subject, body };
   }
 
-  function showPostSubmitActions(name, month){
-    const { subject, body } = secretariaatMessage(name, month);
+  function showPostSubmitActions(name, month, changes){
+    const { subject, body } = secretariaatMessage(name, month, changes);
     const link = document.getElementById("mail-secretariaat-link");
     link.href = `mailto:${SECRETARIAAT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     link.dataset.subject = subject;
     link.dataset.body = body;
+    document.getElementById("notify-text").textContent = (changes && changes.length)
+      ? "Laat Ellen weten dat je je formulier hebt aangepast."
+      : "Laat Ellen weten dat je klaar bent.";
     document.getElementById("post-submit-actions").hidden = false;
   }
 
@@ -914,35 +1184,154 @@
     }
   }
 
-  // ---------- history (team view) ----------
+  // ---------- Drive back-up (PDF, zelfde manier als testen-fyziofit) ----------
+  function pdfSafe(t){
+    // Helvetica in jsPDF kent geen pijltjes/speciale tekens
+    return String(t == null ? "" : t).replace(/→/g, "->").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[—–]/g, "-");
+  }
+
+  function buildSubmissionPdf(sub, action, changes){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"mm", format:"a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const mX = 18, labelW = 62, valX = mX + labelW, valW = pageW - valX - mX;
+    let y = 0;
+
+    // Header in huisstijl
+    doc.setFillColor(130, 23, 109); doc.rect(0, 0, pageW, 30, "F");
+    doc.setFillColor(0, 182, 232); doc.rect(0, 30, pageW, 1.5, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(17);
+    doc.text("Afhandelformulier", mX, 14);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    doc.text(pdfSafe(`${sub.name}  ·  ${cap(monthLabelFull(sub.month))}`), mX, 22);
+    y = 42;
+
+    function ensure(h){
+      if(y + h > pageH - 18){ doc.addPage(); y = 20; }
+    }
+    function heading(t){
+      ensure(12);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(130, 23, 109);
+      doc.text(pdfSafe(t), mX, y); y += 2;
+      doc.setDrawColor(226, 213, 223); doc.line(mX, y, pageW - mX, y); y += 6;
+    }
+    function row(label, value){
+      doc.setFontSize(9.5);
+      const lLines = doc.splitTextToSize(pdfSafe(label), labelW - 4);
+      const vLines = doc.splitTextToSize(pdfSafe(value || "-"), valW);
+      const h = Math.max(lLines.length, vLines.length) * 4.6 + 2.4;
+      ensure(h);
+      doc.setFont("helvetica", "bold"); doc.setTextColor(122, 100, 120); doc.text(lLines, mX, y);
+      doc.setFont("helvetica", "normal"); doc.setTextColor(42, 22, 38); doc.text(vLines, valX, y);
+      y += h;
+    }
+
+    // Status
+    const statusTekst = action === "aangepast"
+      ? `Aangepast op ${new Date(sub.editedAt || Date.now()).toLocaleString("nl-NL")} door ${currentUser ? currentUser.name : sub.name}`
+      : `Ingediend op ${new Date(sub.submittedAt || Date.now()).toLocaleString("nl-NL")}`;
+    doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(122, 100, 120);
+    doc.text(pdfSafe(statusTekst), mX, y); y += 9;
+
+    heading("Antwoorden");
+    row("Naam", sub.name);
+    row("Maand", cap(monthLabelFull(sub.month)));
+    row("COV CHECK + BOEKEN op groen?", yn(sub.covCheck) + (sub.covCheck === "anders" && sub.covCheckAnders ? ` - ${sub.covCheckAnders}` : ""));
+    row("Codes (lijst Borst) gecheckt", (sub.codes && sub.codes.length)
+      ? sub.codes.map(id => (CODE_OPTIONS.find(c => c.id === id) || { label:id }).label).join("\n") : "geen");
+    row("Aantal intakes (1820, 1863, 1864 / 1870)", num(sub.intakes));
+    row("Aantal keer intake +1000", num(sub.intakes1000));
+    row("Aantal extra uren", num(sub.extraHours));
+    row("Extra uren gebruikt voor", (sub.breakdown && sub.breakdown.length)
+      ? sub.breakdown.map(b => `${b.category || "?"}: ${fmtH(b.hours)} u`).join("\n") : "geen uitsplitsing");
+    row("Code 10005 gebruikt", yn(sub.code10005));
+    row("ZorgTopics trajecten gecontroleerd", sub.zorgtopics === "nvt" ? "NVT, geen ZorgTopics trajecten" : yn(sub.zorgtopics));
+    row("Dossiers afgesloten / QDNA verzonden", sub.dossiers);
+
+    if(sub.edits && sub.edits.length){
+      y += 4;
+      heading("Aanpassingen");
+      sub.edits.slice().sort((a,b) => b.at - a.at).forEach(e => {
+        ensure(10);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(180, 113, 31);
+        doc.text(pdfSafe(`${new Date(e.at).toLocaleString("nl-NL")} - door ${e.by}`), mX, y); y += 5.5;
+        (e.changes || []).forEach(c => row(c.label, `${c.old}  ->  ${c.new}`));
+        y += 2;
+      });
+    }
+
+    const pages = doc.internal.getNumberOfPages();
+    for(let p = 1; p <= pages; p++){
+      doc.setPage(p);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(156, 163, 175);
+      doc.text("Fyzio Totaal   ·   Nijverheidsstraat 7, Wierden   ·   www.fyziototaal.nl", pageW/2, pageH - 10, { align:"center" });
+    }
+    return doc;
+  }
+
+  function uploadNaarDrive(sub, action, changes){
+    if(!DRIVE_UPLOAD_URL || !window.jspdf) return;
+    try{
+      const doc = buildSubmissionPdf(sub, action, changes);
+      const naam = (sub.name || "onbekend").replace(/[^A-Za-z0-9]+/g, "-");
+      let bestandsnaam = `Afhandelformulier_${sub.month}_${naam}`;
+      if(action === "aangepast"){
+        const d = new Date(sub.editedAt || Date.now());
+        const stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0")
+          + "_" + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0");
+        bestandsnaam += `_aangepast_${stamp}`;
+      }
+      bestandsnaam += ".pdf";
+      const pdfBase64 = doc.output("datauristring").split(",")[1];
+      fetch(DRIVE_UPLOAD_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" }, // voorkomt CORS-preflight bij Apps Script
+        body: JSON.stringify({ bestandsnaam, pdfBase64 })
+      }).catch(() => {}); // stille fout: back-up blokkeert het opslaan niet
+    }catch(e){
+      console.warn("Drive back-up mislukt", e);
+    }
+  }
+
+  // ---------- historie (eigen formulieren) ----------
   function renderHistory(){
     if(!currentUser) return;
     const name = currentUser.name;
     const rows = submissions.filter(s => s.name === name).sort((a,b) => b.month.localeCompare(a.month));
     const el = document.getElementById("history-list");
     if(rows.length === 0){
-      el.innerHTML = `<div class="empty">Nog geen inzendingen van ${name}.</div>`;
+      el.innerHTML = `<div class="empty">Nog geen inzendingen van ${esc(name)}.</div>`;
       return;
     }
     el.innerHTML = rows.map(r => {
-      const covPill = r.covCheck === "ja" ? `<span class="pill good">COV ok</span>` : `<span class="pill warn">COV: ${r.covCheckAnders || "anders"}</span>`;
-      const codesHtml = (r.codes||[]).map(c => `<code class="code-chip">${c}</code>`).join("") || "<span class=\"hint\">geen</span>";
+      const covPill = r.covCheck === "ja" ? `<span class="pill good">COV ok</span>` : `<span class="pill warn">COV: ${esc(r.covCheckAnders || "anders")}</span>`;
+      const editPill = (r.edits && r.edits.length) ? `<span class="pill warn">Aangepast ${r.edits.length}&times;</span>` : "";
+      const codesHtml = (r.codes||[]).map(c => `<code class="code-chip">${esc(c)}</code>`).join("") || "<span class=\"hint\">geen</span>";
+      const isEditing = editingId === r.id;
       return `
-        <div class="card" style="margin-bottom:12px; padding:14px 16px; box-shadow:none;">
-          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+        <div class="card" style="margin-bottom:12px; padding:14px 16px; box-shadow:none;${isEditing ? " border-color:var(--warning);" : ""}">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; gap:8px;">
             <strong>${monthLabel(r.month)}</strong>
-            <span class="tag tag-blue mono">${r.extraHours} extra uur${r.extraHours===1?"":"en"}</span>
+            <span class="tag tag-blue mono">${fmtH(r.extraHours)} extra uur${r.extraHours===1?"":"en"}</span>
           </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">${covPill}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">${covPill}${editPill}</div>
           <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Codes gecheckt: ${codesHtml}</div>
-          <div style="font-size:12px; color:var(--text-muted);">Intakes: <span class="mono">${r.intakes}</span> &middot; Intakes +1000: <span class="mono">${r.intakes1000}</span></div>
-          ${(r.breakdown && r.breakdown.length) ? `<div style="margin-top:8px; font-size:12px;">${r.breakdown.map(b=>`&bull; ${b.category}: <span class="mono">${b.hours}u</span>`).join("<br>")}</div>` : ""}
+          <div style="font-size:12px; color:var(--text-muted);">Intakes: <span class="mono">${fmtH(r.intakes)}</span> &middot; Intakes +1000: <span class="mono">${fmtH(r.intakes1000)}</span></div>
+          ${(r.breakdown && r.breakdown.length) ? `<div style="margin-top:8px; font-size:12px;">${r.breakdown.map(b=>`&bull; ${esc(b.category)}: <span class="mono">${fmtH(b.hours)}u</span>`).join("<br>")}</div>` : ""}
+          ${(r.edits && r.edits.length) ? `<details class="inline-details"><summary>Bekijk aanpassingen</summary>${renderChangeList(r.edits)}</details>` : ""}
+          <div class="history-actions">
+            ${isEditing
+              ? `<span class="pill warn">Wordt nu aangepast</span>`
+              : `<button type="button" class="btn secondary small" onclick="loadForEdit('${r.id}')">&#9998;&nbsp;Aanpassen</button>`}
+          </div>
         </div>
       `;
     }).join("");
   }
 
-  // ---------- admin ----------
+  // ---------- beheer ----------
   function populateAdminMonths(){
     const months = Array.from(new Set(submissions.map(s => s.month))).sort().reverse();
     const sel = document.getElementById("admin-month");
@@ -952,12 +1341,24 @@
     if(all.includes(cur)) sel.value = cur;
   }
 
+  function aggregateCategories(rowList){
+    const map = new Map();
+    rowList.forEach(r => (r.breakdown || []).forEach(b => {
+      const label = (b.category || "").trim() || "Onbekend";
+      const key = label.toLowerCase();
+      const cur = map.get(key) || { label, hours: 0 };
+      cur.hours += (b.hours || 0);
+      map.set(key, cur);
+    }));
+    return Array.from(map.values()).filter(c => c.hours > 0).sort((a,b) => b.hours - a.hours);
+  }
+
   function renderAdmin(){
     populateAdminMonths();
     const monthSel = document.getElementById("admin-month").value || "alle";
     const rows = monthSel === "alle" ? submissions.slice() : submissions.filter(s => s.month === monthSel);
 
-    // KPIs
+    // KPI's
     const totalHours = rows.reduce((sum,r) => sum + (r.extraHours||0), 0);
     const submittedNames = new Set(rows.map(r=>r.name));
     const missing = teamNames().filter(n => !submittedNames.has(n));
@@ -967,17 +1368,17 @@
     document.getElementById("admin-kpis").innerHTML = `
       <div class="kpi">
         <div class="label">Totaal extra uren</div>
-        <div class="value mono">${totalHours.toFixed(2).replace(/\.00$/,"")}</div>
+        <div class="value mono">${fmtH(totalHours)}</div>
         <div class="sub">${monthSel==="alle"?"alle maanden":monthLabel(monthSel)}</div>
       </div>
       <div class="kpi">
         <div class="label">Ingediend</div>
         <div class="value mono">${submittedNames.size}/${team.length}</div>
-        <div class="sub">${missing.length ? "mist: " + missing.join(", ") : "iedereen heeft ingediend"}</div>
+        <div class="sub">${missing.length ? "mist: " + esc(missing.join(", ")) : "iedereen heeft ingediend"}</div>
       </div>
       <div class="kpi">
         <div class="label">Intakes totaal</div>
-        <div class="value mono">${totalIntakes}</div>
+        <div class="value mono">${fmtH(totalIntakes)}</div>
         <div class="sub">opgegeven in formulieren</div>
       </div>
       <div class="kpi">
@@ -987,46 +1388,169 @@
       </div>
     `;
 
-    // category bars
+    renderAdminEdits(rows);
+
+    // categorieën
     const catTotals = {};
-    rows.forEach(r => (r.breakdown||[]).forEach(b => {
-      const key = b.category || "onbekend";
-      catTotals[key] = (catTotals[key]||0) + (b.hours||0);
-    }));
+    aggregateCategories(rows).forEach(c => { catTotals[c.label] = c.hours; });
     renderBars("admin-category-bars", catTotals, "Nog geen uren-uitsplitsing ingediend.");
 
-    // person bars
-    const personTotals = {};
-    teamNames().forEach(n => personTotals[n] = 0);
-    rows.forEach(r => { personTotals[r.name] = (personTotals[r.name]||0) + (r.extraHours||0); });
-    renderBars("admin-person-bars", personTotals, "Nog geen inzendingen.");
-
-    // trend
+    renderPersonDetails(rows, monthSel);
     renderTrend();
-
-    // team management
     renderTeamManager();
+    renderAdminTable(rows);
+  }
 
-    // table
+  // Melding: aangepaste formulieren in de huidige selectie
+  function renderAdminEdits(rows){
+    const wrap = document.getElementById("admin-edits-wrap");
+    const items = [];
+    rows.forEach(r => (r.edits || []).forEach(e => items.push({ r, e })));
+    if(items.length === 0){ wrap.hidden = true; return; }
+    wrap.hidden = false;
+    items.sort((a,b) => b.e.at - a.e.at);
+    document.getElementById("admin-edits-count").textContent =
+      `${items.length} aanpassing${items.length===1?"":"en"} in deze selectie`;
+    document.getElementById("admin-edits").innerHTML = items.map(({r, e}) => `
+      <div class="change-entry">
+        <div class="change-meta"><strong style="color:var(--text);">${esc(r.name)}</strong> &middot; formulier ${monthLabel(r.month)} &middot; aangepast ${esc(fmtDateTime(e.at))}${e.by && e.by !== r.name ? " door " + esc(e.by) : ""}</div>
+        <ul>${(e.changes || []).map(c => `<li><strong>${esc(c.label)}:</strong> <span class="old">${esc(c.old)}</span> &rarr; <span class="new">${esc(c.new)}</span></li>`).join("")}</ul>
+      </div>`).join("");
+  }
+
+  // Uitklapbaar overzicht per collega
+  const openPersons = new Set();
+  function onPersonToggle(el){
+    const n = el.dataset.name;
+    if(el.open) openPersons.add(n); else openPersons.delete(n);
+  }
+  function miniRow(label, hours, max, muted){
+    return `
+      <div class="mini-row">
+        <span class="mini-label" title="${esc(label)}">${esc(label)}</span>
+        <div class="bar-track"><div class="bar-fill${muted ? " muted" : ""}" style="width:${(hours/max*100).toFixed(1)}%"></div></div>
+        <span class="bar-value mono">${fmtH(hours)}u</span>
+      </div>`;
+  }
+  function renderPersonDetails(rows, monthSel){
+    const el = document.getElementById("admin-person-details");
+    const names = Array.from(new Set(teamNames().concat(rows.map(r => r.name))));
+    const data = names.map(n => {
+      const rs = rows.filter(r => r.name === n);
+      return { name: n, rows: rs, total: rs.reduce((s,r) => s + (r.extraHours||0), 0) };
+    }).sort((a,b) => b.total - a.total || a.name.localeCompare(b.name));
+
+    if(data.length === 0){
+      el.innerHTML = `<div class="empty">Nog geen teamleden.</div>`;
+      return;
+    }
+    const max = Math.max(1, ...data.map(d => d.total));
+
+    el.innerHTML = data.map(d => {
+      let body;
+      if(d.rows.length === 0){
+        body = `<div class="hint" style="margin-top:0;">Geen formulier ingediend${monthSel==="alle" ? "" : " voor " + monthLabelFull(monthSel)}.</div>`;
+      } else {
+        const cats = aggregateCategories(d.rows);
+        const catSum = cats.reduce((s,c) => s + c.hours, 0);
+        const rest = d.total - catSum;
+        const catMax = Math.max(1, ...cats.map(c => c.hours), rest > 0 ? rest : 0);
+        body = "";
+        if(d.total === 0 && cats.length === 0){
+          body = `<div class="hint" style="margin-top:0;">Geen extra uren opgegeven.</div>`;
+        } else {
+          body += cats.map(c => miniRow(c.label, c.hours, catMax, false)).join("");
+          if(rest > 0.004) body += miniRow("Niet uitgesplitst", rest, catMax, true);
+          if(catSum - d.total > 0.004){
+            body += `<div class="hint">Let op: uitsplitsing telt op tot ${fmtH(catSum)}u, opgegeven totaal is ${fmtH(d.total)}u.</div>`;
+          }
+        }
+        if(monthSel === "alle" && d.rows.length > 1){
+          const perMonth = d.rows.slice().sort((a,b) => b.month.localeCompare(a.month));
+          body += `<div class="mini-sub">Per maand</div>` +
+            perMonth.map(r => `<div style="font-size:12px; display:flex; justify-content:space-between;"><span>${monthLabel(r.month)}</span><span class="mono">${fmtH(r.extraHours)}u</span></div>`).join("");
+        }
+      }
+      return `
+        <details class="person-item" data-name="${esc(d.name)}" ${openPersons.has(d.name) ? "open" : ""} ontoggle="onPersonToggle(this)">
+          <summary>
+            <span class="chev"></span>
+            <span class="bar-label" title="${esc(d.name)}">${esc(d.name)}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${(d.total/max*100).toFixed(1)}%"></div></div>
+            <span class="bar-value mono">${fmtH(d.total)}u</span>
+          </summary>
+          <div class="person-body">${body}</div>
+        </details>`;
+    }).join("");
+  }
+
+  // Tabel alle inzendingen (met aanpassingen + verwijderen)
+  const expandedEditRows = new Set();
+  function toggleRowEdits(id){
+    if(expandedEditRows.has(id)) expandedEditRows.delete(id); else expandedEditRows.add(id);
+    renderAdmin();
+  }
+  function renderAdminTable(rows){
     const tbody = document.getElementById("admin-table-body");
     const sortedRows = rows.slice().sort((a,b) => b.month.localeCompare(a.month) || a.name.localeCompare(b.name));
     if(sortedRows.length === 0){
-      tbody.innerHTML = `<tr><td colspan="10" class="empty">Geen inzendingen voor deze selectie.</td></tr>`;
-    } else {
-      tbody.innerHTML = sortedRows.map(r => `
+      tbody.innerHTML = `<tr><td colspan="12" class="empty">Geen inzendingen voor deze selectie.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = sortedRows.map(r => {
+      const n = (r.edits || []).length;
+      const status = n
+        ? `<button class="pill warn" onclick="toggleRowEdits('${r.id}')" title="Klik om de aanpassingen te bekijken">Aangepast ${n}&times; ${expandedEditRows.has(r.id) ? "&#9650;" : "&#9660;"}</button>`
+        : `<span class="pill neutral">Origineel</span>`;
+      const confirming = pendingDeleteSubId === r.id;
+      const row = `
         <tr>
           <td>${monthLabel(r.month)}</td>
-          <td>${r.name}</td>
-          <td>${r.covCheck==="ja" ? '<span class="pill good">Ja</span>' : `<span class="pill warn">${r.covCheckAnders||"anders"}</span>`}</td>
-          <td>${(r.codes||[]).map(c=>`<code class="code-chip">${c}</code>`).join("") || "-"}</td>
-          <td class="mono">${r.intakes}</td>
-          <td class="mono">${r.intakes1000}</td>
-          <td class="mono">${r.extraHours}</td>
-          <td>${r.code10005 ? r.code10005.toUpperCase() : "-"}</td>
-          <td>${r.zorgtopics==="ja" ? '<span class="pill good">Ja</span>' : r.zorgtopics==="nee" ? '<span class="pill warn">Nee</span>' : r.zorgtopics ? r.zorgtopics.toUpperCase() : "-"}</td>
-          <td>${r.dossiers || "-"}</td>
-        </tr>
-      `).join("");
+          <td>${esc(r.name)}</td>
+          <td>${r.covCheck==="ja" ? '<span class="pill good">Ja</span>' : `<span class="pill warn">${esc(r.covCheckAnders||"anders")}</span>`}</td>
+          <td>${(r.codes||[]).map(c=>`<code class="code-chip">${esc(c)}</code>`).join("") || "-"}</td>
+          <td class="mono">${fmtH(r.intakes)}</td>
+          <td class="mono">${fmtH(r.intakes1000)}</td>
+          <td class="mono">${fmtH(r.extraHours)}</td>
+          <td>${r.code10005 ? esc(r.code10005.toUpperCase()) : "-"}</td>
+          <td>${r.zorgtopics==="ja" ? '<span class="pill good">Ja</span>' : r.zorgtopics==="nee" ? '<span class="pill warn">Nee</span>' : r.zorgtopics ? esc(r.zorgtopics.toUpperCase()) : "-"}</td>
+          <td>${esc(r.dossiers || "-")}</td>
+          <td>${status}</td>
+          <td><div class="row-actions"><button class="btn ${confirming ? "danger" : "ghost"} small" onclick="deleteSubmission('${r.id}')">${confirming ? "Zeker weten?" : "Verwijderen"}</button></div></td>
+        </tr>`;
+      const detail = (n && expandedEditRows.has(r.id))
+        ? `<tr class="edit-detail-row"><td colspan="12">${renderChangeList(r.edits)}</td></tr>`
+        : "";
+      return row + detail;
+    }).join("");
+  }
+
+  let pendingDeleteSubId = null;
+  let pendingDeleteSubTimer = null;
+  async function deleteSubmission(id){
+    if(!supabaseClient || !currentUser || !currentUser.admin) return;
+    const s = submissions.find(x => x.id === id);
+    if(!s) return;
+
+    if(pendingDeleteSubId !== id){
+      pendingDeleteSubId = id;
+      showToast(`Klik nogmaals om het formulier van ${s.name} (${monthLabel(s.month)}) te verwijderen`);
+      renderAdmin();
+      clearTimeout(pendingDeleteSubTimer);
+      pendingDeleteSubTimer = setTimeout(() => { pendingDeleteSubId = null; renderAdmin(); }, 4000);
+      return;
+    }
+
+    clearTimeout(pendingDeleteSubTimer);
+    pendingDeleteSubId = null;
+    const { error } = await supabaseClient.from(SUBMISSIONS_TABLE).delete().eq("id", id);
+    if(!error){
+      showToast(`Formulier van ${s.name} (${monthLabel(s.month)}) verwijderd`);
+      expandedEditRows.delete(id);
+      fetchSubmissions();
+    } else {
+      showToast("Verwijderen mislukt, probeer het nog eens.");
+      renderAdmin();
     }
   }
 
@@ -1041,9 +1565,9 @@
     const sorted = nonZero.sort((a,b) => b[1]-a[1]);
     el.innerHTML = sorted.map(([label, val]) => `
       <div class="bar-row">
-        <div class="bar-label" title="${label}">${label}</div>
+        <div class="bar-label" title="${esc(label)}">${esc(label)}</div>
         <div class="bar-track"><div class="bar-fill" style="width:${(val/max*100).toFixed(1)}%"></div></div>
-        <div class="bar-value mono">${val.toFixed(2).replace(/\.00$/,"")}u</div>
+        <div class="bar-value mono">${fmtH(val)}u</div>
       </div>
     `).join("");
   }
@@ -1065,7 +1589,7 @@
       return [x,y];
     });
     const path = points.map((p,i) => (i===0?"M":"L") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
-    const dots = points.map((p,i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="var(--accent)"></circle>`).join("");
+    const dots = points.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="var(--accent)"></circle>`).join("");
     const labels = months.map((m,i) => `<text x="${points[i][0].toFixed(1)}" y="${h-8}" font-size="10" text-anchor="middle" fill="var(--text-muted)">${monthLabel(m)}</text>`).join("");
     const valueLabels = points.map((p,i) => `<text x="${p[0].toFixed(1)}" y="${p[1]-8}" font-size="10" text-anchor="middle" fill="var(--text)" class="mono">${totals[i].toFixed(1).replace(/\.0$/,"")}</text>`).join("");
     el.innerHTML = `
@@ -1080,16 +1604,17 @@
   }
 
   function exportCsv(){
-    const header = ["Maand","Naam","COV check","COV toelichting","Codes","Intakes","Intakes +1000","Extra uren","Uren uitsplitsing","Code 10005","ZorgTopics check","Dossiers/QDNA"];
+    const header = ["Maand","Naam","COV check","COV toelichting","Codes","Intakes","Intakes +1000","Extra uren","Uren uitsplitsing","Code 10005","ZorgTopics check","Dossiers/QDNA","Aantal aanpassingen","Laatst aangepast"];
     const lines = [header.join(";")];
     submissions.slice().sort((a,b)=>a.month.localeCompare(b.month)||a.name.localeCompare(b.name)).forEach(r => {
       const bd = (r.breakdown||[]).map(b=>`${b.category}: ${b.hours}u`).join(" | ");
       lines.push([
         r.month, r.name, r.covCheck, r.covCheckAnders||"", (r.codes||[]).join(","),
-        r.intakes, r.intakes1000, r.extraHours, bd, r.code10005||"", r.zorgtopics||"", r.dossiers||""
+        r.intakes, r.intakes1000, r.extraHours, bd, r.code10005||"", r.zorgtopics||"", r.dossiers||"",
+        (r.edits||[]).length, r.editedAt ? new Date(r.editedAt).toLocaleString("nl-NL") : ""
       ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(";"));
     });
-    const csv = lines.join("\n");
+    const csv = "\uFEFF" + lines.join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -1103,26 +1628,35 @@
     showToast("Export gestart");
   }
 
-  // ---------- team management (admin) ----------
+  // ---------- teambeheer (beheer) ----------
+  let pendingRemoveId = null;
+  let pendingRemoveTimer = null;
+  let pendingResetId = null;
+  let pendingResetTimer = null;
+
   function renderTeamManager(){
     if(!currentUser || !currentUser.admin) return;
     const tbody = document.getElementById("team-table-body");
     if(!tbody) return;
     if(team.length === 0){
-      tbody.innerHTML = `<tr><td colspan="4" class="empty">Nog geen teamleden.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" class="empty">Nog geen teamleden.</td></tr>`;
       return;
     }
     tbody.innerHTML = team.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t => `
       <tr>
-        <td>${t.name}${t.name===currentUser.name ? ' <span class="pill neutral">jij</span>' : ""}</td>
-        <td class="mono">${t.pin}</td>
+        <td>${esc(t.name)}${t.name===currentUser.name ? ' <span class="pill neutral">jij</span>' : ""}</td>
         <td>
           <label class="check-opt">
             <input type="checkbox" ${t.admin ? "checked" : ""} onchange="toggleAdmin('${t.id}', this.checked)">
             beheerder
           </label>
         </td>
-        <td><button class="btn ${pendingRemoveId===t.id ? 'secondary' : 'ghost'} small" onclick="removeTeamMember('${t.id}', '${t.name.replace(/'/g,"\\'")}')">${pendingRemoveId===t.id ? "Zeker weten?" : "Verwijderen"}</button></td>
+        <td>
+          <div class="row-actions">
+            <button class="btn ${pendingResetId===t.id ? 'secondary' : 'ghost'} small" onclick="resetMemberPin('${t.id}')">${pendingResetId===t.id ? "Zeker weten?" : "PIN resetten"}</button>
+            <button class="btn ${pendingRemoveId===t.id ? 'danger' : 'ghost'} small" onclick="removeTeamMember('${t.id}')">${pendingRemoveId===t.id ? "Zeker weten?" : "Verwijderen"}</button>
+          </div>
+        </td>
       </tr>
     `).join("");
   }
@@ -1139,7 +1673,7 @@
     const pinInput = document.getElementById("team-new-pin");
     const adminInput = document.getElementById("team-new-admin");
     const name = nameInput.value.trim();
-    const pin = pinInput.value.trim();
+    const pin = pinInput.value.trim() || "0000";
 
     if(!name){ setTeamStatus("Vul een naam in.", true); return; }
     if(!/^\d{4}$/.test(pin)){ setTeamStatus("PIN moet uit 4 cijfers bestaan.", true); return; }
@@ -1151,7 +1685,7 @@
       nameInput.value = "";
       pinInput.value = "";
       adminInput.checked = false;
-      setTeamStatus(`${name} toegevoegd.`, false);
+      setTeamStatus(`${name} toegevoegd. Laat ${name} de PIN na de eerste keer inloggen zelf wijzigen.`, false);
       showToast(`${name} toegevoegd aan het team`);
       fetchTeam();
     } else {
@@ -1162,22 +1696,46 @@
   async function toggleAdmin(id, checked){
     if(!supabaseClient) return;
     const { error } = await supabaseClient.from(TEAM_TABLE).update({ admin: checked }).eq("id", id);
-    if(error){
-      showToast("Wijzigen mislukt");
-    }
+    if(error){ showToast("Wijzigen mislukt"); }
     fetchTeam();
   }
 
-  let pendingRemoveId = null;
-  let pendingRemoveTimer = null;
-
-  async function removeTeamMember(id, name){
+  async function resetMemberPin(id){
     if(!supabaseClient) return;
+    const member = team.find(t => t.id === id);
+    if(!member) return;
+
+    if(pendingResetId !== id){
+      pendingResetId = id;
+      setTeamStatus(`Klik nogmaals om de PIN van ${member.name} terug te zetten naar 0000.`, false);
+      renderTeamManager();
+      clearTimeout(pendingResetTimer);
+      pendingResetTimer = setTimeout(() => { pendingResetId = null; renderTeamManager(); }, 4000);
+      return;
+    }
+
+    clearTimeout(pendingResetTimer);
+    pendingResetId = null;
+    const { error } = await supabaseClient.from(TEAM_TABLE).update({ pin: "0000" }).eq("id", id);
+    if(!error){
+      setTeamStatus(`PIN van ${member.name} is teruggezet naar 0000. Laat ${member.name} deze direct zelf wijzigen.`, false);
+      showToast(`PIN van ${member.name} gereset`);
+      fetchTeam();
+    } else {
+      setTeamStatus("Resetten mislukt, probeer het nog eens.", true);
+      renderTeamManager();
+    }
+  }
+
+  async function removeTeamMember(id){
+    if(!supabaseClient) return;
+    const member = team.find(t => t.id === id);
+    if(!member) return;
     if(team.length <= 1){ setTeamStatus("Je kunt niet het laatste teamlid verwijderen.", true); return; }
 
     if(pendingRemoveId !== id){
       pendingRemoveId = id;
-      setTeamStatus(`Klik nogmaals om ${name} te verwijderen. Eerdere inzendingen blijven bewaard.`, false);
+      setTeamStatus(`Klik nogmaals om ${member.name} te verwijderen. Eerdere inzendingen blijven bewaard.`, false);
       renderTeamManager();
       clearTimeout(pendingRemoveTimer);
       pendingRemoveTimer = setTimeout(() => { pendingRemoveId = null; renderTeamManager(); }, 4000);
@@ -1188,8 +1746,8 @@
     pendingRemoveId = null;
     const { error } = await supabaseClient.from(TEAM_TABLE).delete().eq("id", id);
     if(!error){
-      setTeamStatus(`${name} verwijderd.`, false);
-      showToast(`${name} verwijderd uit het team`);
+      setTeamStatus(`${member.name} verwijderd.`, false);
+      showToast(`${member.name} verwijderd uit het team`);
       fetchTeam();
     } else {
       setTeamStatus("Verwijderen mislukt, probeer het nog eens.", true);
@@ -1197,7 +1755,7 @@
     }
   }
 
-  // ---------- database wiring (Supabase) ----------
+  // ---------- database (Supabase) ----------
   async function migrateTeamRoster(){
     try{
       const { data: metaRows } = await supabaseClient.from(META_TABLE).select("*").eq("id","singleton").limit(1);
@@ -1258,7 +1816,15 @@
     if(error){ showToast("Kan gegevens niet laden: " + error.message); return; }
 
     submissions = (data || []).map(rowToSubmission);
+
+    // Formulier dat je aan het aanpassen bent is intussen verwijderd door beheer
+    if(editingId && !submissions.some(s => s.id === editingId)){
+      resetForm();
+      showToast("Het formulier dat je aanpaste is verwijderd door beheer.");
+    }
+
     renderHistory();
+    onMonthChange();
     if(currentUser && currentUser.admin){
       renderAdmin();
     } else {
@@ -1303,7 +1869,7 @@
   });
 
   populateLoginSelect();
-  initFormOnce();
+  resetForm();
   populateAdminMonths();
   initSupabaseApp();
   tryAutoLogin();
