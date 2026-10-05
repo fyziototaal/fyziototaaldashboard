@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- APP_VERSION: 2026-10-05.1 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-10-05.2 (ophogen bij elke update — hier én in de constante hieronder) -->
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -19,7 +19,7 @@
 // versie beschikbaar is. Na die ene herlaad komen de versies
 // overeen en gebeurt er niets meer — geen oneindige lus.
 (function () {
-  var APP_VERSION = "2026-10-05.1";
+  var APP_VERSION = "2026-10-05.2";
   try {
     fetch(location.pathname + "?_fresh=" + Date.now(), { cache: "no-store" })
       .then(function (res) { return res.text(); })
@@ -107,7 +107,7 @@ if (!window.storage) {
 "use strict";
 var STORAGE_KEY = "fyzio-verlof-v1";
 // Moet gelijk blijven aan de APP_VERSION in de <script> bovenaan de <head>.
-var APP_VERSION_DISPLAY = "2026-10-05.1";
+var APP_VERSION_DISPLAY = "2026-10-05.2";
 var h = React.createElement;
 var useState = React.useState, useEffect = React.useEffect, useCallback = React.useCallback, useMemo = React.useMemo, useRef = React.useRef;
 
@@ -728,7 +728,7 @@ function VerlofForm(props) {
     return h(Card, { className: "mx-auto max-w-md text-center" },
       h("p", { className: "text-2xl" }, "✅"),
       h("h3", { className: "mt-2 text-base font-bold text-slate-900" }, "Aanvraag ingediend"),
-      h("p", { className: "mt-1 text-sm text-slate-500" }, "Je verlofaanvraag staat klaar voor goedkeuring."),
+      h("p", { className: "mt-1 text-sm text-slate-500" }, "Je aanvraag is opgeslagen. Bevestig hem nog even via de knop hieronder, zodat " + ((notifyName || "").trim() || "Lars") + " hem ziet."),
       notifyEmail
         ? h(NotifyButton, { email: notifyEmail, name: notifyName, user: user, req: submitted, done: done })
         : h("button", { className: BTN_PRIMARY + " mt-5", onClick: done }, "Naar mijn overzicht")
@@ -786,11 +786,11 @@ function NotifyButton(props) {
   }
 
   return h("div", { className: "mt-5 flex flex-col items-center gap-2" },
-    h("a", { className: BTN_PRIMARY + " inline-block no-underline", href: href, target: "_blank", rel: "noreferrer", onClick: copy }, "📧 Mail " + displayName),
+    h("a", { className: BTN_PRIMARY + " inline-block no-underline", href: href, target: "_blank", rel: "noreferrer", onClick: copy }, (req.type === "verlof" ? "📧 Klik hier om je verlofaanvraag te bevestigen" : "📧 Klik hier om je overuren te bevestigen")),
     h("p", { className: "max-w-xs text-center text-xs text-slate-400" },
       copied
-        ? "De tekst staat ook op je klembord — mocht Gmail niet openen, plak 'm dan in WhatsApp, sms of je mailapp."
-        : "Dit opent Gmail in een nieuw tabblad. Gebruik je een andere mail-app? Probeer dan de knop hieronder."
+        ? "De tekst staat ook op je klembord — mocht Gmail niet openen, plak 'm dan in WhatsApp, sms of je mailapp. Vergeet niet op Verzenden te klikken!"
+        : "Je aanvraag is pas gezien door " + displayName + " als je deze bevestigt. Dit opent Gmail met een kant-en-klare mail: je hoeft alleen nog op Verzenden te klikken. Gebruik je een andere mail-app? Probeer dan de knop hieronder."
     ),
     h("a", { className: BTN_SECONDARY + " inline-block no-underline text-center", href: mailtoHref }, "Open in mijn eigen mailapp"),
     h("button", { className: BTN_SECONDARY, onClick: copy }, copied ? "✓ Gekopieerd! Plak hem in je mail of appje" : "Kopieer melding"),
