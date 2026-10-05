@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-05.1 -->
+<!-- APP_VERSION: 2026-10-05.2 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-05.1";
+  const APP_VERSION = "2026-10-05.2";
   (function(){
     var params = new URLSearchParams(location.search);
     var alreadyReloaded = params.has("_v");
@@ -394,8 +394,8 @@
 
   DRIVE BACK-UP
   Elke inzending en aanpassing wordt als PDF naar Drive gestuurd via
-  hetzelfde Apps Script endpoint als testen-fyziofit.html
-  (DRIVE_UPLOAD_URL). Aanpassingen krijgen een eigen PDF met tijdstempel.
+  het Apps Script "Afhandelformulieren" naar de Drive-map
+  Afhandelformulieren (DRIVE_UPLOAD_URL). Aanpassingen krijgen een eigen PDF met tijdstempel.
   =====================================================================
 -->
 
@@ -679,9 +679,9 @@
   const SUPABASE_URL = "https://szunargvsmtzbbnmnghc.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5";
 
-  // Drive-upload endpoint — zelfde Apps Script Web App als testen-fyziofit.html
-  // (FyzioFit Rapport Ontvanger). Verwacht { bestandsnaam, pdfBase64 }.
-  const DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbzZZHNKhzSP8c51MnC9dwKOtQFsmsSuQQBjTqC21fqZyLkk5_gRXKQ9f1xZBqMAuAQmdw/exec";
+  // Drive-upload endpoint — eigen Apps Script Web App "Afhandelformulieren"
+  // (zelfde werkwijze als testen-fyziofit.html). Verwacht { bestandsnaam, pdfBase64 }.
+  const DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbxfnnsFCMPnCgbgWzANSu5A3prPSDt7cMjbTFg4R7lsx54YegtmRohaHMkbBYXgHnAH/exec";
 
   const TEAM_TABLE = "afhandelformulier_team";
   const SUBMISSIONS_TABLE = "afhandelformulier_submissions";
