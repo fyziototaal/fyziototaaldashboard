@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-05.3 -->
+<!-- APP_VERSION: 2026-10-05.4 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-05.3";
+  const APP_VERSION = "2026-10-05.4";
   (function(){
     var params = new URLSearchParams(location.search);
     var alreadyReloaded = params.has("_v");
@@ -289,23 +289,14 @@
   .month-hint:empty{ display:none; }
   .history-actions{ display:flex; gap:6px; margin-top:10px; }
 
-  /* Totaaloverzicht (collega x maand) */
-  table.matrix{ font-size:13px; min-width:100%; }
-  table.matrix th, table.matrix td{ text-align:right; white-space:nowrap; padding:9px 12px; }
-  table.matrix th:first-child, table.matrix td:first-child{
-    text-align:left; position:sticky; left:0; background:var(--surface); z-index:1;
+  .team-total{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    padding:12px 14px; margin-bottom:12px; border-radius:10px;
+    background:var(--accent-soft); color:var(--accent);
   }
-  table.matrix td.na{ color:var(--text-muted); opacity:0.6; }
-  table.matrix .col-sel{ background:var(--accent-soft); }
-  table.matrix th.col-sel{ color:var(--accent); }
-  table.matrix .col-total{ font-weight:700; border-left:2px solid var(--border); }
-  table.matrix tr.total-row td{
-    font-weight:700; border-top:2px solid var(--accent); border-bottom:none;
-    background:var(--surface-2);
-  }
-  table.matrix tr.total-row td:first-child{ background:var(--surface-2); color:var(--accent); }
-  table.matrix tr.total-row td.grand{ background:var(--accent); color:#fff; border-radius:0 0 8px 0; }
-  table.matrix tbody tr:not(.total-row):hover td{ background:var(--surface-2); }
+  .team-total .tt-label{ font-weight:600; font-size:13px; }
+  .team-total .tt-value{ font-size:22px; font-weight:700; }
+  .team-total .tt-sub{ display:block; font-size:12px; font-weight:500; color:var(--text-muted); }
   .empty{ text-align:center; color:var(--text-muted); padding:32px 16px; }
   .section-title{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; gap:8px; flex-wrap:wrap; }
   .section-title h2{ font-size:16px; }
@@ -601,16 +592,6 @@
 
       <div class="kpis" id="admin-kpis"></div>
 
-      <div class="divider"></div>
-
-      <div class="card">
-        <div class="section-title">
-          <h2>Totaaloverzicht extra uren</h2>
-          <span class="hint" id="matrix-hint"></span>
-        </div>
-        <div class="table-wrap" id="admin-matrix"></div>
-      </div>
-
       <div id="admin-edits-wrap" hidden>
         <div class="divider"></div>
         <div class="card alert-card">
@@ -631,9 +612,10 @@
         </div>
         <div class="card">
           <div class="section-title">
-            <h2>Uitsplitsing per collega</h2>
+            <h2>Extra uren per collega</h2>
             <span class="hint">Klik op een naam voor de uitsplitsing</span>
           </div>
+          <div class="team-total" id="admin-team-total"></div>
           <div id="admin-person-details" class="person-list"></div>
         </div>
       </div>
@@ -1442,7 +1424,6 @@
       </div>
     `;
 
-    renderMatrix(monthSel);
     renderAdminEdits(rows);
 
     // categorieën
@@ -1454,52 +1435,6 @@
     renderTrend();
     renderTeamManager();
     renderAdminTable(rows);
-  }
-
-  // Totaaloverzicht: extra uren per collega per maand, met totalen
-  const MATRIX_MONTHS = 6;
-  function renderMatrix(monthSel){
-    const el = document.getElementById("admin-matrix");
-    const hint = document.getElementById("matrix-hint");
-    const allMonths = Array.from(new Set(submissions.map(s => s.month))).sort();
-    if(allMonths.length === 0){
-      el.innerHTML = `<div class="empty">Nog geen inzendingen.</div>`;
-      hint.textContent = "";
-      return;
-    }
-    let months = allMonths.slice(-MATRIX_MONTHS);
-    if(monthSel !== "alle" && !months.includes(monthSel)){
-      months = allMonths.filter(m => m <= monthSel).slice(-MATRIX_MONTHS);
-    }
-    hint.textContent = months.length === allMonths.length
-      ? "alle maanden"
-      : `laatste ${months.length} maanden (${monthLabel(months[0])} t/m ${monthLabel(months[months.length-1])})`;
-
-    const names = Array.from(new Set(teamNames().concat(
-      submissions.filter(s => months.includes(s.month)).map(s => s.name)
-    ))).sort((a,b) => a.localeCompare(b));
-
-    const cell = (name, m) => {
-      const s = submissions.find(x => x.name === name && x.month === m);
-      return s ? (s.extraHours || 0) : null;
-    };
-    const colCls = m => m === monthSel ? " col-sel" : "";
-
-    const colTotals = months.map(m => submissions.filter(s => s.month === m).reduce((t,s) => t + (s.extraHours||0), 0));
-    const grand = colTotals.reduce((a,b) => a + b, 0);
-
-    const head = `<tr><th>Collega</th>${months.map(m => `<th class="${colCls(m).trim()}">${monthLabel(m)}</th>`).join("")}<th class="col-total">Totaal</th></tr>`;
-    const body = names.map(n => {
-      const vals = months.map(m => cell(n, m));
-      const total = vals.reduce((t,v) => t + (v || 0), 0);
-      return `<tr><td>${esc(n)}</td>${vals.map((v,i) => v === null
-        ? `<td class="na${colCls(months[i])}" title="Geen formulier ingediend">–</td>`
-        : `<td class="mono${colCls(months[i])}">${fmtH(v)}</td>`).join("")}<td class="mono col-total">${fmtH(total)}</td></tr>`;
-    }).join("");
-    const foot = `<tr class="total-row"><td>Totaal team</td>${colTotals.map((t,i) => `<td class="mono${colCls(months[i])}">${fmtH(t)}</td>`).join("")}<td class="mono col-total grand">${fmtH(grand)}</td></tr>`;
-
-    el.innerHTML = `<table class="matrix"><thead>${head}</thead><tbody>${body}${foot}</tbody></table>
-      <p class="hint" style="margin-top:10px;">Uren per maand. &ndash; = geen formulier ingediend.${monthSel !== "alle" ? " Geselecteerde maand is gemarkeerd." : ""}</p>`;
   }
 
   // Melding: aangepaste formulieren in de huidige selectie
@@ -1543,9 +1478,17 @@
 
     if(data.length === 0){
       el.innerHTML = `<div class="empty">Nog geen teamleden.</div>`;
+      document.getElementById("admin-team-total").innerHTML = "";
       return;
     }
     const max = Math.max(1, ...data.map(d => d.total));
+    const teamTotal = data.reduce((t,d) => t + d.total, 0);
+    const indieners = data.filter(d => d.rows.length).length;
+    document.getElementById("admin-team-total").innerHTML = `
+      <span class="tt-label">Totaal alle collega's
+        <span class="tt-sub">${monthSel==="alle" ? "alle maanden" : monthLabelFull(monthSel)} &middot; ${indieners} formulier${indieners===1?"":"en"}</span>
+      </span>
+      <span class="tt-value mono">${fmtH(teamTotal)} uur</span>`;
 
     el.innerHTML = data.map(d => {
       let body;
