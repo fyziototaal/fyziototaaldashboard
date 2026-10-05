@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-10-05.3 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-10-05.4 (ophogen bij elke update — hier én in de constante hieronder) -->
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
@@ -10,7 +10,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-10-05.3";
+  const APP_VERSION = "2026-10-05.4";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -665,6 +665,7 @@ function renderPlPatient(){
     const st=gedaan?"groen":gepland?getMomentStatus(gepland,false):"grijs";
     items.push({id:m.id,label:m.kort,type:"mijlpaal",richtlijn,gepland,uitgesteldDatum,gedaan,gedaanDatum,reden:status.reden||"",st,richtlijnWeek:m.richtlijnWeek,viaTest:!!mmGedaan});
   });
+  items.sort((x,y)=>(x.richtlijnWeek??999)-(y.richtlijnWeek??999));
   const rttGedaan=items.find(i=>i.id==="m_rtt")?.gedaan;
   const rtcGedaan=items.find(i=>i.id==="m_rtc")?.gedaan;
   const rttReminder=rttGedaan&&!rtcGedaan?`<div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:12px;padding:12px 14px;margin-bottom:12px"><div style="font-size:13px;font-weight:500;color:#92400e;margin-bottom:2px">🏃 RTT testen voltooid</div><div style="font-size:13px;color:#78350f">RTC nog niet gepland — vergeet de 8 trainingen niet te registreren.</div></div>`:"";
