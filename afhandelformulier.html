@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-05.4 -->
+<!-- APP_VERSION: 2026-10-06.1 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-05.4";
+  const APP_VERSION = "2026-10-06.1";
   (function(){
     var params = new URLSearchParams(location.search);
     var alreadyReloaded = params.has("_v");
@@ -775,6 +775,7 @@
   const yn = v => v==="ja" ? "Ja" : v==="nee" ? "Nee" : v==="nvt" ? "NVT" : v==="anders" ? "Anders" : (v || "-");
   const num = v => (v==null || v==="") ? "-" : fmtH(v);
   const FIELD_DEFS = [
+    { key:"month",          label:"Maand",                   fmt: v => v ? cap(monthLabelFull(v)) : "-" },
     { key:"covCheck",       label:"COV check",               fmt: yn },
     { key:"covCheckAnders", label:"COV toelichting",         fmt: v => v || "-" },
     { key:"codes",          label:"Codes gecheckt",          fmt: v => (v && v.length) ? v.slice().sort().join(", ") : "geen" },
@@ -939,8 +940,14 @@
   function onMonthChange(){
     const hint = document.getElementById("f-month-hint");
     const m = document.getElementById("f-month").value;
-    if(editingId || !currentUser || !m){ hint.innerHTML = ""; return; }
+    if(!currentUser || !m){ hint.innerHTML = ""; return; }
     const existing = submissions.find(s => s.id === docIdFor(currentUser.name, m));
+    if(editingId){
+      hint.innerHTML = (existing && existing.id !== editingId)
+        ? `Je hebt voor ${monthLabelFull(m)} al een ander formulier ingediend. Kies een andere maand, of verwijder eerst één van beide via beheer.`
+        : (editingOriginal && m !== editingOriginal.month ? `Dit formulier wordt verplaatst van ${monthLabelFull(editingOriginal.month)} naar ${monthLabelFull(m)}.` : "");
+      return;
+    }
     hint.innerHTML = existing
       ? `Je hebt voor ${monthLabelFull(m)} al een formulier ingediend. <button type="button" class="btn ghost small" onclick="loadForEdit('${existing.id}')">Dat formulier aanpassen</button>`
       : "";
@@ -1056,7 +1063,6 @@
     editingOriginal = JSON.parse(JSON.stringify(s));
 
     buildMonthOptions(s.month);
-    document.getElementById("f-month").disabled = true;
     document.getElementById("f-month-hint").innerHTML = "";
 
     setRadioValue("cov", s.covCheck || "ja");
@@ -1137,7 +1143,13 @@
       return;
     }
 
-    const id = editingId || docIdFor(name, month);
+    const id = docIdFor(name, month);
+    const oldId = editingId && editingId !== id ? editingId : null; // maand gewijzigd bij aanpassen
+    if(oldId && submissions.some(s => s.id === id)){
+      statusEl.textContent = `Je hebt voor ${monthLabelFull(month)} al een ander formulier ingediend. Kies een andere maand.`;
+      statusEl.style.color = "var(--critical)";
+      return;
+    }
     // Bestaat er al een formulier voor deze maand? Dan is dit een aanpassing.
     const original = editingOriginal || submissions.find(s => s.id === id) || null;
     let changes = null;
@@ -1164,6 +1176,11 @@
     statusEl.textContent = "Opslaan…";
 
     const { error } = await supabaseClient.from(SUBMISSIONS_TABLE).upsert(submissionToRow(record));
+
+    if(!error && oldId){
+      const { error: delError } = await supabaseClient.from(SUBMISSIONS_TABLE).delete().eq("id", oldId);
+      if(delError) showToast("Let op: de oude versie kon niet worden verwijderd. Vraag beheer om dit te doen.");
+    }
     btn.disabled = false;
 
     if(error){
