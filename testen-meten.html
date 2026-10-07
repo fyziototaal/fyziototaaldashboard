@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-07.7 -->
+<!-- APP_VERSION: 2026-10-07.8 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-07.7";
+  const APP_VERSION = "2026-10-07.8";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -779,6 +779,8 @@ const RATIOS = [
 /* =====================================================================
    HULPFUNCTIES
    ===================================================================== */
+// Mailen naar patiënt staat tijdelijk uit (nog niet in gebruik). Zet op true om de knoppen terug te zetten.
+const MAIL_ENABLED = false;
 const SB_URL = 'https://szunargvsmtzbbnmnghc.supabase.co';
 const SB_KEY = 'sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5';
 const TABLE = 'fyzio_testen_meten';
@@ -1057,7 +1059,7 @@ function renderDash(){
       </div>
       <div class="row">
         <button class="btn small" data-act="editPatient">✏️ Gegevens</button>
-        ${ms.length ? '<button class="btn small" data-act="pdfModal">📄 PDF / mail</button><button class="btn small" data-act="aiModal">✨ AI-samenvatting</button>' : ''}
+        ${ms.length ? '<button class="btn small" data-act="pdfModal">📄 PDF</button><button class="btn small" data-act="aiModal">✨ AI-samenvatting</button>' : ''}
         <button class="btn primary" data-act="newMoment">+ Nieuw testmoment</button>
       </div>
     </div>
@@ -1183,7 +1185,7 @@ function renderAiTab(){
   const list = S.patient.samenvattingen.slice().sort((a,b) => (b.created || '').localeCompare(a.created || ''));
   if(!list.length) return `<div class="card empty"><div class="big">✨</div><h3>Nog geen AI-samenvattingen</h3><p>Optioneel: laat een testverslag schrijven op basis van één of meer testmomenten.</p><button class="btn primary" data-act="aiModal">✨ AI-samenvatting maken</button></div>`;
   return list.map(s => `<section class="card"><div class="row"><h3>Samenvatting ${fmtDate((s.created || '').slice(0,10))}</h3><span class="muted small">Testmomenten: ${(s.momenten || []).map(fmtDate).join(', ')}</span><span class="spacer"></span>
-    <button class="btn small" data-act="copyAi" data-id="${s.id}">📋 Kopiëren</button><button class="btn small" data-act="mailAi" data-id="${s.id}">📧 Mailen</button><button class="btn small" data-act="editAi" data-id="${s.id}">✏️ Bewerken</button><button class="btn small danger" data-act="delAi" data-id="${s.id}">Verwijderen</button></div>
+    <button class="btn small" data-act="copyAi" data-id="${s.id}">📋 Kopiëren</button>${MAIL_ENABLED ? `<button class="btn small" data-act="mailAi" data-id="${s.id}">📧 Mailen</button>` : ''}<button class="btn small" data-act="editAi" data-id="${s.id}">✏️ Bewerken</button><button class="btn small danger" data-act="delAi" data-id="${s.id}">Verwijderen</button></div>
     <div class="ai-text" style="margin-top:10px">${aiTextHTML(s.tekst)}</div></section>`).join('');
 }
 
@@ -1380,7 +1382,7 @@ function pdfModal(aiPre){
   const sums = S.patient.samenvattingen.slice().sort((a,b) => (b.created || '').localeCompare(a.created || ''));
   const last = ms[0];
   const body = mailBody(last, aiPre ? sums.find(x => x.id === aiPre) : null);
-  openModal(`<h2>📄 Testoverzicht voor de patiënt</h2><p class="muted small">Kies wat erin komt. Je kunt de PDF downloaden of direct mailen.</p>
+  openModal(`<h2>📄 Testoverzicht voor de patiënt</h2><p class="muted small">Kies wat erin komt${MAIL_ENABLED ? '. Je kunt de PDF downloaden of direct mailen' : ' en download de PDF'}.</p>
     <div class="grid2" style="margin-top:10px">
       <div><div class="row"><b class="small">Testmomenten</b><span class="spacer"></span><button class="linkbtn small" data-act="checkAll" data-g="pm">alles/niets</button></div>
         <div class="checklist">${ms.map(m => `<label><input type="checkbox" data-g="pm" value="${m.id}" checked> ${fmtDate(m.datum)} <span class="muted small">${esc(m.tester || '')} · ${(m.results || []).length} testen</span></label>`).join('')}</div></div>
@@ -1393,15 +1395,15 @@ function pdfModal(aiPre){
       <label class="row small"><input type="checkbox" id="pdf-ratios"> Krachtverhoudingen (zoals H/Q-ratio) toevoegen</label>
       ${sums.length ? `<label class="f" style="margin-top:6px">AI-samenvatting als toelichting toevoegen<select class="inp" id="pdf-ai"><option value="">Nee</option>${sums.map(s => `<option value="${s.id}" ${s.id === aiPre ? 'selected' : ''}>Samenvatting van ${fmtDate((s.created || '').slice(0,10))}</option>`).join('')}</select></label>` : ''}
     </div>
-    <div class="mailbox">
+    ${MAIL_ENABLED ? `<div class="mailbox">
       <b>📧 Mailen naar de patiënt</b>
       <label class="f">E-mailadres patiënt <span style="font-weight:500">(wordt niet opgeslagen)</span><input type="email" class="inp" id="mail-to" inputmode="email" autocomplete="off" placeholder="naam@voorbeeld.nl"></label>
       <label class="f">Onderwerp<input class="inp" id="mail-su" value="Je testresultaten bij Fyzio Totaal"></label>
       <label class="f">Bericht<textarea class="inp" id="mail-body" style="min-height:150px">${esc(body)}</textarea></label>
       ${sums.length ? `<label class="row small"><input type="checkbox" id="mail-ai" ${aiPre ? 'checked' : ''}> Gekozen AI-samenvatting ook in de mailtekst zetten</label>` : ''}
       <p class="muted small" style="margin:0">Op je telefoon kies je daarna je mail-app; de PDF zit er dan al als bijlage in. Op de computer opent Gmail met een concept en wordt de PDF gedownload om bij te voegen.</p>
-    </div>
-    <div class="actions"><button class="btn" data-act="closeModal">Annuleren</button><button class="btn" data-act="makePdf">📄 Downloaden</button><button class="btn primary" data-act="mailPdf">📧 Mail naar patiënt</button></div>`, true);
+    </div>` : ''}
+    <div class="actions"><button class="btn" data-act="closeModal">Annuleren</button><button class="btn ${MAIL_ENABLED ? '' : 'primary'}" data-act="makePdf">📄 Downloaden</button>${MAIL_ENABLED ? '<button class="btn primary" data-act="mailPdf">📧 Mail naar patiënt</button>' : ''}</div>`, true);
 }
 function mailBody(m, sum){
   const p = S.patient;
@@ -2090,8 +2092,8 @@ const ACT = {
   async archCustom(el){ const c = S.config.customTests.find(x => x.id === el.dataset.id); if(!c || !confirm('“' + c.n + '” verwijderen? De test is daarna niet meer te kiezen; eerdere resultaten blijven zichtbaar.')) return; try{ await saveConfig(cf => { const x = cf.customTests.find(z => z.id === c.id); if(x) x.archived = true; }); render(); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); } },
   async restoreCustom(el){ try{ await saveConfig(cf => { const x = cf.customTests.find(z => z.id === el.dataset.id); if(x) x.archived = false; }); render(); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); } },
   pdfModal(){ pdfModal(); }, aiModal, runAi,
-  makePdf(){ doPdf('download'); }, mailPdf(){ doPdf('mail'); },
-  mailAi(el){ pdfModal(el.dataset.id); },
+  makePdf(){ doPdf('download'); }, mailPdf(){ if(MAIL_ENABLED) doPdf('mail'); },
+  mailAi(el){ if(MAIL_ENABLED) pdfModal(el.dataset.id); },
   checkAll(el){ const bx = [...document.querySelectorAll('input[data-g="' + el.dataset.g + '"]')]; const all = bx.every(b => b.checked); bx.forEach(b => b.checked = !all); },
   resetKey(){ try{ localStorage.removeItem('ft_apikey'); } catch(e){} toast('Key verwijderd, klik opnieuw op Genereren'); const b = document.querySelector('[data-act="runAi"]'); if(b) b.disabled = false; },
   copyAiDraft(){ copyText($('#ai-result').value); },
@@ -2133,7 +2135,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if(el.id === 'unit-sel'){ const o = $('#unit-other'); o.style.display = el.value === '__anders' ? '' : 'none'; if(el.value === '__anders') o.focus(); return; }
-  if(el.id === 'mail-ai' || el.id === 'pdf-ai'){
+  if(MAIL_ENABLED && (el.id === 'mail-ai' || el.id === 'pdf-ai')){
     const id = $('#pdf-ai') ? $('#pdf-ai').value : '', on = $('#mail-ai') && $('#mail-ai').checked;
     const ms = sortedMoments(); $('#mail-body').value = mailBody(ms[ms.length-1], on && id ? S.patient.samenvattingen.find(x => x.id === id) : null);
     return;
