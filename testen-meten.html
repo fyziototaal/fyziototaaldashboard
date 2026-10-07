@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-07.6 -->
+<!-- APP_VERSION: 2026-10-07.7 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-07.6";
+  const APP_VERSION = "2026-10-07.7";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -1334,6 +1334,7 @@ function renderBeheer(){
     </section>
   </div>`;
 }
+const UNITS = [['','Geen eenheid'],['kg','kg (kilogram)'],['N','N (newton)'],['hh','herhalingen'],['s','s (seconden)'],['min','min (minuten)'],['cm','cm (centimeter)'],['m','m (meter)'],['°','° (graden)'],['%','% (procent)'],['bpm','bpm (hartslag)'],['m/s','m/s (snelheid)'],['punten','punten (score)'],['Watt','Watt'],['ml/kg/min','ml/kg/min (VO2max)']];
 function customForm(c){
   c = c || {n:'', d:'kracht', s:'', kw:'', type:'getal', label:'', unit:'', opts:'Goed, Matig, Slecht', side:false, better:'hoog', info:''};
   const subs = [...new Set(allTests().map(t => t.s))];
@@ -1345,7 +1346,8 @@ function customForm(c){
       <label class="f" style="grid-column:1/-1">Zoekwoorden (waar zou een collega op zoeken?)<input class="inp" name="kw" value="${esc(c.kw)}" placeholder="bijv. nek spierkracht whiplash cervicaal"></label>
       <label class="f">Type uitkomst<select class="inp" name="type"><option value="getal" ${c.type !== 'keuze' ? 'selected' : ''}>Getal</option><option value="keuze" ${c.type === 'keuze' ? 'selected' : ''}>Keuze (bijv. goed/matig/slecht)</option></select></label>
       <label class="f">Label van de uitkomst<input class="inp" name="label" value="${esc(c.label)}" placeholder="bijv. Kracht, Tijd, Afstand"></label>
-      <label class="f">Eenheid (bij getal)<input class="inp" name="unit" value="${esc(c.unit)}" placeholder="kg, s, cm, °, hh…"></label>
+      <label class="f">Eenheid (bij getal)<select class="inp" name="unitSel" id="unit-sel">${(() => { const known = UNITS.some(u => u[0] === (c.unit || '')); return UNITS.map(u => `<option value="${esc(u[0])}" ${u[0] === (c.unit || '') ? 'selected' : ''}>${esc(u[1])}</option>`).join('') + `<option value="__anders" ${known ? '' : 'selected'}>Anders…</option>`; })()}</select>
+        <input class="inp" name="unitOther" id="unit-other" value="${esc(UNITS.some(u => u[0] === (c.unit || '')) ? '' : c.unit)}" placeholder="Typ de eenheid" style="margin-top:6px;${UNITS.some(u => u[0] === (c.unit || '')) ? 'display:none' : ''}"></label>
       <label class="f">Opties (bij keuze, komma-gescheiden)<input class="inp" name="opts" value="${esc(c.opts)}"></label>
       <label class="f">Links/rechts apart meten?<select class="inp" name="side"><option value="0">Nee</option><option value="1" ${c.side ? 'selected' : ''}>Ja (met LSI)</option></select></label>
       <label class="f">Wat is beter?<select class="inp" name="better"><option value="hoog">Hoger is beter</option><option value="laag" ${c.better === 'laag' ? 'selected' : ''}>Lager is beter (bijv. tijd)</option></select></label>
@@ -2130,6 +2132,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  if(el.id === 'unit-sel'){ const o = $('#unit-other'); o.style.display = el.value === '__anders' ? '' : 'none'; if(el.value === '__anders') o.focus(); return; }
   if(el.id === 'mail-ai' || el.id === 'pdf-ai'){
     const id = $('#pdf-ai') ? $('#pdf-ai').value : '', on = $('#mail-ai') && $('#mail-ai').checked;
     const ms = sortedMoments(); $('#mail-body').value = mailBody(ms[ms.length-1], on && id ? S.patient.samenvattingen.find(x => x.id === id) : null);
@@ -2157,7 +2160,7 @@ document.addEventListener('submit', async e => {
   }
   if(f.id === 'custom-form'){
     const fd = new FormData(f), id = f.dataset.id;
-    const c = {n:fd.get('n').trim(), d:fd.get('d'), s:fd.get('s').trim() || 'Eigen testen', kw:fd.get('kw').trim(), type:fd.get('type'), label:fd.get('label').trim(), unit:fd.get('unit').trim(), opts:fd.get('opts').trim(), side:fd.get('side') === '1', better:fd.get('better'), info:fd.get('info').trim()};
+    const c = {n:fd.get('n').trim(), d:fd.get('d'), s:fd.get('s').trim() || 'Eigen testen', kw:fd.get('kw').trim(), type:fd.get('type'), label:fd.get('label').trim(), unit:(fd.get('unitSel') === '__anders' ? (fd.get('unitOther') || '').trim() : fd.get('unitSel')), opts:fd.get('opts').trim(), side:fd.get('side') === '1', better:fd.get('better'), info:fd.get('info').trim()};
     if(!c.n) return;
     if(c.type === 'keuze' && c.opts.split(',').filter(s => s.trim()).length < 2){ toast('Geef minimaal twee keuzeopties, gescheiden door komma’s', true); return; }
     try{
