@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-07.4 -->
+<!-- APP_VERSION: 2026-10-07.6 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-07.4";
+  const APP_VERSION = "2026-10-07.6";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -361,7 +361,7 @@ const SUBKW = {
 
 /* ---- Norm-helpers ---- */
 const NB = (lvl, t) => ({lvl, t});
-const LSI_NORM = x => x >= 90 ? NB('good','≥90%') : x >= 80 ? NB('warn','80–90%') : NB('bad','<80%');
+const LSI_NORM = x => x >= 90 ? NB('good','≥90%') : NB('warn','<90%');
 
 const num  = (k,l,u,x={}) => Object.assign({k,l,u,t:'num'},x);
 const mmss = (k,l,x={}) => Object.assign({k,l,u:'min:sec',t:'mmss'},x);
@@ -369,7 +369,7 @@ const sel  = (k,l,opts,x={}) => Object.assign({k,l,t:'sel',opts},x);
 // Extensie met richting: tekort (deficit) of hyperextensie, zodat niemand met + of − hoeft te puzzelen
 const sgn  = (k,l) => ({k,l,u:'°',t:'signed',hint:'Kies tekort of hyper, vul het aantal graden in'});
 
-const HHD_INFO = 'Isometrische meting met handheld dynamometer (kg). Neem per zijde de beste van 2–3 pogingen (3–5 s maximaal aanspannen), start met de niet-aangedane zijde. Gebruik bij herhaalmetingen steeds dezelfde positie, hefboomarm en (bij voorkeur) dezelfde tester.\nLSI ≥90% wordt in de sportrevalidatie meestal als streefwaarde gebruikt.';
+const HHD_INFO = 'Isometrische meting met handheld dynamometer (kg). Neem per zijde de beste van 2–3 pogingen (3–5 s maximaal aanspannen), start met de niet-aangedane zijde. Gebruik bij herhaalmetingen steeds dezelfde positie, hefboomarm en (bij voorkeur) dezelfde tester.\nLSI ≥90% is de gangbare return-to-sport-grens. Absolute kg-normen zijn zonder hefboomarm en lichaamsgewicht niet bruikbaar, daarom toont de tool alleen de LSI.';
 const hhd = (id, n, sub, kw, pos) => ({id, n, d:'kracht', s:sub, kw, side:true, f:[num('kg','Kracht','kg')], info:(pos ? 'Positie: ' + pos + '\n' : '') + HHD_INFO});
 
 const chairNorm = (x, ctx) => {
@@ -386,12 +386,13 @@ const gripNorm = (x, ctx) => {
   return x < cut ? NB('bad','Laag (<'+cut+' kg, EWGSOP2)') : NB('good','Boven afkappunt');
 };
 const plankNorm = (x, ctx, v) => {
-  if(v.var === 'RKC plank') return x > 45 ? NB('good','Goed (>45 s)') : x >= 30 ? NB('neutral','Matig (30–45 s)') : NB('warn','Zwak (<30 s)');
+  if(v.var === 'RKC plank') return x > 45 ? NB('good','Goed (>45 s)') : x >= 30 ? NB('warn','Matig (30–45 s)') : NB('bad','Zwak (<30 s)');
   if(v.var === 'Gewone plank'){
     if(!ctx.leeftijd || !ctx.geslacht) return NB('grey','Vul leeftijd + geslacht in voor norm');
-    const M = [[29,45,75],[39,40,65],[49,35,55],[200,30,50]], V = [[29,30,60],[39,25,50],[49,20,45],[200,15,40]];
+    // [t/m leeftijd, ondergrens gemiddeld, bovengrens gemiddeld, uitstekend vanaf] — gelijk aan de Fitheidstest
+    const M = [[29,45,75,99],[39,40,65,80],[49,35,55,70],[59,30,50,65],[200,25,45,60]], V = [[29,30,60,85],[39,25,50,75],[49,20,45,65],[59,15,40,55],[200,10,35,50]];
     const r = (ctx.geslacht === 'M' ? M : V).find(a => ctx.leeftijd <= a[0]);
-    return x < r[1] ? NB('warn','Onder norm (<'+r[1]+' s)') : x > r[2] ? NB('good','Boven norm (>'+r[2]+' s)') : NB('neutral','Binnen norm ('+r[1]+'–'+r[2]+' s)');
+    return x >= r[3] ? NB('good','Uitstekend (≥'+r[3]+' s)') : x >= r[1] ? NB('neutral','Gemiddeld ('+r[1]+'–'+r[2]+' s)') : NB('warn','Ondergemiddeld (<'+r[1]+' s)');
   }
   return null;
 };
@@ -445,6 +446,38 @@ const TINETTI_ITEMS = [
   TIN('Gang','Spoorbreedte',[[1,'Hielen raken elkaar bijna'],[0,'Hielen ver uit elkaar']])
 ];
 
+/* Bronnen van de normen, getoond in de uitleg (ⓘ) */
+const SRC_FT = 'Fitheidstest Fyzio Totaal (dezelfde normen als in die tool)';
+const SRC_LSI = 'LSI ≥90%: gangbare return-to-sport-grens (o.a. Munro & Herrington)';
+const SRC = {
+  grip:'EWGSOP2 — Cruz-Jentoft e.a. 2019 (meetinstrumentenzorg.nl verwijst naar de percentielen van Dodds e.a.; onder P10 = lage knijpkracht)', chair30:'CDC STEADI (op basis van Rikli & Jones)',
+  sts5:'meetinstrumentenzorg.nl (toelichtingsformulier Timed Chair-Stand-Test); Bohannon 2006 (leeftijdsnormen)',
+  slsu30:SRC_FT, brug1:SRC_FT, sorensen:SRC_FT, sideplank:SRC_FT, plank:SRC_FT, dll:SRC_FT, ymca:SRC_FT, roei1000:SRC_FT, shoulderpress:SRC_FT,
+  heelraise:'Lunsford & Perry 1995; Bohannon 2022 (meta-analyse)', ckcuest:'Tucci e.a. 2014', dnf:'Domenech e.a. 2011',
+  bbs:'meetinstrumentenzorg.nl (toelichtingsformulier BBS); Berg e.a. 1992', minibest:'meetinstrumentenzorg.nl (toelichtingsformulier Mini-BESTest); Tsang e.a. 2013 (CVA)',
+  tinetti:'meetinstrumentenzorg.nl (toelichtingsformulier POMA, o.b.v. Sterke 2003)', dgi:'meetinstrumentenzorg.nl (toelichtingsformulier DGI); Huang e.a. 2011 (MDC)',
+  fga:'Wrisley & Kumar 2010; Beninato e.a. 2014', ols:'meetinstrumentenzorg.nl (toelichtingsformulier Single Leg Stance Test); Vellas e.a. 1997 (valrisico <5 s)',
+  stage4:'CDC STEADI', fr:'meetinstrumentenzorg.nl (toelichtingsformulier Functional Reach Test)', fsst:'Dite & Temple 2002; Whitney e.a. 2007 (vestibulair)',
+  tug:'CDC STEADI (≥12 s); Shumway-Cook e.a. 2000 (≥13,5 s); meetinstrumentenzorg.nl (revalidatie: 20 / 30 s); Steffen e.a. 2002 (gemiddelden)', mwt10:'Studenski e.a. 2011',
+  ybal_oe:'Plisky e.a. 2006 (verschil anterieur >4 cm)', lunge:'Powden e.a. 2015 (meetfout ±1,9 cm)', schober:'Gemodificeerde Schober-test',
+  bmi:'meetinstrumentenzorg.nl (toelichtingsformulier BMI, WHO-indeling)', buik:'Fitheidstest Fyzio Totaal (buikomvang); meetinstrumentenzorg.nl (middel-heupratio)', mwt6:'meetinstrumentenzorg.nl (toelichtingsformulier 6MWT, formule 30 m-baan)', mwt2:'meetinstrumentenzorg.nl (toelichtingsformulier 2MWT)', astrand:'meetinstrumentenzorg.nl (toelichtingsformulier Åstrand; Shvartz & Reibold 1990)', sppb:'meetinstrumentenzorg.nl (toelichtingsformulier SPPB)', shop:SRC_LSI, thop:SRC_LSI, chop:SRC_LSI, hop6:SRC_LSI, sidehop:SRC_LSI
+};
+const infoText = t => (t.info || '') + (SRC[t.id] ? '\nBron: ' + SRC[t.id] : (t.id.startsWith('hhd_') ? '\nBron: ' + SRC_LSI : ''));
+
+/* VO2max-classificatie (Shvartz & Reibold 1990), ondergrenzen van Zwak, Matig, Gemiddeld, Goed, Uitstekend, Uitmuntend */
+const VO2 = {
+  M:[[24,[32,38,44,51,57,63]],[29,[31,36,43,49,54,60]],[34,[29,35,41,46,52,57]],[39,[28,33,39,44,49,55]],[44,[26,32,36,42,47,52]],[49,[25,30,35,40,44,49]],[54,[24,28,33,37,42,47]],[59,[22,27,31,35,40,44]],[200,[21,25,29,33,37,41]]],
+  V:[[24,[27,32,37,42,47,52]],[29,[26,31,36,41,45,50]],[34,[25,30,34,38,43,47]],[39,[24,28,32,36,41,45]],[44,[22,26,30,34,38,42]],[49,[21,24,28,32,36,39]],[54,[19,23,26,30,33,37]],[59,[18,21,24,28,31,34]],[200,[16,19,22,25,28,31]]]
+};
+const vo2Norm = (x, c) => {
+  if(!c.leeftijd || !c.geslacht) return NB('grey','Vul leeftijd + geslacht in voor norm');
+  if(c.leeftijd < 20) return null;
+  const b = VO2[c.geslacht].find(r => c.leeftijd <= r[0])[1];
+  const L = [['bad','Zeer zwak'],['bad','Zwak'],['warn','Matig'],['neutral','Gemiddeld'],['good','Goed'],['good','Uitstekend'],['good','Uitmuntend']];
+  let i = 0; while(i < 6 && x >= b[i]) i++;
+  return NB(L[i][0], L[i][1] + (c.leeftijd > 65 ? ' (norm t/m 65 jr)' : ''));
+};
+
 const SCALE_NOTE = '\nScore per item; het totaal wordt automatisch berekend. Raadpleeg bij twijfel de officiële handleiding voor de exacte scoringscriteria.';
 
 /* ---- De tests ---- */
@@ -477,17 +510,22 @@ const LIB = [
   {id:'chair30', n:'30-sec Chair Stand Test', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'opstaan stoel sit to stand beenkracht ouderen valrisico senior fitness test', f:[num('hh','Herhalingen','hh',{norm:chairNorm})],
     info:'Stoel ±43 cm, armen gekruist voor de borst. Aantal keer volledig opstaan in 30 s.\nNorm (CDC STEADI, 60+): onder gemiddeld wijst op verhoogd valrisico.'},
   {id:'sts5', n:'5× Sit-to-Stand', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'opstaan stoel sit to stand 5x vijf keer beenkracht valrisico ouderen', better:'laag',
-    f:[num('s','Tijd','s',{norm:x => x > 15 ? NB('bad','Verhoogd valrisico (>15 s)') : x >= 12 ? NB('warn','Grensgebied (12–15 s)') : NB('good','<12 s')})],
-    info:'Stoel ±43 cm, armen gekruist. Tijd voor 5 keer volledig opstaan en zitten.\n>15 s wijst op een verhoogd valrisico.'},
+    f:[num('s','Tijd','s',{norm:(x, c) => {
+      if(x >= 14) return NB('bad','Verhoogd valrisico (≥14 s)');
+      const a = c.leeftijd, ref = a >= 80 ? 14.8 : a >= 70 ? 12.6 : a >= 60 ? 11.4 : null;
+      if(ref && x > ref) return NB('warn','Trager dan gemiddeld voor leeftijd (>' + String(ref).replace('.', ',') + ' s)');
+      return NB('good', ref ? 'Gemiddeld of beter voor leeftijd' : 'Geen verhoogd valrisico (<14 s)');
+    }})],
+    info:'Stoel ±43 cm, armen gekruist. Tijd voor 5 keer volledig opstaan en zitten.\nVerhoogd valrisico: ≥14 s (algemeen), >16 s bij Parkinson, >12 s na een CVA, >14,2 s bij evenwichtsproblemen boven 60 jaar (>10 s onder 60). Trager dan gemiddeld voor leeftijd: >11,4 s (60–69), >12,6 s (70–79), >14,8 s (80–89).'},
   {id:'slsu30', n:'30-sec Single Leg Stand Up', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'eenbenig opstaan stoel beenkracht fitheidstest', side:true,
-    f:[num('hh','Herhalingen','hh',{norm:x => x > 10 ? NB('good','Goed (>10)') : x >= 5 ? NB('neutral','Matig (5–10)') : NB('warn','Zwak (<5)')})],
+    f:[num('hh','Herhalingen','hh',{norm:x => x > 10 ? NB('good','Goed (>10)') : x >= 5 ? NB('warn','Matig (5–10)') : NB('bad','Zwak (<5)')})],
     info:'Op één been voor een bank met knie op 90°, armen gekruist. Zo vaak mogelijk opstaan en gecontroleerd zitten in 30 s.\nNorm: Goed >10 / Matig 5–10 / Zwak <5.'},
   {id:'slsquat', n:'Single Leg Squat (aantal)', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'eenbenige squat knie heup beenkracht vkb patellofemoraal', side:true, f:[num('hh','Herhalingen','hh')],
     info:'Aantal correcte eenbenige squats (tot ±60° knieflexie) tot vermoeidheid of verlies van kwaliteit. Noteer bijzonderheden (knie naar binnen, bekken kantelen) bij opmerkingen.'},
   {id:'heelraise', n:'Heel Raise Test', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'kuit kuitkracht enkel achilles tenen hielheffen soleus calf raise', side:true, f:[num('hh','Herhalingen','hh')],
-    info:'Eenbenig op de tenen in metronoomtempo (60 bpm, 1 hh per 2 tikken), vingertoppen tegen de muur. Herhalingen tot vermoeidheid of hoogteverlies.\nIndicatie: ±25 herhalingen bij gezonde volwassenen; LSI ≥90% als streefwaarde bij achillespeesklachten.'},
+    info:'Eenbenig op de tenen in metronoomtempo (60 bpm, 1 hh per 2 tikken), vingertoppen tegen de muur. Herhalingen tot vermoeidheid of hoogteverlies.\nIndicatie: ±25 herhalingen bij gezonde volwassenen; gemiddeld ±29 bij jongere en ±12 bij oudere volwassenen. Bij ouderen is 25 dus geen realistische norm. LSI ≥90% als streefwaarde bij achillespeesklachten.'},
   {id:'brug1', n:'1-benige brug (box)', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'hamstrings bil brug bridge single leg bridge fitheidstest', side:true,
-    f:[num('hh','Herhalingen','hh',{norm:x => x > 30 ? NB('good','Top (>30)') : x >= 20 ? NB('good','Goed (20–30)') : NB('warn','Zwak (<20)')})],
+    f:[num('hh','Herhalingen','hh',{norm:x => x > 30 ? NB('good','Top (>30)') : x >= 20 ? NB('good','Goed (20–30)') : NB('bad','Zwak (<20)')})],
     info:'Rugligging, hak op box van 60 cm, knie ±20° gebogen, ander been gestrekt omhoog. Heup volledig strekken, herhalingen tot uitputting.\nNorm: Top >30 / Goed ±25 / Zwak <20.'},
   {id:'rm1', n:'1RM-schatting (oefening naar keuze)', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'1rm rm maximaal gewicht leg press squat deadlift brzycki fitness',
     f:[sel('oef','Oefening',['Leg press','Squat','Deadlift','Bench press','Lat pulldown','Leg extension','Leg curl','Anders']), sel('zijde','Zijde',['Beide','Links','Rechts']), num('kg','Gewicht','kg'), num('hh','Herhalingen','hh')],
@@ -497,20 +535,24 @@ const LIB = [
   {id:'shoulderpress', n:'Shoulder Press (8–12 RM)', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'schouder schouderkracht drukken press armen fitheidstest', side:true,
     f:[num('kg','Gewicht','kg'), num('hh','Herhalingen','hh')],
     calc: v => { const o = {k:'e1rm', l:'Geschatte 1RM', u:'kg'}; ['L','R'].forEach(s => { const kg = toNum(v.kg?.[s]), hh = toNum(v.hh?.[s]); o[s] = kg && hh && hh <= 12 ? kg*36/(37-hh) : null; }); return (o.L != null || o.R != null) ? [o] : []; },
-    info:'Zittend of staand, per arm tot technisch spierfalen binnen 8–12 herhalingen. De geschatte 1RM (Brzycki) wordt gebruikt voor de LSI.\nNorm asymmetrie: verschil L/R liefst niet groter dan 15–17%.', lsiKey:'e1rm'},
+    info:'Zittend of staand, per arm tot technisch spierfalen binnen 8–12 herhalingen. De geschatte 1RM (Brzycki) wordt gebruikt voor de LSI.\nNorm asymmetrie: verschil L/R niet groter dan 17% (dus LSI ≥83%).', lsiKey:'e1rm', lsiNorm: x => x >= 83 ? NB('good','Verschil ≤17%') : NB('warn','Verschil >17%')},
   {id:'pushup', n:'Push-up test', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'opdrukken push up borst triceps armen', f:[sel('var','Variant',['Volledig (tenen)','Op knieën']), num('hh','Herhalingen','hh')],
     info:'Maximaal aantal correcte push-ups (borst tot vuist-hoogte boven de grond) zonder pauze.'},
   {id:'ckcuest', n:'CKCUEST', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'closed kinetic chain upper extremity stability test schouder stabiliteit werpsport push up positie', f:[num('aant','Aanrakingen (gem. 3 pogingen)','x')],
-    info:'Push-up positie, handen 91,4 cm uit elkaar. Zo vaak mogelijk afwisselend de andere hand aantikken in 15 s. Gemiddelde van 3 pogingen.\nIndicatie: ±18 (vrouw) tot ±21 (man) bij gezonde sporters.'},
+    info:'Push-up positie, handen 91,4 cm uit elkaar. Zo vaak mogelijk afwisselend de andere hand aantikken in 15 s. Gemiddelde van 3 pogingen.\nIndicatie: gemiddeld ±18,5 (man) en ±20,5 (vrouw) in de algemene populatie; bij mannelijke sporters ±28–30.'},
   {id:'armcurl', n:'30-sec Arm Curl', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'biceps arm armkracht senior fitness test ouderen', side:true, f:[num('hh','Herhalingen','hh')],
     info:'Zittend, halter 2,3 kg (vrouw) / 3,6 kg (man). Aantal volledige curls in 30 s.'},
   /* Romp & core */
   {id:'sorensen', n:'Biering-Sorensen', d:'kracht', s:'Romp & core', kw:'rug rugspieren extensoren lage rug uithouding back extension fitheidstest',
-    f:[sel('var','Uitvoering',['Verzwaard (met gewicht)','Normaal (zonder gewicht)']), num('s','Tijd','s',{norm:(x,c,v) => v.var !== 'Verzwaard (met gewicht)' ? null : x > 90 ? NB('good','Top (>90 s)') : x > 60 ? NB('good','Goed (>60 s)') : x >= 45 ? NB('neutral','Gemiddeld (45–60 s)') : NB('warn','Zwak (<45 s)')})],
-    info:'Horizontaal op back-extension apparaat, heup op de rand. Normaal: armen gekruist. Verzwaard: handen achter het hoofd + schijf (V 5 kg / M 10 kg).\nStoppen zodra de romp onder horizontaal zakt of bij pijn.'},
+    f:[sel('var','Uitvoering',['Verzwaard (met gewicht)','Normaal (zonder gewicht)']), num('s','Tijd','s',{norm:(x,c,v) => v.var === 'Verzwaard (met gewicht)'
+      ? (x > 90 ? NB('good','Top (>90 s)') : x >= 60 ? NB('good','Goed (≥60 s)') : x >= 45 ? NB('warn','Matig (45–60 s)') : NB('bad','Zwak (<45 s)'))
+      : v.var === 'Normaal (zonder gewicht)' ? (x > 180 ? NB('good','Goed (>180 s)') : x >= 120 ? NB('warn','Matig (120–180 s)') : NB('bad','Zwak (<120 s)')) : null})],
+    info:'Horizontaal op back-extension apparaat, heup op de rand. Normaal: armen gekruist. Verzwaard: handen achter het hoofd + schijf (V 5 kg / M 10 kg).\nStoppen zodra de romp onder horizontaal zakt of bij pijn.\nNorm verzwaard: Top >90 / Goed ≥60 / Matig 45–60 / Zwak <45 s. Zonder gewicht: Goed >180 / Matig 120–180 / Zwak <120 s.'},
   {id:'sideplank', n:'Laterale Roman Chair / Side Plank', d:'kracht', s:'Romp & core', kw:'zijplank side plank laterale romp obliquus quadratus lumborum zijwaarts fitheidstest', side:true,
-    f:[sel('var','Uitvoering',['Roman Chair verzwaard','Roman Chair normaal','Side plank (grond)']), num('s','Tijd','s',{norm:(x,c,v) => v.var !== 'Roman Chair verzwaard' ? null : x > 60 ? NB('good','Top (>60 s)') : x >= 45 ? NB('good','Goed (≥45 s)') : x >= 30 ? NB('neutral','Gemiddeld (30–45 s)') : NB('warn','Zwak (<30 s)')})],
-    info:'Zijwaarts horizontaal, romp in rechte lijn zo lang mogelijk. Verzwaard: schijf tegen de borst (V 5 kg / M 10 kg).'},
+    f:[sel('var','Uitvoering',['Roman Chair verzwaard','Roman Chair normaal','Side plank (grond)']), num('s','Tijd','s',{norm:(x,c,v) => v.var === 'Roman Chair verzwaard'
+      ? (x > 60 ? NB('good','Top (>60 s)') : x >= 45 ? NB('good','Goed (45–60 s)') : x >= 30 ? NB('warn','Matig (30–45 s)') : NB('bad','Zwak (<30 s)'))
+      : v.var === 'Roman Chair normaal' ? (x > 90 ? NB('good','Goed (>90 s)') : x >= 60 ? NB('warn','Matig (60–90 s)') : NB('bad','Zwak (<60 s)')) : null})],
+    info:'Zijwaarts horizontaal, romp in rechte lijn zo lang mogelijk. Verzwaard: schijf tegen de borst (V 5 kg / M 10 kg).\nNorm verzwaard: Top >60 / Goed 45–60 / Matig 30–45 / Zwak <30 s. Zonder gewicht: Goed >90 / Matig 60–90 / Zwak <60 s. Voor de side plank op de grond is geen norm opgenomen.'},
   {id:'plank', n:'Planktest', d:'kracht', s:'Romp & core', kw:'plank buikspieren core rompstabiliteit rkc fitheidstest',
     f:[sel('var','Variant',['RKC plank','Gewone plank']), num('s','Tijd','s',{norm:plankNorm})],
     info:'RKC: ellebogen actief naar de tenen trekken, billen en benen maximaal aanspannen. Norm RKC: Goed >45 / Matig 30–45 / Zwak <30 s.\nGewone plank: zo lang mogelijk in rechte lijn; norm afhankelijk van leeftijd en geslacht.'},
@@ -542,8 +584,8 @@ const LIB = [
   {id:'rom_tws', n:'Thoracale rotatie (zittend)', d:'mob', s:'Goniometrie', kw:'thoracaal borstwervelkolom rotatie romp bwk', side:true, f:[num('deg','Rotatie','°')],
     info:'Zittend, stok voor de borst/achter de nek, bekken gefixeerd. Rotatie meten met inclinometer of goniometer.'},
   {id:'lunge', n:'Weight-bearing Lunge Test (knee-to-wall)', d:'mob', s:'Functionele mobiliteit', kw:'enkel dorsaalflexie knie naar muur kuit achilles enkeldistorsie', side:true,
-    f:[num('cm','Afstand teen–muur','cm',{norm:x => x >= 10 ? NB('good','≥10 cm') : x >= 9 ? NB('warn','9–10 cm') : NB('bad','Beperkt (<9 cm)')})],
-    info:'Knie raakt de muur met de hiel aan de grond. Maximale afstand grote teen–muur.\nVerschil L/R >1,5–2 cm is relevant.'},
+    f:[num('cm','Afstand teen–muur','cm')],
+    info:'Knie raakt de muur met de hiel aan de grond. Maximale afstand grote teen–muur.\nEr is geen eenduidige ondergrens (in de literatuur worden waarden van ±9 tot 12 cm genoemd), daarom toont de tool hier geen kleur. Kijk vooral naar het verschil links/rechts en het verloop: een verschil groter dan ±2 cm valt buiten de meetfout.'},
   {id:'sitreach', n:'Sit & Reach', d:'mob', s:'Functionele mobiliteit', kw:'hamstrings lenigheid rug lage rug sit and reach fitheidstest', f:[num('cm','Score','cm')],
     info:'Zit met gestrekte benen, voeten tegen de meetbox. Langzaam zo ver mogelijk reiken, 2 s vasthouden. + = voorbij de tenen, − = voor de tenen.'},
   {id:'wallangels', n:'Wall Angels', d:'mob', s:'Functionele mobiliteit', kw:'schouder thoracaal houding muur fitheidstest', f:[sel('score','Score',['Goed','Matig','Slecht'])],
@@ -564,27 +606,40 @@ const LIB = [
   {id:'faber', n:'FABER-afstand', d:'mob', s:'Spierlengte', kw:'faber patrick heup si gewricht lies fai', side:true, better:'laag',
     f:[num('cm','Afstand knie–bank','cm')], info:'Ruglig, voet op de andere knie. Afstand laterale knie tot de bank. Noteer pijnlocatie bij opmerkingen.'},
   {id:'schober', n:'Schober', d:'mob', s:'Wervelkolom', kw:'lumbaal flexie rug wervelkolom bechterew', f:[num('cm','Toename','cm')],
-    info:'Markering ter hoogte van de dimples van Venus en 10 cm erboven. Toename bij maximale flexie (normaal ≥5 cm).'},
+    info:'Gemodificeerde Schober: markering op de lumbosacrale overgang (dimples van Venus), plus 5 cm eronder en 10 cm erboven. Meet de toename van de afstand (15 cm) bij maximale flexie.\nMinder dan 5 cm toename wijst op een beperkte lumbale flexie.'},
 
   /* ===== BALANS & VALRISICO ===== */
   {id:'bbs', n:'Berg Balance Scale (BBS)', d:'bal', s:'Schalen (per item)', kw:'berg bbs ouderen valrisico evenwicht cva neurologie', items:BBS_ITEMS,
-    totNorm: x => x >= 46 ? NB('good','Geen verhoogd valrisico (≥46)') : x >= 41 ? NB('warn','Verhoogd valrisico (≤45)') : NB('bad','Sterk verhoogd valrisico (≤40)'),
-    info:'14 items, 0–4 punten per item (max 56).\nAfkappunt ≤45 voor verhoogd valrisico; ≤40 sterk verhoogd.' + SCALE_NOTE},
+    totNorm: x => x >= 45 ? NB('good','Zelfstandig en zeker (≥45)') : x >= 36 ? NB('warn','Verhoogd valrisico (<45)') : NB('bad','Zeer hoog valrisico (<36)'),
+    info:'14 items, 0–4 punten per item (max 56).\nOnder 45 punten is iemand vaak afhankelijk van een hulpmiddel of toezicht; onder 43 is er een aanzienlijk valrisico bij zelfstandig lopen; onder 36 is het valrisico zeer hoog. Let op: 45 voorspelt toekomstige valpartijen maar matig.\nEen verandering is pas echt bij minimaal 4 punten (start 45–56), 5 punten (35–44) of 7 punten (25–34).' + SCALE_NOTE},
   {id:'minibest', n:'Mini-BESTest', d:'bal', s:'Schalen (per item)', kw:'mini best bestest balans parkinson neurologie valrisico reactief', items:MINIBEST_ITEMS,
-    totNorm: x => x <= 19 ? NB('bad','Verhoogd valrisico (≤19)') : NB('good','Boven afkappunt (>19)'),
-    info:'14 items, 0–2 punten (max 28). Bij items met L/R telt de slechtste zijde.\nAfkappunt ≤19 voor verhoogd valrisico (o.a. bij Parkinson).' + SCALE_NOTE},
+    totNorm: x => x < 19 ? NB('bad','Verhoogd valrisico (<19)') : NB('good','Boven afkappunt (≥19)'),
+    info:'14 items, 0–2 punten (max 28). Bij items met L/R telt de slechtste zijde.\nEen score onder 19 betekent een verhoogd valrisico; bij CVA ligt de grens rond 17,5. Voor andere groepen is het afkappunt minder goed onderzocht.' + SCALE_NOTE},
   {id:'tinetti', n:'Tinetti (POMA)', d:'bal', s:'Schalen (per item)', kw:'tinetti poma performance oriented mobility assessment gang lopen ouderen valrisico', items:TINETTI_ITEMS,
-    totNorm: x => x >= 24 ? NB('good','Laag valrisico (≥24)') : x >= 19 ? NB('warn','Matig valrisico (19–23)') : NB('bad','Hoog valrisico (≤18)'),
-    info:'Balansdeel (max 16) + gangdeel (max 12) = max 28.\n≤18 hoog, 19–23 matig, ≥24 laag valrisico.' + SCALE_NOTE},
+    totNorm: x => x < 19 ? NB('bad','Hoog valrisico (<19)') : x <= 24 ? NB('warn','Verhoogd valrisico (19–24)') : NB('good','Laag valrisico (>24)'),
+    info:'Balansdeel (max 16) + gangdeel (max 12) = max 28.\nMeer dan 24 punten: laag valrisico. 19–24: verhoogd valrisico. Onder 19: hoog valrisico (ongeveer 5× zo groot).' + SCALE_NOTE},
   {id:'dgi', n:'Dynamic Gait Index (DGI)', d:'bal', s:'Schalen (per item)', kw:'dgi dynamic gait lopen gang vestibulair duizeligheid valrisico', items:DGI_ITEMS,
-    totNorm: x => x <= 19 ? NB('bad','Verhoogd valrisico (≤19)') : NB('good','>19'),
-    info:'8 items, 0–3 punten (max 24). ≤19 wijst op verhoogd valrisico.' + SCALE_NOTE},
+    totNorm: x => x < 19 ? NB('bad','Verhoogd valrisico (<19)') : NB('good','≥19'),
+    info:'8 items, 0–3 punten (max 24). Een score onder 19 voorspelt vallen bij ouderen. Een verandering is pas echt bij minimaal 3 punten (MDC).' + SCALE_NOTE},
   {id:'fga', n:'Functional Gait Assessment (FGA)', d:'bal', s:'Schalen (per item)', kw:'fga functional gait lopen gang vestibulair duizeligheid valrisico', items:FGA_ITEMS,
     totNorm: x => x <= 22 ? NB('bad','Verhoogd valrisico (≤22)') : NB('good','>22'),
     info:'10 items, 0–3 punten (max 30). ≤22 wijst op verhoogd valrisico bij ouderen.' + SCALE_NOTE},
+  {id:'sppb', n:'Short Physical Performance Battery (SPPB)', d:'bal', s:'Mobiliteit & lopen', kw:'sppb short physical performance battery ouderen kwetsbaarheid balans loopsnelheid opstaan valrisico geriatrie',
+    f:[sel('bal','Balans (0–4)',['0','1','2','3','4']), sel('loop','Loopsnelheid 4 m (0–4)',['0','1','2','3','4']), sel('stoel','5× opstaan (0–4)',['0','1','2','3','4'])],
+    calc: v => { const p = ['bal','loop','stoel'].map(k => v[k] === undefined || v[k] === '' ? null : +v[k]); if(p.some(x => x == null)) return []; const t = p[0] + p[1] + p[2];
+      return [{k:'totaal', l:'Totaal', u:'/ 12', V:t, norm: t <= 3 ? NB('bad','Ernstige beperkingen (0–3)') : t <= 9 ? NB('warn','Hoog risico op nieuwe beperkingen (4–9)') : NB('good','Laag risico (10–12)')}]; },
+    info:'Drie onderdelen, elk 0–4 punten: balans (voeten naast elkaar, semi-tandem, tandem), loopsnelheid over 4 m en 5× opstaan uit een stoel. Totaal 0–12.\nIndeling: 0–3 ernstige beperkingen, 4–9 hoog risico op nieuwe beperkingen (o.a. in ADL), 10–12 laag risico. Let op het plafondeffect bij goed functionerende ouderen.'},
   {id:'ols', n:'Eenbeensstand', d:'bal', s:'Statische balans', kw:'one leg stance staan op een been evenwicht statisch propriocepsis enkel', side:true,
-    f:[sel('var','Variant',['Ogen open','Ogen dicht','Ogen open, instabiele ondergrond']), num('s','Tijd (max 30 s)','s',{norm:(x,c,v) => v.var !== 'Ogen open' ? null : x < 5 ? NB('bad','Verhoogd valrisico (<5 s)') : x < 10 ? NB('warn','5–10 s') : NB('good','≥10 s')})],
-    info:'Armen over de borst, staande voet stil. Stoppen bij neerzetten voet, steun of bewegen van de standvoet. Gemiddelde of beste van 2–3 pogingen.'},
+    f:[sel('var','Variant',['Ogen open','Ogen dicht','Ogen open, instabiele ondergrond']), num('s','Tijd','s',{norm:(x,c,v) => {
+      if(v.var !== 'Ogen open' && v.var !== 'Ogen dicht') return null;
+      const a = c.leeftijd, open = v.var === 'Ogen open';
+      if(open && x < 5) return NB('bad','Verhoogd valrisico (<5 s)');
+      if(!a) return open ? NB('good','≥5 s') : NB('grey','Vul leeftijd in voor norm');
+      const T = open ? [[39,44.7],[49,41.9],[59,41.2],[69,32.1],[79,21.5],[200,9.4]] : [[39,15.2],[49,12.7],[59,8.3],[69,4.4],[79,3.1],[200,1.9]];
+      const ref = T.find(r => a <= r[0])[1];
+      return x >= ref ? NB('good','Gemiddeld of beter voor leeftijd') : NB('neutral','Onder leeftijdsgemiddelde (' + String(ref).replace('.', ',') + ' s)');
+    }})],
+    info:'Armen over de borst, staande voet stil. Stoppen bij neerzetten voet, steun of bewegen van de standvoet. Beste van 3 pogingen, maximaal 45 s.\nOgen open: <5 s geeft ruim 2× zoveel kans op een val met letsel. Daarnaast vergelijkt de tool met het leeftijdsgemiddelde, bijv. ogen open 32 s (60–69 jr), 21 s (70–79 jr), 9 s (80+). Bij Parkinson is ±10 s (ogen open) een ongunstig teken.'},
   {id:'stage4', n:'4-Stage Balance Test', d:'bal', s:'Statische balans', kw:'4 stage four stage steadi cdc valrisico ouderen tandem',
     f:[sel('fase','Hoogste fase 10 s volgehouden',['0 – geen','1 – voeten naast elkaar','2 – semi-tandem','3 – tandem','4 – op één been'],{norm:x => null})],
     calc: v => { const f = v.fase ? parseInt(v.fase) : null; return f == null ? [] : [{k:'fase_n', l:'Fase', u:'', V:f, norm: f < 3 ? NB('bad','Verhoogd valrisico (tandem <10 s)') : NB('good','Tandem ≥10 s')}]; },
@@ -608,18 +663,23 @@ const LIB = [
     calc: v => { const c = {k:'comp', l:'Composite score', u:'%'}; ['L','R'].forEach(s => { const a = toNum(v.med?.[s]), b = toNum(v.il?.[s]), d = toNum(v.sl?.[s]), al = toNum(v.al?.[s]); c[s] = a!=null && b!=null && d!=null && al ? (a+b+d)/(3*al)*100 : null; }); return (c.L!=null||c.R!=null) ? [c] : []; },
     lsiKey:'comp', info:'Push-up positie op één arm, met de andere hand in 3 richtingen reiken. Zijde = steunende arm.'},
   {id:'fr', n:'Functional Reach Test', d:'bal', s:'Dynamische balans', kw:'functional reach reiken valrisico ouderen',
-    f:[num('cm','Reikafstand','cm',{norm:x => x >= 25.4 ? NB('good','Laag valrisico (≥25,4 cm)') : x >= 15.3 ? NB('warn','Matig valrisico') : NB('bad','Hoog valrisico (<15,3 cm)')})],
-    info:'Staand naast de muur, arm 90° geheven. Zo ver mogelijk naar voren reiken zonder stap. Gemiddelde van 2 pogingen.'},
+    f:[num('cm','Reikafstand','cm',{norm:(x, c) => {
+      if(x < 15) return NB('bad','Verhoogd valrisico (<15 cm)');
+      if(!c.leeftijd || !c.geslacht) return NB('good','Geen verhoogd valrisico (≥15 cm)');
+      const ref = c.leeftijd <= 40 ? (c.geslacht === 'M' ? 43 : 38) : c.leeftijd <= 69 ? (c.geslacht === 'M' ? 38 : 35) : (c.geslacht === 'M' ? 33 : 28);
+      return x >= ref ? NB('good','Gemiddeld of beter voor leeftijd') : NB('neutral','Onder leeftijdsgemiddelde (' + ref + ' cm)');
+    }})],
+    info:'Staand naast de muur, arm 90° geheven. Zo ver mogelijk naar voren reiken zonder stap. Gemiddelde van 2 pogingen.\nMinder dan 15 cm voorspelt een hoger valrisico. Gemiddelden: man 43 / 38 / 33 cm en vrouw 38 / 35 / 28 cm voor 20–40, 41–69 en 70–87 jaar.'},
   {id:'fsst', n:'Four Square Step Test', d:'bal', s:'Dynamische balans', kw:'four square step stappen richtingen valrisico ouderen', better:'laag',
     f:[num('s','Tijd','s',{norm:x => x > 15 ? NB('bad','Verhoogd valrisico (>15 s)') : NB('good','≤15 s')})],
-    info:'Stappen in 4 vakken (met de klok mee en terug) zo snel mogelijk zonder de stokken te raken. Beste van 2 pogingen.'},
+    info:'Stappen in 4 vakken (met de klok mee en terug) zo snel mogelijk zonder de stokken te raken. Beste van 2 pogingen.\n>15 s wijst op verhoogd valrisico bij ouderen; bij vestibulaire klachten ligt de grens op >12 s.'},
   {id:'tug', n:'Timed Up & Go (TUG)', d:'bal', s:'Mobiliteit & lopen', kw:'tug timed up and go opstaan lopen valrisico ouderen dual task', better:'laag',
-    f:[sel('var','Variant',['Standaard','Dual task cognitief','Dual task motorisch']), num('s','Tijd','s',{norm:(x,c,v) => v.var !== 'Standaard' ? null : x < 10 ? NB('good','Normaal (<10 s)') : x < 13.5 ? NB('warn','10–13,5 s') : NB('bad','Verhoogd valrisico (≥13,5 s)')})],
-    info:'Opstaan uit stoel, 3 meter lopen, omdraaien, terug en gaan zitten in eigen tempo. Eventueel loophulpmiddel noteren.'},
+    f:[sel('var','Variant',['Standaard','Dual task cognitief','Dual task motorisch']), num('s','Tijd','s',{norm:(x,c,v) => v.var !== 'Standaard' ? null : x < 12 ? NB('good','Geen verhoogd valrisico (<12 s)') : x < 13.5 ? NB('warn','Verhoogd valrisico (≥12 s)') : NB('bad','Verhoogd valrisico (≥13,5 s)')})],
+    info:'Opstaan uit stoel, 3 meter lopen, omdraaien, terug en gaan zitten in eigen tempo. Eventueel loophulpmiddel noteren.\nVerhoogd valrisico vanaf 12 s en zeker vanaf 13,5 s. In de revalidatie: onder 20 s loopt iemand zelfstandig en veilig, boven 30 s is hulp bij het lopen nodig. Gemiddelde bij gezonde ouderen: ±8 s (60–69 jr), ±9 s (70–79 jr), ±10–11 s (80–89 jr).'},
   {id:'mwt10', n:'10-meter looptest', d:'bal', s:'Mobiliteit & lopen', kw:'10 meter loopsnelheid gait speed lopen ouderen neurologie', better:'laag',
     f:[sel('var','Tempo',['Comfortabel','Maximaal']), num('s','Tijd over 10 m','s')],
-    calc: (v) => { const t = toNum(v.s); if(!t) return []; const sp = 10/t; return [{k:'speed', l:'Loopsnelheid', u:'m/s', V:sp, better:'hoog', norm: v.var !== 'Comfortabel' ? null : sp >= 1.0 ? NB('good','Normaal (≥1,0 m/s)') : sp >= 0.8 ? NB('warn','Beperkt (0,8–1,0)') : NB('bad','Laag (<0,8 m/s)')}]; },
-    info:'Meet de middelste 10 m van een traject van 14 m (2 m aanloop en uitloop).'},
+    calc: (v) => { const t = toNum(v.s); if(!t) return []; const sp = 10/t; return [{k:'speed', l:'Loopsnelheid', u:'m/s', V:sp, better:'hoog', norm: v.var !== 'Comfortabel' ? null : sp >= 0.8 ? NB('good','Boven 0,8 m/s') : NB('bad','Verhoogd risico (<0,8 m/s)')}]; },
+    info:'Meet de middelste 10 m van een traject van 14 m (2 m aanloop en uitloop).\nEen comfortabele loopsnelheid onder 0,8 m/s hangt samen met een verhoogd risico op nadelige gezondheidsuitkomsten bij ouderen.'},
 
   /* ===== SPORT & SPRONG ===== */
   {id:'shop', n:'Single Hop for Distance', d:'sport', s:'Hoptesten', kw:'single hop afstand hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Eenbenig zo ver mogelijk springen en stabiel landen (2 s). Beste van 2–3 geldige pogingen.\nLSI ≥90% als streefwaarde voor terugkeer naar sport.'},
@@ -636,14 +696,28 @@ const LIB = [
   {id:'slsq_kwal', n:'Single Leg Squat (kwaliteit)', d:'sport', s:'Kwalitatief', kw:'eenbenige squat kwaliteit valgus bekken romp knie', side:true, f:[sel('score','Kwaliteit',['Goed','Matig','Slecht'])], info:'Beoordeel knie-uitlijning, bekkenpositie en romp tijdens 5 eenbenige squats.'},
 
   /* ===== UITHOUDINGSVERMOGEN ===== */
-  {id:'mwt6', n:'6-Minuten Wandeltest', d:'cond', s:'Wandeltesten', kw:'6mwt zes minuten wandeltest copd hartfalen ouderen conditie', f:[num('m','Afstand','m'), num('borg','Borg na test (0–10)',''), num('hr','Hartslag na test','bpm')], info:'Op een traject van 30 m zo ver mogelijk wandelen in 6 minuten, gestandaardiseerde aanmoediging.'},
-  {id:'mwt2', n:'2-Minuten Wandeltest', d:'cond', s:'Wandeltesten', kw:'2mwt twee minuten wandeltest ouderen conditie', f:[num('m','Afstand','m')], info:'Zo ver mogelijk wandelen in 2 minuten.'},
+  {id:'mwt6', n:'6-Minuten Wandeltest', main:'m', d:'cond', s:'Wandeltesten', kw:'6mwt zes minuten wandeltest copd hartfalen ouderen conditie',
+    f:[num('m','Afstand','m'), num('len','Lengte (voor voorspelde afstand)','cm'), num('kg','Gewicht (voor voorspelde afstand)','kg'), num('borg','Borg na test (0–10)',''), num('hr','Hartslag na test','bpm')],
+    calc: (v, c) => {
+      const d = toNum(v.m), l = toNum(v.len), k = toNum(v.kg), a = c.leeftijd;
+      if(!d || !l || !k || !a || !c.geslacht) return [];
+      const pred = c.geslacht === 'M' ? 7.57*l - 5.02*a - 1.76*k - 309 : 2.11*l - 2.29*k - 5.78*a + 667;
+      const pct = d / pred * 100;
+      return [{k:'pct', l:'% van voorspelde afstand', u:'%', V:pct, norm: pct < 70 ? NB('warn','Onder 70% van voorspeld') : NB('good','70% of meer van voorspeld')}];
+    },
+    info:'Op een traject van 30 m zo ver mogelijk wandelen in 6 minuten, gestandaardiseerde aanmoediging.\nVul lengte, gewicht, leeftijd en geslacht in, dan berekent de tool de voorspelde afstand (formule voor een 30 m-baan) en het percentage daarvan. Bij COPD geldt minder dan 70% als onvoldoende. Een verschil van 25–50 m is klinisch relevant (artrose, reuma).'},
+  {id:'mwt2', n:'2-Minuten Wandeltest', d:'cond', s:'Wandeltesten', kw:'2mwt twee minuten wandeltest ouderen conditie', f:[num('m','Afstand','m',{norm:(x, c) => {
+      if(!c.leeftijd || !c.geslacht) return NB('grey','Vul leeftijd + geslacht in voor norm');
+      const pred = 252.583 - 1.165*c.leeftijd + 19.987*(c.geslacht === 'M' ? 1 : 0), low = pred - 44;
+      return x < low ? NB('warn','Onder normaalwaarde (<' + Math.round(low) + ' m)') : NB('good','Binnen normaalwaarde (voorspeld ' + Math.round(pred) + ' m)');
+    }})],
+    info:'Zo ver mogelijk wandelen in 2 minuten.\nGezonde volwassenen (18–89 jr) lopen gemiddeld 149 ± 35 m. Voorspelde afstand = 252,6 − 1,165 × leeftijd (+20 m voor mannen); de ondergrens van normaal is voorspeld min 44 m.'},
   {id:'ymca', n:'3-Minuten YMCA Steptest', d:'cond', s:'Steptesten', kw:'ymca steptest bankje herstelhartslag fitheidstest', better:'laag',
     f:[num('hr','Herstelhartslag na 60 s','bpm',{norm:(x,c) => { if(!c.geslacht) return NB('grey','Vul geslacht in voor norm'); const t = c.geslacht === 'M' ? [81,96,112] : [88,104,120]; return x < t[0] ? NB('good','Excellent') : x <= t[1] ? NB('good','Goed') : x <= t[2] ? NB('neutral','Gemiddeld') : NB('warn','Ondergemiddeld'); }})],
     info:'3 min op- en afstappen op bankje van 30 cm, 96 bpm (24 stappen/min). Direct zitten, na 60 s hartslag aflezen.'},
   {id:'chester', n:'Chester Step Test', d:'cond', s:'Steptesten', kw:'chester steptest vo2max submaximaal', f:[num('niv','Bereikt niveau (1–5)',''), num('hr','Hartslag einde','bpm'), num('vo2','Geschatte VO2max','ml/kg/min')], info:'Submaximale steptest in 5 niveaus van 2 minuten. Stop bij 80% HRmax of Borg 14. VO2max aflezen uit grafiek.'},
-  {id:'astrand', n:'Astrand fietstest (6 min)', d:'cond', s:'Fiets, roei & loop', kw:'astrand fietstest fiets ergometer vo2max submaximaal fitheidstest', f:[num('hr5','Hartslag min 5','bpm'), num('hr6','Hartslag min 6','bpm'), num('w','Weerstand','Watt'), num('vo2','VO2max (nomogram)','ml/kg/min')],
-    info:'6 minuten fietsen op 50 rpm, weerstand zodanig dat de hartslag stabiel tussen 125–170 bpm ligt. VO2max via nomogram.\nStoppen bij klachten, duizeligheid of hartslag >85% HRmax.'},
+  {id:'astrand', n:'Astrand fietstest (6 min)', d:'cond', s:'Fiets, roei & loop', kw:'astrand fietstest fiets ergometer vo2max submaximaal fitheidstest', f:[num('hr5','Hartslag min 5','bpm'), num('hr6','Hartslag min 6','bpm'), num('w','Weerstand','Watt'), num('vo2','VO2max (nomogram)','ml/kg/min',{norm:vo2Norm})],
+    info:'6 minuten fietsen op 50 rpm, weerstand zodanig dat de hartslag stabiel tussen 125–170 bpm ligt. VO2max via nomogram (met leeftijdscorrectie); de tool beoordeelt die met de leeftijds- en geslachtstabel (20–65 jaar).\nStoppen bij klachten, duizeligheid of hartslag >85% HRmax.'},
   {id:'roei1000', n:'1000 m roeitest (Concept2)', d:'cond', s:'Fiets, roei & loop', kw:'roeien roeitest concept2 1000 meter fitheidstest', better:'laag',
     f:[mmss('t','Eindtijd',{norm:(x,c) => { if(!c.geslacht) return NB('grey','Vul geslacht in voor norm'); const t = c.geslacht === 'M' ? [210,260] : [250,305]; return x < t[0] ? NB('good','Top') : x <= t[1] ? NB('neutral','Gemiddeld') : NB('warn','Matig'); }})],
     info:'1000 m all-out, weerstand level 4–6. Noteer eindtijd als m:ss.'},
@@ -653,11 +727,12 @@ const LIB = [
   /* ===== LICHAAMSMATEN ===== */
   {id:'bmi', n:'Lengte, gewicht & BMI', d:'maat', s:'Antropometrie', kw:'lengte gewicht bmi body mass index overgewicht fitheidstest', f:[num('len','Lengte','cm'), num('kg','Gewicht','kg')],
     calc: v => { const l = toNum(v.len), k = toNum(v.kg); if(!l || !k) return []; const b = k / Math.pow(l/100, 2);
-      return [{k:'bmi', l:'BMI', u:'kg/m²', V:b, norm: b < 18.5 ? NB('warn','Ondergewicht') : b < 25 ? NB('good','Gezond gewicht') : b < 30 ? NB('warn','Overgewicht') : NB('bad','Obesitas')}]; },
+      return [{k:'bmi', l:'BMI', u:'kg/m²', V:b, norm: b < 18.5 ? NB('warn','Ondergewicht') : b < 25 ? NB('good','Gezond gewicht') : b < 30 ? NB('warn','Overgewicht') : b < 35 ? NB('bad','Obesitas graad 1') : b < 40 ? NB('bad','Obesitas graad 2') : NB('bad','Obesitas graad 3')}]; },
     info:'Zonder schoenen; bij voorkeur steeds dezelfde weegschaal.'},
-  {id:'buik', n:'Buikomvang', d:'maat', s:'Antropometrie', kw:'buikomvang middelomtrek taille fitheidstest', better:'laag',
-    f:[num('cm','Buikomvang','cm',{norm:(x,c) => { if(!c.geslacht) return NB('grey','Vul geslacht in voor norm'); const t = c.geslacht === 'M' ? [94,102] : [80,88]; return x < t[0] ? NB('good','Gezond') : x <= t[1] ? NB('warn','Verhoogd') : NB('bad','Te hoog'); }})],
-    info:'Halverwege onderste rib en bekkenkam, aan het einde van een normale uitademing.\nNorm vrouw: <80 gezond / 80–88 verhoogd / >88 te hoog. Man: <94 / 94–102 / >102.'}
+  {id:'buik', n:'Buikomvang', main:'cm', d:'maat', s:'Antropometrie', kw:'buikomvang middelomtrek taille fitheidstest', better:'laag',
+    f:[num('cm','Buikomvang','cm',{norm:(x,c) => { if(!c.geslacht) return NB('grey','Vul geslacht in voor norm'); const t = c.geslacht === 'M' ? [94,102] : [80,88]; return x < t[0] ? NB('good','Gezond') : x <= t[1] ? NB('warn','Verhoogd') : NB('bad','Te hoog'); }}), num('heup','Heupomvang (optioneel)','cm')],
+    calc: (v, c) => { const w = toNum(v.cm), h = toNum(v.heup); if(!w || !h) return []; const r = w / h; return [{k:'whr', l:'Middel-heupratio', u:'', V:r, better:'laag', norm: !c.geslacht ? NB('grey','Vul geslacht in voor norm') : r > (c.geslacht === 'M' ? 0.95 : 0.80) ? NB('warn','Verhoogd risico (>' + (c.geslacht === 'M' ? '0,95' : '0,80') + ')') : NB('good','Gezond')}]; },
+    info:'Halverwege onderste rib en bekkenkam, aan het einde van een normale uitademing.\nNorm vrouw: <80 gezond / 80–88 verhoogd / >88 te hoog. Man: <94 / 94–102 / >102.\nVul je ook de heupomvang in (breedste punt van de billen), dan berekent de tool de middel-heupratio: verhoogd risico boven 0,95 (man) of 0,80 (vrouw).'}
 ];
 
 /* Patiëntvriendelijke testnamen: gebruikt in de PDF en in de AI-samenvatting,
@@ -688,7 +763,7 @@ const PN = {
   shop:'Eenbenige sprong ver', thop:'Drie eenbenige sprongen', chop:'Zigzagsprongen op één been', hop6:'Hoppen op één been (6 meter)',
   sidehop:'Zijwaarts springen op één been', slcmj:'Eenbenige sprong omhoog', cmj:'Sprong omhoog', broad:'Sprong vooruit',
   ttest:'Wendbaarheidstest', tuck:'Landingstest (herhaald springen)', dropjump:'Landing na een sprong', slsq_kwal:'Kwaliteit eenbenige kniebuiging',
-  mwt6:'Wandeltest (6 minuten)', mwt2:'Wandeltest (2 minuten)', ymca:'Steptest (herstel van je hartslag)', chester:'Steptest (uithoudingsvermogen)',
+  sppb:'Korte test van balans, lopen en opstaan (SPPB)', mwt6:'Wandeltest (6 minuten)', mwt2:'Wandeltest (2 minuten)', ymca:'Steptest (herstel van je hartslag)', chester:'Steptest (uithoudingsvermogen)',
   astrand:'Fietstest', roei1000:'Roeitest (1000 meter)', shuttle:'Pendelloop', cooper:'Hardlooptest (12 minuten)', bmi:'Lengte en gewicht', buik:'Buikomvang'
 };
 const patName = t => PN[t.id] || t.n;
@@ -810,7 +885,7 @@ function lsi(t, m, ctx){
     const inv = z === 'L' ? m.L : m.R, un = z === 'L' ? m.R : m.L;
     val = better === 'laag' ? un/inv*100 : inv/un*100; label = 'LSI';
   } else { val = Math.min(m.L, m.R)/Math.max(m.L, m.R)*100; label = 'Symmetrie'; }
-  return {v:val, label, norm:LSI_NORM(val)};
+  return {v:val, label, norm:(t.lsiNorm || LSI_NORM)(val)};
 }
 function selTexts(t, r){ const v = (r && r.v) || {}; return (t.f || []).filter(f => f.t === 'sel').map(f => { if(t.side){ const L = v[f.k]?.L, R = v[f.k]?.R; return L || R ? {l:f.l, L, R} : null; } return v[f.k] ? {l:f.l, V:v[f.k]} : null; }).filter(Boolean); }
 function hasValue(r){ const walk = x => x == null ? false : typeof x === 'object' ? Object.values(x).some(walk) : String(x).trim() !== ''; return walk(r.v) ; }
@@ -826,7 +901,7 @@ function ratiosFor(moment){
   return out;
 }
 const badge = (n) => n ? '<span class="badge ' + n.lvl + '">' + esc(n.t) + '</span>' : '';
-function primaryMetric(t, ms){ if(!ms.length) return null; if(t.lsiKey){ const m = ms.find(x => x.k === t.lsiKey); if(m) return m; } return ms.find(m => m.k === 'totaal') || ms.find(m => m.side) || ms[ms.length-1]; }
+function primaryMetric(t, ms){ if(!ms.length) return null; if(t.main){ const m = ms.find(x => x.k === t.main); if(m) return m; } if(t.lsiKey){ const m = ms.find(x => x.k === t.lsiKey); if(m) return m; } return ms.find(m => m.k === 'totaal') || ms.find(m => m.side) || ms[ms.length-1]; }
 
 /* =====================================================================
    ZOEKEN
@@ -1173,7 +1248,7 @@ function renderResultCard(r, i){
       ${t.info ? `<button class="iconbtn" style="color:var(--cyan-strong)" data-act="toggleInfo" data-i="${i}" title="Uitleg">ⓘ</button>` : ''}
       <button class="iconbtn" data-act="removeResult" data-i="${i}" title="Verwijderen uit testmoment">✕</button></div>
     <div class="row" style="gap:6px"><span class="tag purple">${dom.ic} ${esc(dom.n)}</span>${t.s ? `<span class="tag blue">${esc(t.s)}</span>` : ''}${t.custom ? '<span class="tag blue">Eigen test</span>' : ''}</div>
-    ${show && t.info ? `<div class="info">${esc(t.info)}</div>` : ''}
+    ${show && t.info ? `<div class="info">${esc(infoText(t))}</div>` : ''}
     ${body}
     <div class="calc" id="calc-${i}">${calcHTML(t, r)}</div>
     <input class="inp" style="margin-top:10px;min-height:36px" data-r="${i}" data-note="1" value="${esc(r.o || '')}" placeholder="Opmerking (optioneel)">
@@ -1541,6 +1616,7 @@ const PD = {
   tuck:'Hoe goed je landt bij herhaald springen. Minder fouten is beter.',
   dropjump:'Hoe goed je landt na een sprong van een kastje.',
   slsq_kwal:'Hoe goed je knie, heup en romp in lijn blijven bij een eenbenige kniebuiging.',
+  sppb:'Drie korte onderdelen: stilstaan in verschillende standen, 4 meter lopen en 5 keer opstaan uit een stoel. Maximaal 12 punten.',
   mwt6:'Hoe ver je in 6 minuten kunt wandelen: een maat voor je uithoudingsvermogen.',
   mwt2:'Hoe ver je in 2 minuten kunt wandelen.',
   ymca:'Hoe snel je hartslag herstelt na 3 minuten op- en afstappen. Een lagere hartslag is beter.',
