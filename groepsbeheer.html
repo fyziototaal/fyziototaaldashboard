@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-09-29.3 -->
+<!-- APP_VERSION: 2026-10-09.1 -->
 <html lang="nl">
 <head>
   <script>
     /* ── VERSIECHECK: altijd de nieuwste versie laden ──
        Verhoog APP_VERSION bij élke wijziging, zowel hier als in de HTML-comment bovenaan. */
-    var APP_VERSION = "2026-09-29.3";
+    var APP_VERSION = "2026-10-09.1";
     (function () {
       try {
         if (location.protocol === "file:") return;
@@ -364,12 +364,28 @@ var STATE={
   ba:{groups:null,waitlist:null,loading:true,saveStatus:"",tab:"groups",filterFree:false,expandedGroup:null,expandedEdit:null,newMember:{naam:"",betaling:"incasso"},editColleague:"",editNiveau:"",wlForm:{naam:"",availability:{},referrer:"",referrerOther:"",note:""},wlEditId:null,showAddGroup:false,newGroup:{day:"Maandag",time:"",colleague:"",niveau:""},reserveForm:{}}
 };
 
-function render(){document.getElementById("root").innerHTML="";document.getElementById("root").appendChild(buildApp());scheduleAutosave();}
+function render(){
+  var root=document.getElementById("root");
+  // Vangnet: onthoud welk veld actief was (en de cursorpositie) en zet dat na het opnieuw opbouwen terug
+  var ae=document.activeElement,fi=-1,ss=null,se=null;
+  if(ae&&root.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)){
+    fi=Array.prototype.indexOf.call(root.querySelectorAll("input,select,textarea"),ae);
+    try{ss=ae.selectionStart;se=ae.selectionEnd;}catch(e){}
+  }
+  root.innerHTML="";root.appendChild(buildApp());
+  if(fi>-1){
+    var nf=root.querySelectorAll("input,select,textarea")[fi];
+    if(nf){nf.focus({preventScroll:true});try{if(ss!=null)nf.setSelectionRange(ss,se);}catch(e){}}
+  }
+  scheduleAutosave();
+}
 
 /* ── AUTOSAVE ──
    Na elke render wordt gekeken of groepen/wachtlijst veranderd zijn t.o.v. de laatst opgeslagen stand.
-   Zo ja: na 1 seconde zonder nieuwe wijziging wordt automatisch opgeslagen. */
-var AUTOSAVE_DELAY=1000;
+   Zo ja: pas na 3 seconden zonder nieuwe wijziging wordt automatisch opgeslagen.
+   De opslagstatus wordt ter plekke bijgewerkt, zónder de pagina opnieuw op te bouwen,
+   zodat een veld waarin je typt nooit zijn focus verliest. */
+var AUTOSAVE_DELAY=3000;
 var LAST_SAVED={ft:null,ba:null},SAVE_TIMERS={},SAVING={},PENDING={},RETRY_TIMERS={};
 function modKeys(mod){return mod==="ft"?{g:KEYS.ftg,w:KEYS.ftw}:{g:KEYS.bag,w:KEYS.baw};}
 function snapshot(mod){return JSON.stringify({g:STATE[mod].groups,w:STATE[mod].waitlist});}
@@ -391,7 +407,7 @@ async function saveModule(mod){
   if(snap===LAST_SAVED[mod])return;
   SAVING[mod]=true;
   LAST_SAVED[mod]=snap;
-  STATE[mod].saveStatus="saving";render();
+  STATE[mod].saveStatus="saving";updateSaveBadge(mod);
   var data=JSON.parse(snap),k=modKeys(mod);
   var ok1=await dbSet(k.g,JSON.stringify(data.g));
   var ok2=await dbSet(k.w,JSON.stringify(data.w));
@@ -403,9 +419,28 @@ async function saveModule(mod){
     STATE[mod].saveStatus="error";
     RETRY_TIMERS[mod]=setTimeout(function(){saveModule(mod);},5000);
   }
-  if(PENDING[mod]){PENDING[mod]=false;}
-  render();
+  if(PENDING[mod]){PENDING[mod]=false;scheduleAutosave();}
+  updateSaveBadge(mod);
 }
+
+function saveBadgeInfo(mod){
+  var S=STATE[mod],dirty=snapshot(mod)!==LAST_SAVED[mod];
+  var st=S.saveStatus==="saving"?"saving":S.saveStatus==="error"?"error":dirty?"dirty":"saved";
+  var accent=mod==="ft"?G.purple:G.blue;
+  return {
+    saving:{t:"⏳ Opslaan…",bg:"#fff",c:accent,b:G.border},
+    dirty:{t:"✎ Wijzigingen…",bg:"#fff",c:G.textMuted,b:G.border},
+    saved:{t:"✓ Automatisch opgeslagen",bg:G.successLight,c:G.successGreen,b:G.successBorder},
+    error:{t:"⚠ Opslaan mislukt — probeert opnieuw",bg:G.redLight,c:G.red,b:G.red}
+  }[st];
+}
+function updateSaveBadge(mod){
+  var b=document.getElementById("save-badge-"+mod);if(!b)return;
+  var i=saveBadgeInfo(mod);
+  b.textContent=i.t;b.style.background=i.bg;b.style.color=i.c;b.style.border="1px solid "+i.b;
+}
+/* Voor typvelden: data is al bijgewerkt, alleen status + timer verversen (geen herbouw) */
+function changed(mod){scheduleAutosave();updateSaveBadge(mod);}
 
 window.addEventListener("beforeunload",function(e){
   if(hasUnsaved("ft")||hasUnsaved("ba")){e.preventDefault();e.returnValue="";}
@@ -490,15 +525,8 @@ function buildModule(mod,MAX,accent,accentLight){
   var tempN=notifs.filter(function(n){return n.onlyTemp;});
 
   var statText=totalActive+" actief"+(totalStopped>0?" · "+totalStopped+" gepauzeerd":"")+(totalReserved>0?" · "+totalReserved+" gereserveerd":"")+" · "+waitlist.length+" wachtlijst";
-  var dirty=snapshot(mod)!==LAST_SAVED[mod];
-  var stState=S.saveStatus==="saving"?"saving":S.saveStatus==="error"?"error":dirty?"dirty":"saved";
-  var stMap={
-    saving:{t:"⏳ Opslaan…",bg:"#fff",c:accent,b:G.border},
-    dirty:{t:"✎ Wijzigingen…",bg:"#fff",c:G.textMuted,b:G.border},
-    saved:{t:"✓ Automatisch opgeslagen",bg:G.successLight,c:G.successGreen,b:G.successBorder},
-    error:{t:"⚠ Opslaan mislukt — probeert opnieuw",bg:G.redLight,c:G.red,b:G.red}
-  }[stState];
-  var saveBtn=el("span",{style:{padding:"5px 12px",borderRadius:"999px",fontSize:"12px",fontWeight:"600",background:stMap.bg,color:stMap.c,border:"1px solid "+stMap.b,whiteSpace:"nowrap"}},stMap.t);
+  var stMap=saveBadgeInfo(mod);
+  var saveBtn=el("span",{id:"save-badge-"+mod,style:{padding:"5px 12px",borderRadius:"999px",fontSize:"12px",fontWeight:"600",background:stMap.bg,color:stMap.c,border:"1px solid "+stMap.b,whiteSpace:"nowrap"}},stMap.t);
 
   var statBarWrap=el("div",{style:{padding:"10px 16px",background:accentLight,borderBottom:"1px solid "+G.border}});
   var statBar=el("div",{className:"stat-bar"});
@@ -682,8 +710,13 @@ function buildModule(mod,MAX,accent,accentLight){
             if(m.stopped){
               var sp=el("div",{style:{background:G.orangeLight,border:"1px solid #f0c090",borderRadius:"10px",padding:"8px 10px",margin:"2px 0 4px"}});
               sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px"}},"REDEN PAUZE *"));
-              sp.appendChild(el("input",{style:inp({width:"100%",padding:"5px 8px",border:"1px solid "+(m.stopReason&&m.stopReason.trim()?"#f0c090":G.red)}),placeholder:"verplicht",value:m.stopReason||"",onInput:function(e){m.stopReason=e.target.value;render();}}));
-              if(!m.stopReason||!m.stopReason.trim())sp.appendChild(el("div",{style:{fontSize:"11px",color:G.red,marginTop:"2px"}},"Verplicht"));
+              var rsHint=el("div",{style:{fontSize:"11px",color:G.red,marginTop:"2px",display:(m.stopReason&&m.stopReason.trim())?"none":"block"}},"Verplicht");
+              sp.appendChild(el("input",{style:inp({width:"100%",padding:"5px 8px",border:"1px solid "+(m.stopReason&&m.stopReason.trim()?"#f0c090":G.red)}),placeholder:"verplicht",value:m.stopReason||"",onInput:function(e){
+                m.stopReason=e.target.value;var ok=!!m.stopReason.trim();
+                e.target.style.borderColor=ok?"#f0c090":G.red;rsHint.style.display=ok?"none":"block";
+                changed(mod);
+              }}));
+              sp.appendChild(rsHint);
               sp.appendChild(el("div",{style:{fontSize:"11px",color:G.orange,fontWeight:"600",marginBottom:"3px",marginTop:"6px"}},"GEPAUZEERD TOT *"));
               if(!m.stopUnknown){
                 sp.appendChild(el("input",{type:"date",style:inp({width:"100%",padding:"5px 8px",marginBottom:"4px",border:"1px solid "+(!m.stopUnknown&&!m.stopUntil?G.red:"#f0c090")}),value:m.stopUntil||"",onChange:function(e){m.stopUntil=e.target.value;render();}}));
