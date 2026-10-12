@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-07.8 -->
+<!-- APP_VERSION: 2026-10-12.3 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-07.8";
+  const APP_VERSION = "2026-10-12.3";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -252,6 +252,14 @@
   @media(max-width:520px){.sidegrid{grid-template-columns:1fr 1fr}.sidegrid .lbl{grid-column:1/-1;margin-top:4px}.sidegrid .h.first{display:none}}
   .sgn{display:flex;gap:6px;min-width:0}.sgn select{flex:0 0 auto;width:auto;padding-right:26px}.sgn input{flex:1;min-width:0}
   .mailbox{background:var(--surface-2);border-radius:14px;padding:12px 14px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
+  .qual{margin-top:10px;background:var(--surface-2);border-radius:12px;padding:8px 12px}
+  .qual summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--accent)}
+  .qrow{display:flex;gap:8px;align-items:flex-start;margin-top:6px;flex-wrap:wrap}
+  .qlbl{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;min-width:52px;padding-top:6px}
+  .proto-card{border:1.5px solid var(--accent-soft)}
+  .ptile{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:14px;padding:10px 12px;cursor:pointer;margin-top:8px}
+  .ptile b{display:block;font-size:13.5px;color:var(--accent)} .ptile small{color:var(--muted);font-size:11.5px}
+  .ptile.added{opacity:.6}
   .calc{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:0}
   .calc:empty{display:none}
   .items{margin-top:10px;display:flex;flex-direction:column;gap:6px}
@@ -364,6 +372,8 @@ const NB = (lvl, t) => ({lvl, t});
 const LSI_NORM = x => x >= 90 ? NB('good','≥90%') : NB('warn','<90%');
 
 const num  = (k,l,u,x={}) => Object.assign({k,l,u,t:'num'},x);
+// cap: maximaal aantal; daarboven wordt '>cap' vastgelegd
+const capV = (x, cap) => { if(x == null || x === '') return null; const s = String(x).trim(); if(s.startsWith('>')) return cap + 0.001; const n = toNum(s); return n == null ? null : n > cap ? cap + 0.001 : n; };
 const mmss = (k,l,x={}) => Object.assign({k,l,u:'min:sec',t:'mmss'},x);
 const sel  = (k,l,opts,x={}) => Object.assign({k,l,t:'sel',opts},x);
 // Extensie met richting: tekort (deficit) of hyperextensie, zodat niemand met + of − hoeft te puzzelen
@@ -388,6 +398,7 @@ const gripNorm = (x, ctx) => {
 const plankNorm = (x, ctx, v) => {
   if(v.var === 'RKC plank') return x > 45 ? NB('good','Goed (>45 s)') : x >= 30 ? NB('warn','Matig (30–45 s)') : NB('bad','Zwak (<30 s)');
   if(v.var === 'Gewone plank'){
+    if(ctx.leeftijd && ctx.leeftijd < 18) return x > 120 ? NB('good','Goed (>2 min)') : x >= 60 ? NB('warn','Matig (1–2 min)') : NB('bad','Slecht (<1 min)');
     if(!ctx.leeftijd || !ctx.geslacht) return NB('grey','Vul leeftijd + geslacht in voor norm');
     // [t/m leeftijd, ondergrens gemiddeld, bovengrens gemiddeld, uitstekend vanaf] — gelijk aan de Fitheidstest
     const M = [[29,45,75,99],[39,40,65,80],[49,35,55,70],[59,30,50,65],[200,25,45,60]], V = [[29,30,60,85],[39,25,50,75],[49,20,45,65],[59,15,40,55],[200,10,35,50]];
@@ -452,7 +463,7 @@ const SRC_LSI = 'LSI ≥90%: gangbare return-to-sport-grens (o.a. Munro & Herrin
 const SRC = {
   grip:'EWGSOP2 — Cruz-Jentoft e.a. 2019 (meetinstrumentenzorg.nl verwijst naar de percentielen van Dodds e.a.; onder P10 = lage knijpkracht)', chair30:'CDC STEADI (op basis van Rikli & Jones)',
   sts5:'meetinstrumentenzorg.nl (toelichtingsformulier Timed Chair-Stand-Test); Bohannon 2006 (leeftijdsnormen)',
-  slsu30:SRC_FT, brug1:SRC_FT, sorensen:SRC_FT, sideplank:SRC_FT, plank:SRC_FT, dll:SRC_FT, ymca:SRC_FT, roei1000:SRC_FT, shoulderpress:SRC_FT,
+  slsu30:SRC_FT, brug1:SRC_FT + ' (alleen box)', sorensen:SRC_FT, sideplank:SRC_FT, plank:'Fyzio Totaal: eigen norm jongeren <18; volwassenen gelijk aan de Fitheidstest', dll:SRC_FT, ymca:SRC_FT, roei1000:SRC_FT, shoulderpress:SRC_FT,
   heelraise:'Lunsford & Perry 1995; Bohannon 2022 (meta-analyse)', ckcuest:'Tucci e.a. 2014', dnf:'Domenech e.a. 2011',
   bbs:'meetinstrumentenzorg.nl (toelichtingsformulier BBS); Berg e.a. 1992', minibest:'meetinstrumentenzorg.nl (toelichtingsformulier Mini-BESTest); Tsang e.a. 2013 (CVA)',
   tinetti:'meetinstrumentenzorg.nl (toelichtingsformulier POMA, o.b.v. Sterke 2003)', dgi:'meetinstrumentenzorg.nl (toelichtingsformulier DGI); Huang e.a. 2011 (MDC)',
@@ -507,9 +518,9 @@ const LIB = [
     f:[num('kg','Knijpkracht','kg',{norm:gripNorm})],
     info:'Zittend, elleboog 90°, onderarm neutraal, Jamar in stand 2. Neem per hand de beste van 3 pogingen.\nNorm: afkappunt voor lage knijpkracht (EWGSOP2) is <27 kg (man) en <16 kg (vrouw).'},
   /* Functionele kracht OE */
-  {id:'chair30', n:'30-sec Chair Stand Test', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'opstaan stoel sit to stand beenkracht ouderen valrisico senior fitness test', f:[num('hh','Herhalingen','hh',{norm:chairNorm})],
+  {id:'chair30', n:'30-Second Chair Stand Test', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'30-sec chair stand test opstaan stoel sit to stand beenkracht ouderen valrisico senior fitness test', f:[num('hh','Herhalingen','hh',{norm:chairNorm})],
     info:'Stoel ±43 cm, armen gekruist voor de borst. Aantal keer volledig opstaan in 30 s.\nNorm (CDC STEADI, 60+): onder gemiddeld wijst op verhoogd valrisico.'},
-  {id:'sts5', n:'5× Sit-to-Stand', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'opstaan stoel sit to stand 5x vijf keer beenkracht valrisico ouderen', better:'laag',
+  {id:'sts5', n:'Five Times Sit to Stand Test', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'5× sit-to-stand opstaan stoel sit to stand 5x vijf keer beenkracht valrisico ouderen', better:'laag',
     f:[num('s','Tijd','s',{norm:(x, c) => {
       if(x >= 14) return NB('bad','Verhoogd valrisico (≥14 s)');
       const a = c.leeftijd, ref = a >= 80 ? 14.8 : a >= 70 ? 12.6 : a >= 60 ? 11.4 : null;
@@ -520,13 +531,19 @@ const LIB = [
   {id:'slsu30', n:'30-sec Single Leg Stand Up', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'eenbenig opstaan stoel beenkracht fitheidstest', side:true,
     f:[num('hh','Herhalingen','hh',{norm:x => x > 10 ? NB('good','Goed (>10)') : x >= 5 ? NB('warn','Matig (5–10)') : NB('bad','Zwak (<5)')})],
     info:'Op één been voor een bank met knie op 90°, armen gekruist. Zo vaak mogelijk opstaan en gecontroleerd zitten in 30 s.\nNorm: Goed >10 / Matig 5–10 / Zwak <5.'},
+  {id:'olsu', n:'One leg stand up', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'one leg stand up eenbenig opstaan stoel bank beenkracht stabiliteit performance check', side:true,
+    f:[num('hh','Herhalingen (max. 30)','hh',{cap:30})],
+    info:'Op één been opstaan van een bank/stoel en gecontroleerd weer gaan zitten, armen gekruist. Maximaal aantal herhalingen met een maximum van 30; meer dan 30: kies >30.\nLet op kracht én stabiliteit (zie Kwaliteit van bewegen).'},
   {id:'slsquat', n:'Single Leg Squat (aantal)', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'eenbenige squat knie heup beenkracht vkb patellofemoraal', side:true, f:[num('hh','Herhalingen','hh')],
     info:'Aantal correcte eenbenige squats (tot ±60° knieflexie) tot vermoeidheid of verlies van kwaliteit. Noteer bijzonderheden (knie naar binnen, bekken kantelen) bij opmerkingen.'},
   {id:'heelraise', n:'Heel Raise Test', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'kuit kuitkracht enkel achilles tenen hielheffen soleus calf raise', side:true, f:[num('hh','Herhalingen','hh')],
     info:'Eenbenig op de tenen in metronoomtempo (60 bpm, 1 hh per 2 tikken), vingertoppen tegen de muur. Herhalingen tot vermoeidheid of hoogteverlies.\nIndicatie: ±25 herhalingen bij gezonde volwassenen; gemiddeld ±29 bij jongere en ±12 bij oudere volwassenen. Bij ouderen is 25 dus geen realistische norm. LSI ≥90% als streefwaarde bij achillespeesklachten.'},
-  {id:'brug1', n:'1-benige brug (box)', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'hamstrings bil brug bridge single leg bridge fitheidstest', side:true,
-    f:[num('hh','Herhalingen','hh',{norm:x => x > 30 ? NB('good','Top (>30)') : x >= 20 ? NB('good','Goed (20–30)') : NB('bad','Zwak (<20)')})],
-    info:'Rugligging, hak op box van 60 cm, knie ±20° gebogen, ander been gestrekt omhoog. Heup volledig strekken, herhalingen tot uitputting.\nNorm: Top >30 / Goed ±25 / Zwak <20.'},
+  {id:'brug1', n:'Eenbenige brug', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'1-benige brug hamstrings bil brug bruggetje bridge single leg bridge fitheidstest performance check', side:true,
+    f:[sel('var','Uitvoering',['Box 60 cm','Op de grond']), num('hh','Herhalingen','hh',{cap:30, norm:(x,c,v) => v.var === 'Op de grond' ? null : x > 30 ? NB('good','Top (>30)') : x >= 20 ? NB('good','Goed (20–30)') : NB('bad','Zwak (<20)')})],
+    info:'Box: rugligging, hak op box van 60 cm, knie ±20° gebogen, ander been gestrekt omhoog. Heup volledig strekken, herhalingen tot uitputting. Op de grond (Performance check): maximaal 30 herhalingen; meer dan 30: kies >30.\nNorm (alleen box): Top >30 / Goed ±25 / Zwak <20. Voor de uitvoering op de grond is geen norm opgenomen; vergelijk links/rechts en het verloop.'},
+  {id:'abd_zij', n:'Heupabductie zijlig', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'heupabductie in zijlig (herhalingen) abductie zijlig heup gluteus medius zijkant heup kneeing performance check', side:true,
+    f:[num('hh','Herhalingen (max. 30)','hh',{cap:30})],
+    info:'Zijlig, onderste been licht gebogen, bovenste been gestrekt in lijn met de romp. Been zijwaarts heffen tot vermoeidheid of verlies van kwaliteit (romp kantelt, been komt naar voren), maximaal 30 herhalingen. Meer dan 30: kies >30.\nRelateer de uitkomst aan kneeing in tijdens de functionele testen en kijk naar de connectie met romp en mobiliteit van lumbale wervelkolom en heup.'},
   {id:'rm1', n:'1RM-schatting (oefening naar keuze)', d:'kracht', s:'Functionele kracht onderste extremiteit', kw:'1rm rm maximaal gewicht leg press squat deadlift brzycki fitness',
     f:[sel('oef','Oefening',['Leg press','Squat','Deadlift','Bench press','Lat pulldown','Leg extension','Leg curl','Anders']), sel('zijde','Zijde',['Beide','Links','Rechts']), num('kg','Gewicht','kg'), num('hh','Herhalingen','hh')],
     calc: v => { const kg = toNum(v.kg), hh = toNum(v.hh); return kg && hh && hh <= 12 ? [{k:'e1rm', l:'Geschatte 1RM', u:'kg', V: kg * 36 / (37 - hh)}] : []; },
@@ -538,30 +555,33 @@ const LIB = [
     info:'Zittend of staand, per arm tot technisch spierfalen binnen 8–12 herhalingen. De geschatte 1RM (Brzycki) wordt gebruikt voor de LSI.\nNorm asymmetrie: verschil L/R niet groter dan 17% (dus LSI ≥83%).', lsiKey:'e1rm', lsiNorm: x => x >= 83 ? NB('good','Verschil ≤17%') : NB('warn','Verschil >17%')},
   {id:'pushup', n:'Push-up test', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'opdrukken push up borst triceps armen', f:[sel('var','Variant',['Volledig (tenen)','Op knieën']), num('hh','Herhalingen','hh')],
     info:'Maximaal aantal correcte push-ups (borst tot vuist-hoogte boven de grond) zonder pauze.'},
-  {id:'ckcuest', n:'CKCUEST', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'closed kinetic chain upper extremity stability test schouder stabiliteit werpsport push up positie', f:[num('aant','Aanrakingen (gem. 3 pogingen)','x')],
+  {id:'ckcuest', n:'Closed Kinetic Chain Upper Extremity Stability Test (CKCUEST)', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'ckcuest closed kinetic chain upper extremity stability test schouder stabiliteit werpsport push up positie', f:[num('aant','Aanrakingen (gem. 3 pogingen)','x')],
     info:'Push-up positie, handen 91,4 cm uit elkaar. Zo vaak mogelijk afwisselend de andere hand aantikken in 15 s. Gemiddelde van 3 pogingen.\nIndicatie: gemiddeld ±18,5 (man) en ±20,5 (vrouw) in de algemene populatie; bij mannelijke sporters ±28–30.'},
-  {id:'armcurl', n:'30-sec Arm Curl', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'biceps arm armkracht senior fitness test ouderen', side:true, f:[num('hh','Herhalingen','hh')],
+  {id:'armcurl', n:'30-Second Arm Curl Test', d:'kracht', s:'Functionele kracht bovenste extremiteit', kw:'30-sec arm curl biceps arm armkracht senior fitness test ouderen', side:true, f:[num('hh','Herhalingen','hh')],
     info:'Zittend, halter 2,3 kg (vrouw) / 3,6 kg (man). Aantal volledige curls in 30 s.'},
   /* Romp & core */
-  {id:'sorensen', n:'Biering-Sorensen', d:'kracht', s:'Romp & core', kw:'rug rugspieren extensoren lage rug uithouding back extension fitheidstest',
+  {id:'sorensen', n:'Biering-Sørensen test', d:'kracht', s:'Romp & core', kw:'biering-sorensen rug rugspieren extensoren lage rug uithouding back extension fitheidstest',
     f:[sel('var','Uitvoering',['Verzwaard (met gewicht)','Normaal (zonder gewicht)']), num('s','Tijd','s',{norm:(x,c,v) => v.var === 'Verzwaard (met gewicht)'
       ? (x > 90 ? NB('good','Top (>90 s)') : x >= 60 ? NB('good','Goed (≥60 s)') : x >= 45 ? NB('warn','Matig (45–60 s)') : NB('bad','Zwak (<45 s)'))
       : v.var === 'Normaal (zonder gewicht)' ? (x > 180 ? NB('good','Goed (>180 s)') : x >= 120 ? NB('warn','Matig (120–180 s)') : NB('bad','Zwak (<120 s)')) : null})],
     info:'Horizontaal op back-extension apparaat, heup op de rand. Normaal: armen gekruist. Verzwaard: handen achter het hoofd + schijf (V 5 kg / M 10 kg).\nStoppen zodra de romp onder horizontaal zakt of bij pijn.\nNorm verzwaard: Top >90 / Goed ≥60 / Matig 45–60 / Zwak <45 s. Zonder gewicht: Goed >180 / Matig 120–180 / Zwak <120 s.'},
-  {id:'sideplank', n:'Laterale Roman Chair / Side Plank', d:'kracht', s:'Romp & core', kw:'zijplank side plank laterale romp obliquus quadratus lumborum zijwaarts fitheidstest', side:true,
+  {id:'sideplank', n:'Zijwaartse plank / Laterale Roman Chair (tijd)', d:'kracht', s:'Romp & core', kw:'laterale roman chair / side plank zijplank side plank laterale romp obliquus quadratus lumborum zijwaarts fitheidstest', side:true,
     f:[sel('var','Uitvoering',['Roman Chair verzwaard','Roman Chair normaal','Side plank (grond)']), num('s','Tijd','s',{norm:(x,c,v) => v.var === 'Roman Chair verzwaard'
       ? (x > 60 ? NB('good','Top (>60 s)') : x >= 45 ? NB('good','Goed (45–60 s)') : x >= 30 ? NB('warn','Matig (30–45 s)') : NB('bad','Zwak (<30 s)'))
       : v.var === 'Roman Chair normaal' ? (x > 90 ? NB('good','Goed (>90 s)') : x >= 60 ? NB('warn','Matig (60–90 s)') : NB('bad','Zwak (<60 s)')) : null})],
     info:'Zijwaarts horizontaal, romp in rechte lijn zo lang mogelijk. Verzwaard: schijf tegen de borst (V 5 kg / M 10 kg).\nNorm verzwaard: Top >60 / Goed 45–60 / Matig 30–45 / Zwak <30 s. Zonder gewicht: Goed >90 / Matig 60–90 / Zwak <60 s. Voor de side plank op de grond is geen norm opgenomen.'},
+  {id:'sideplank_hh', n:'Zijwaartse plank', d:'kracht', s:'Romp & core', kw:'zijwaartse plank zijplank side plank herhalingen laterale romp performance check', side:true,
+    f:[num('hh','Herhalingen (max. 30)','hh',{cap:30})],
+    info:'Zijwaartse plank op onderarm en voeten; per zijde het maximaal aantal correcte herhalingen, maximaal 30. Meer dan 30: kies >30.\nDe zijwaartse plank op tijd (of op de Roman Chair) vind je als aparte test.'},
   {id:'plank', n:'Planktest', d:'kracht', s:'Romp & core', kw:'plank buikspieren core rompstabiliteit rkc fitheidstest',
     f:[sel('var','Variant',['RKC plank','Gewone plank']), num('s','Tijd','s',{norm:plankNorm})],
-    info:'RKC: ellebogen actief naar de tenen trekken, billen en benen maximaal aanspannen. Norm RKC: Goed >45 / Matig 30–45 / Zwak <30 s.\nGewone plank: zo lang mogelijk in rechte lijn; norm afhankelijk van leeftijd en geslacht.'},
+    info:'RKC: ellebogen actief naar de tenen trekken, billen en benen maximaal aanspannen. Norm RKC: Goed >45 / Matig 30–45 / Zwak <30 s.\nGewone plank: zo lang mogelijk in rechte lijn. Jongeren (<18): Goed >2 min / Matig 1–2 min / Slecht <1 min. Volwassenen: norm afhankelijk van leeftijd en geslacht.'},
   {id:'dll', n:'Double Leg Lowering Test', d:'kracht', s:'Romp & core', kw:'buikspieren core onderrug benen laten zakken lumbopelvisch', better:'laag',
     f:[num('deg','Hoek waarop de rug loskomt','°',{norm:x => x < 45 ? NB('good','Goed (<45°)') : NB('warn','Matig (≥45°)')})],
     info:'Rugligging, benen gestrekt verticaal (90°). Tester hand onder de onderrug. Benen langzaam laten zakken; noteer de hoek (t.o.v. de grond) waarop de onderrug loskomt. Lager is beter.'},
   {id:'dnf', n:'Deep Neck Flexor Endurance Test', d:'kracht', s:'Romp & core', kw:'nek diepe nekflexoren cervicaal hoofdpijn whiplash uithouding', f:[num('s','Tijd','s')],
     info:'Haaklig, kin ingetrokken, hoofd ±2,5 cm optillen. Tijd tot de kin-intrekking of hoofdpositie verloren gaat.\nIndicatie: ±39 s (man) / ±29 s (vrouw) bij gezonden; korter bij nekklachten.'},
-  {id:'mcgill_flex', n:'McGill flexie-uithouding', d:'kracht', s:'Romp & core', kw:'buikspieren core rompflexoren mcgill uithouding lage rug', f:[num('s','Tijd','s')],
+  {id:'mcgill_flex', n:'McGill flexor endurance test', d:'kracht', s:'Romp & core', kw:'mcgill flexie-uithouding buikspieren core rompflexoren mcgill uithouding lage rug', f:[num('s','Tijd','s')],
     info:'Zit met romp in 60° (steun weggehaald), knieën 90°, armen gekruist. Tijd tot de romp de positie niet meer vasthoudt.'},
 
   /* ===== MOBILITEIT & ROM ===== */
@@ -586,7 +606,7 @@ const LIB = [
   {id:'lunge', n:'Weight-bearing Lunge Test (knee-to-wall)', d:'mob', s:'Functionele mobiliteit', kw:'enkel dorsaalflexie knie naar muur kuit achilles enkeldistorsie', side:true,
     f:[num('cm','Afstand teen–muur','cm')],
     info:'Knie raakt de muur met de hiel aan de grond. Maximale afstand grote teen–muur.\nEr is geen eenduidige ondergrens (in de literatuur worden waarden van ±9 tot 12 cm genoemd), daarom toont de tool hier geen kleur. Kijk vooral naar het verschil links/rechts en het verloop: een verschil groter dan ±2 cm valt buiten de meetfout.'},
-  {id:'sitreach', n:'Sit & Reach', d:'mob', s:'Functionele mobiliteit', kw:'hamstrings lenigheid rug lage rug sit and reach fitheidstest', f:[num('cm','Score','cm')],
+  {id:'sitreach', n:'Sit and reach test', d:'mob', s:'Functionele mobiliteit', kw:'sit & reach hamstrings lenigheid rug lage rug sit and reach fitheidstest', f:[num('cm','Score','cm')],
     info:'Zit met gestrekte benen, voeten tegen de meetbox. Langzaam zo ver mogelijk reiken, 2 s vasthouden. + = voorbij de tenen, − = voor de tenen.'},
   {id:'wallangels', n:'Wall Angels', d:'mob', s:'Functionele mobiliteit', kw:'schouder thoracaal houding muur fitheidstest', f:[sel('score','Score',['Goed','Matig','Slecht'])],
     info:'Rug, billen, achterhoofd en armen tegen de muur. Van W- naar Y-positie zonder dat rug, achterhoofd of polsen loskomen.'},
@@ -594,18 +614,18 @@ const LIB = [
     info:'Voeten op schouderbreedte, stok gestrekt boven het hoofd. Let op knieën naar binnen, hakken los, romp naar voren, armen zakken.'},
   {id:'hand_rug', n:'Hand-achter-rug (duim–C7)', d:'mob', s:'Functionele mobiliteit', kw:'schouder apley scratch endorotatie hand achter rug frozen shoulder', side:true, better:'laag',
     f:[num('cm','Afstand duim–C7','cm')], info:'Hand zo hoog mogelijk achter de rug. Afstand duim tot processus spinosus C7. Kleiner is beter.'},
-  {id:'vva', n:'Vinger-vloer-afstand', d:'mob', s:'Functionele mobiliteit', kw:'vinger vloer rug flexie lenigheid hamstrings lage rug', better:'laag', f:[num('cm','Afstand','cm')],
-    info:'Staand, knieën gestrekt, maximaal vooroverbuigen. Afstand middelvinger tot de vloer (0 = vloer raken).'},
+  {id:'vva', n:'Vinger-vloer-afstand (VBA)', d:'mob', s:'Functionele mobiliteit', kw:'vinger vloer bodem vba vva rug flexie lenigheid hamstrings lage rug performance check', better:'laag', f:[num('cm','Afstand','cm')],
+    info:'Staand, knieën gestrekt, maximaal vooroverbuigen. Afstand middelvinger tot de vloer (0 = vloer raken).\nBij een beperking (>10 cm): kijk naar verschil links/rechts in lengte en naar de heupmobiliteit.'},
   {id:'thomas', n:'Thomas test', d:'mob', s:'Spierlengte', kw:'heupflexoren iliopsoas rectus femoris verkorting heup lies', side:true,
     f:[sel('uit','Uitslag',['Negatief','Positief iliopsoas','Positief rectus femoris','Positief beide']), num('deg','Heupextensie-hoek (optioneel)','°')],
     info:'Ruglig aan de rand van de bank, niet-geteste knie naar de borst. Beoordeel of het bovenbeen de bank raakt (iliopsoas) en of de knie ≥80° gebogen blijft (rectus femoris).'},
   {id:'hams9090', n:'90/90 hamstringtest', d:'mob', s:'Spierlengte', kw:'hamstrings verkorting knie extensie lenigheid', side:true, better:'laag',
     f:[num('deg','Knie-extensiedeficit','°')], info:'Ruglig, heup 90°, knie actief strekken. Noteer het resterende extensiedeficit (0 = volledig gestrekt). Kleiner is beter.'},
-  {id:'slr', n:'SLR (passief)', d:'mob', s:'Spierlengte', kw:'straight leg raise hamstrings lasegue zenuw ischias', side:true, f:[num('deg','Heupflexie','°')],
+  {id:'slr', n:'Straight leg raise (SLR)', d:'mob', s:'Spierlengte', kw:'slr (passief) straight leg raise hamstrings lasegue zenuw ischias', side:true, f:[num('deg','Heupflexie','°')],
     info:'Passieve gestrekte beenheffing tot weerstand of klachten. Noteer neurogene klachten bij opmerkingen.'},
-  {id:'faber', n:'FABER-afstand', d:'mob', s:'Spierlengte', kw:'faber patrick heup si gewricht lies fai', side:true, better:'laag',
+  {id:'faber', n:'FABER-test', d:'mob', s:'Spierlengte', kw:'faber-afstand faber patrick heup si gewricht lies fai', side:true, better:'laag',
     f:[num('cm','Afstand knie–bank','cm')], info:'Ruglig, voet op de andere knie. Afstand laterale knie tot de bank. Noteer pijnlocatie bij opmerkingen.'},
-  {id:'schober', n:'Schober', d:'mob', s:'Wervelkolom', kw:'lumbaal flexie rug wervelkolom bechterew', f:[num('cm','Toename','cm')],
+  {id:'schober', n:'Schober-test', d:'mob', s:'Wervelkolom', kw:'schober lumbaal flexie rug wervelkolom bechterew', f:[num('cm','Toename','cm')],
     info:'Gemodificeerde Schober: markering op de lumbosacrale overgang (dimples van Venus), plus 5 cm eronder en 10 cm erboven. Meet de toename van de afstand (15 cm) bij maximale flexie.\nMinder dan 5 cm toename wijst op een beperkte lumbale flexie.'},
 
   /* ===== BALANS & VALRISICO ===== */
@@ -629,7 +649,7 @@ const LIB = [
     calc: v => { const p = ['bal','loop','stoel'].map(k => v[k] === undefined || v[k] === '' ? null : +v[k]); if(p.some(x => x == null)) return []; const t = p[0] + p[1] + p[2];
       return [{k:'totaal', l:'Totaal', u:'/ 12', V:t, norm: t <= 3 ? NB('bad','Ernstige beperkingen (0–3)') : t <= 9 ? NB('warn','Hoog risico op nieuwe beperkingen (4–9)') : NB('good','Laag risico (10–12)')}]; },
     info:'Drie onderdelen, elk 0–4 punten: balans (voeten naast elkaar, semi-tandem, tandem), loopsnelheid over 4 m en 5× opstaan uit een stoel. Totaal 0–12.\nIndeling: 0–3 ernstige beperkingen, 4–9 hoog risico op nieuwe beperkingen (o.a. in ADL), 10–12 laag risico. Let op het plafondeffect bij goed functionerende ouderen.'},
-  {id:'ols', n:'Eenbeensstand', d:'bal', s:'Statische balans', kw:'one leg stance staan op een been evenwicht statisch propriocepsis enkel', side:true,
+  {id:'ols', n:'Single leg stance test', d:'bal', s:'Statische balans', kw:'eenbeensstand one leg stance staan op een been evenwicht statisch propriocepsis enkel', side:true,
     f:[sel('var','Variant',['Ogen open','Ogen dicht','Ogen open, instabiele ondergrond']), num('s','Tijd','s',{norm:(x,c,v) => {
       if(v.var !== 'Ogen open' && v.var !== 'Ogen dicht') return null;
       const a = c.leeftijd, open = v.var === 'Ogen open';
@@ -676,17 +696,17 @@ const LIB = [
   {id:'tug', n:'Timed Up & Go (TUG)', d:'bal', s:'Mobiliteit & lopen', kw:'tug timed up and go opstaan lopen valrisico ouderen dual task', better:'laag',
     f:[sel('var','Variant',['Standaard','Dual task cognitief','Dual task motorisch']), num('s','Tijd','s',{norm:(x,c,v) => v.var !== 'Standaard' ? null : x < 12 ? NB('good','Geen verhoogd valrisico (<12 s)') : x < 13.5 ? NB('warn','Verhoogd valrisico (≥12 s)') : NB('bad','Verhoogd valrisico (≥13,5 s)')})],
     info:'Opstaan uit stoel, 3 meter lopen, omdraaien, terug en gaan zitten in eigen tempo. Eventueel loophulpmiddel noteren.\nVerhoogd valrisico vanaf 12 s en zeker vanaf 13,5 s. In de revalidatie: onder 20 s loopt iemand zelfstandig en veilig, boven 30 s is hulp bij het lopen nodig. Gemiddelde bij gezonde ouderen: ±8 s (60–69 jr), ±9 s (70–79 jr), ±10–11 s (80–89 jr).'},
-  {id:'mwt10', n:'10-meter looptest', d:'bal', s:'Mobiliteit & lopen', kw:'10 meter loopsnelheid gait speed lopen ouderen neurologie', better:'laag',
+  {id:'mwt10', n:'10 meter looptest', d:'bal', s:'Mobiliteit & lopen', kw:'10-meter looptest 10 meter loopsnelheid gait speed lopen ouderen neurologie', better:'laag',
     f:[sel('var','Tempo',['Comfortabel','Maximaal']), num('s','Tijd over 10 m','s')],
     calc: (v) => { const t = toNum(v.s); if(!t) return []; const sp = 10/t; return [{k:'speed', l:'Loopsnelheid', u:'m/s', V:sp, better:'hoog', norm: v.var !== 'Comfortabel' ? null : sp >= 0.8 ? NB('good','Boven 0,8 m/s') : NB('bad','Verhoogd risico (<0,8 m/s)')}]; },
     info:'Meet de middelste 10 m van een traject van 14 m (2 m aanloop en uitloop).\nEen comfortabele loopsnelheid onder 0,8 m/s hangt samen met een verhoogd risico op nadelige gezondheidsuitkomsten bij ouderen.'},
 
   /* ===== SPORT & SPRONG ===== */
-  {id:'shop', n:'Single Hop for Distance', d:'sport', s:'Hoptesten', kw:'single hop afstand hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Eenbenig zo ver mogelijk springen en stabiel landen (2 s). Beste van 2–3 geldige pogingen.\nLSI ≥90% als streefwaarde voor terugkeer naar sport.'},
-  {id:'thop', n:'Triple Hop for Distance', d:'sport', s:'Hoptesten', kw:'triple hop drie sprongen hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Drie opeenvolgende eenbenige sprongen, stabiel landen. Beste van 2–3 pogingen.'},
-  {id:'chop', n:'Crossover Hop for Distance', d:'sport', s:'Hoptesten', kw:'crossover hop zigzag hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Drie eenbenige sprongen kruislings over een lijn van 15 cm breed. Beste van 2–3 pogingen.'},
-  {id:'hop6', n:'6m Timed Hop', d:'sport', s:'Hoptesten', kw:'6 meter timed hop tijd hoptest vkb acl knie', side:true, better:'laag', f:[num('s','Tijd','s')], info:'6 meter eenbenig hoppen zo snel mogelijk. Beste van 2 pogingen. Lager is beter.'},
-  {id:'sidehop', n:'Side Hop Test', d:'sport', s:'Hoptesten', kw:'side hop zijwaarts enkel enkeldistorsie knie vkb', side:true, f:[num('aant','Aantal (30 s)','x')], info:'Eenbenig zijwaarts heen en weer springen over twee lijnen 40 cm uit elkaar, 30 s. Aantal geldige sprongen.'},
+  {id:'shop', n:'Single leg hop test', d:'sport', s:'Hoptesten', kw:'single hop for distance single hop afstand hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Eenbenig zo ver mogelijk springen en stabiel landen (2 s). Beste van 2–3 geldige pogingen.\nLSI ≥90% als streefwaarde voor terugkeer naar sport.'},
+  {id:'thop', n:'Triple hop test', d:'sport', s:'Hoptesten', kw:'triple hop for distance triple hop drie sprongen hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Drie opeenvolgende eenbenige sprongen, stabiel landen. Beste van 2–3 pogingen.'},
+  {id:'chop', n:'Crossover hop test', d:'sport', s:'Hoptesten', kw:'crossover hop for distance crossover hop zigzag hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Drie eenbenige sprongen kruislings over een lijn van 15 cm breed. Beste van 2–3 pogingen.'},
+  {id:'hop6', n:'6 meter timed hop test', d:'sport', s:'Hoptesten', kw:'6m timed hop 6 meter timed hop tijd hoptest vkb acl knie', side:true, better:'laag', f:[num('s','Tijd','s')], info:'6 meter eenbenig hoppen zo snel mogelijk. Beste van 2 pogingen. Lager is beter.'},
+  {id:'sidehop', n:'Side hop test', d:'sport', s:'Hoptesten', kw:'side hop test side hop zijwaarts enkel enkeldistorsie knie vkb', side:true, f:[num('aant','Aantal (30 s)','x')], info:'Eenbenig zijwaarts heen en weer springen over twee lijnen 40 cm uit elkaar, 30 s. Aantal geldige sprongen.'},
   {id:'slcmj', n:'Single Leg Countermovement Jump', d:'sport', s:'Sprongkracht', kw:'cmj counter movement jump spronghoogte eenbenig vertical jump my jump', side:true, f:[num('cm','Spronghoogte','cm')], info:'Eenbenige verticale sprong met tegenbeweging, handen in de zij. Beste van 3 pogingen (app of springmat).'},
   {id:'cmj', n:'Countermovement Jump (tweebenig)', d:'sport', s:'Sprongkracht', kw:'cmj counter movement jump spronghoogte verticaal vertical jump', f:[num('cm','Spronghoogte','cm')], info:'Tweebenige verticale sprong met tegenbeweging, handen in de zij. Beste van 3 pogingen.'},
   {id:'broad', n:'Standing Broad Jump', d:'sport', s:'Sprongkracht', kw:'verspringen broad jump horizontale sprong uit stand', f:[num('cm','Afstand','cm')], info:'Tweebenig zo ver mogelijk vooruit springen vanuit stand, meten tot de achterste hiel.'},
@@ -696,7 +716,7 @@ const LIB = [
   {id:'slsq_kwal', n:'Single Leg Squat (kwaliteit)', d:'sport', s:'Kwalitatief', kw:'eenbenige squat kwaliteit valgus bekken romp knie', side:true, f:[sel('score','Kwaliteit',['Goed','Matig','Slecht'])], info:'Beoordeel knie-uitlijning, bekkenpositie en romp tijdens 5 eenbenige squats.'},
 
   /* ===== UITHOUDINGSVERMOGEN ===== */
-  {id:'mwt6', n:'6-Minuten Wandeltest', main:'m', d:'cond', s:'Wandeltesten', kw:'6mwt zes minuten wandeltest copd hartfalen ouderen conditie',
+  {id:'mwt6', n:'6 minuten wandeltest', main:'m', d:'cond', s:'Wandeltesten', kw:'6-minuten wandeltest 6mwt zes minuten wandeltest copd hartfalen ouderen conditie',
     f:[num('m','Afstand','m'), num('len','Lengte (voor voorspelde afstand)','cm'), num('kg','Gewicht (voor voorspelde afstand)','kg'), num('borg','Borg na test (0–10)',''), num('hr','Hartslag na test','bpm')],
     calc: (v, c) => {
       const d = toNum(v.m), l = toNum(v.len), k = toNum(v.kg), a = c.leeftijd;
@@ -706,23 +726,23 @@ const LIB = [
       return [{k:'pct', l:'% van voorspelde afstand', u:'%', V:pct, norm: pct < 70 ? NB('warn','Onder 70% van voorspeld') : NB('good','70% of meer van voorspeld')}];
     },
     info:'Op een traject van 30 m zo ver mogelijk wandelen in 6 minuten, gestandaardiseerde aanmoediging.\nVul lengte, gewicht, leeftijd en geslacht in, dan berekent de tool de voorspelde afstand (formule voor een 30 m-baan) en het percentage daarvan. Bij COPD geldt minder dan 70% als onvoldoende. Een verschil van 25–50 m is klinisch relevant (artrose, reuma).'},
-  {id:'mwt2', n:'2-Minuten Wandeltest', d:'cond', s:'Wandeltesten', kw:'2mwt twee minuten wandeltest ouderen conditie', f:[num('m','Afstand','m',{norm:(x, c) => {
+  {id:'mwt2', n:'2 minuten wandeltest', d:'cond', s:'Wandeltesten', kw:'2-minuten wandeltest 2mwt twee minuten wandeltest ouderen conditie', f:[num('m','Afstand','m',{norm:(x, c) => {
       if(!c.leeftijd || !c.geslacht) return NB('grey','Vul leeftijd + geslacht in voor norm');
       const pred = 252.583 - 1.165*c.leeftijd + 19.987*(c.geslacht === 'M' ? 1 : 0), low = pred - 44;
       return x < low ? NB('warn','Onder normaalwaarde (<' + Math.round(low) + ' m)') : NB('good','Binnen normaalwaarde (voorspeld ' + Math.round(pred) + ' m)');
     }})],
     info:'Zo ver mogelijk wandelen in 2 minuten.\nGezonde volwassenen (18–89 jr) lopen gemiddeld 149 ± 35 m. Voorspelde afstand = 252,6 − 1,165 × leeftijd (+20 m voor mannen); de ondergrens van normaal is voorspeld min 44 m.'},
-  {id:'ymca', n:'3-Minuten YMCA Steptest', d:'cond', s:'Steptesten', kw:'ymca steptest bankje herstelhartslag fitheidstest', better:'laag',
+  {id:'ymca', n:'YMCA 3 minuten steptest', d:'cond', s:'Steptesten', kw:'3-minuten ymca steptest ymca steptest bankje herstelhartslag fitheidstest', better:'laag',
     f:[num('hr','Herstelhartslag na 60 s','bpm',{norm:(x,c) => { if(!c.geslacht) return NB('grey','Vul geslacht in voor norm'); const t = c.geslacht === 'M' ? [81,96,112] : [88,104,120]; return x < t[0] ? NB('good','Excellent') : x <= t[1] ? NB('good','Goed') : x <= t[2] ? NB('neutral','Gemiddeld') : NB('warn','Ondergemiddeld'); }})],
     info:'3 min op- en afstappen op bankje van 30 cm, 96 bpm (24 stappen/min). Direct zitten, na 60 s hartslag aflezen.'},
   {id:'chester', n:'Chester Step Test', d:'cond', s:'Steptesten', kw:'chester steptest vo2max submaximaal', f:[num('niv','Bereikt niveau (1–5)',''), num('hr','Hartslag einde','bpm'), num('vo2','Geschatte VO2max','ml/kg/min')], info:'Submaximale steptest in 5 niveaus van 2 minuten. Stop bij 80% HRmax of Borg 14. VO2max aflezen uit grafiek.'},
-  {id:'astrand', n:'Astrand fietstest (6 min)', d:'cond', s:'Fiets, roei & loop', kw:'astrand fietstest fiets ergometer vo2max submaximaal fitheidstest', f:[num('hr5','Hartslag min 5','bpm'), num('hr6','Hartslag min 6','bpm'), num('w','Weerstand','Watt'), num('vo2','VO2max (nomogram)','ml/kg/min',{norm:vo2Norm})],
+  {id:'astrand', n:'Åstrand fietstest', d:'cond', s:'Fiets, roei & loop', kw:'astrand fietstest (6 min) astrand fietstest fiets ergometer vo2max submaximaal fitheidstest', f:[num('hr5','Hartslag min 5','bpm'), num('hr6','Hartslag min 6','bpm'), num('w','Weerstand','Watt'), num('vo2','VO2max (nomogram)','ml/kg/min',{norm:vo2Norm})],
     info:'6 minuten fietsen op 50 rpm, weerstand zodanig dat de hartslag stabiel tussen 125–170 bpm ligt. VO2max via nomogram (met leeftijdscorrectie); de tool beoordeelt die met de leeftijds- en geslachtstabel (20–65 jaar).\nStoppen bij klachten, duizeligheid of hartslag >85% HRmax.'},
-  {id:'roei1000', n:'1000 m roeitest (Concept2)', d:'cond', s:'Fiets, roei & loop', kw:'roeien roeitest concept2 1000 meter fitheidstest', better:'laag',
+  {id:'roei1000', n:'1000 meter roeitest', d:'cond', s:'Fiets, roei & loop', kw:'1000 m roeitest (concept2) roeien roeitest concept2 1000 meter fitheidstest', better:'laag',
     f:[mmss('t','Eindtijd',{norm:(x,c) => { if(!c.geslacht) return NB('grey','Vul geslacht in voor norm'); const t = c.geslacht === 'M' ? [210,260] : [250,305]; return x < t[0] ? NB('good','Top') : x <= t[1] ? NB('neutral','Gemiddeld') : NB('warn','Matig'); }})],
     info:'1000 m all-out, weerstand level 4–6. Noteer eindtijd als m:ss.'},
-  {id:'shuttle', n:'20m Shuttle Run (beeptest)', d:'cond', s:'Fiets, roei & loop', kw:'shuttle run beeptest piepjestest leger conditie sport', f:[num('trap','Bereikte trap','')], info:'Pendelen over 20 m op oplopend tempo. Noteer de laatst volledig gehaalde trap (bijv. 8,5).'},
-  {id:'cooper', n:'Coopertest (12 min)', d:'cond', s:'Fiets, roei & loop', kw:'cooper hardlopen 12 minuten loop conditie', f:[num('m','Afstand','m')], info:'Zo ver mogelijk hardlopen in 12 minuten.'},
+  {id:'shuttle', n:'20 meter shuttle run test (beeptest)', d:'cond', s:'Fiets, roei & loop', kw:'20m shuttle run (beeptest) shuttle run beeptest piepjestest leger conditie sport', f:[num('trap','Bereikte trap','')], info:'Pendelen over 20 m op oplopend tempo. Noteer de laatst volledig gehaalde trap (bijv. 8,5).'},
+  {id:'cooper', n:'Coopertest', d:'cond', s:'Fiets, roei & loop', kw:'coopertest (12 min) cooper hardlopen 12 minuten loop conditie', f:[num('m','Afstand','m')], info:'Zo ver mogelijk hardlopen in 12 minuten.'},
 
   /* ===== LICHAAMSMATEN ===== */
   {id:'bmi', n:'Lengte, gewicht & BMI', d:'maat', s:'Antropometrie', kw:'lengte gewicht bmi body mass index overgewicht fitheidstest', f:[num('len','Lengte','cm'), num('kg','Gewicht','kg')],
@@ -735,38 +755,54 @@ const LIB = [
     info:'Halverwege onderste rib en bekkenkam, aan het einde van een normale uitademing.\nNorm vrouw: <80 gezond / 80–88 verhoogd / >88 te hoog. Man: <94 / 94–102 / >102.\nVul je ook de heupomvang in (breedste punt van de billen), dan berekent de tool de middel-heupratio: verhoogd risico boven 0,95 (man) of 0,80 (vrouw).'}
 ];
 
-/* Patiëntvriendelijke testnamen: gebruikt in de PDF en in de AI-samenvatting,
-   zodat er nooit zelfverzonnen termen (zoals "kuitmeter") in een verslag komen. */
-const PN = {
-  hhd_quad:'Kracht bovenbeen voorkant (quadriceps)', hhd_hams:'Kracht bovenbeen achterkant (hamstrings)',
-  hhd_heup_abd:'Kracht zijkant heup', hhd_heup_add:'Kracht binnenkant bovenbeen', hhd_heup_flex:'Kracht heupbuigers', hhd_heup_ext:'Kracht bilspieren',
-  hhd_heup_exo:'Kracht heup: naar buiten draaien', hhd_heup_endo:'Kracht heup: naar binnen draaien',
-  hhd_enkel_pf:'Kracht kuitspieren', hhd_enkel_df:'Kracht voorkant onderbeen',
-  hhd_sch_exo:'Kracht schouder: naar buiten draaien', hhd_sch_endo:'Kracht schouder: naar binnen draaien',
-  hhd_sch_exo90:'Kracht schouder: naar buiten draaien (arm opzij)', hhd_sch_endo90:'Kracht schouder: naar binnen draaien (arm opzij)',
-  hhd_sch_abd:'Kracht schouder: arm zijwaarts heffen', hhd_sch_flex:'Kracht schouder: arm voorwaarts heffen',
-  hhd_elb_flex:'Kracht biceps', hhd_elb_ext:'Kracht triceps', grip:'Knijpkracht',
-  chair30:'Opstaan uit een stoel (30 seconden)', sts5:'Vijf keer opstaan uit een stoel', slsu30:'Op één been opstaan uit een stoel',
-  slsquat:'Eenbenige kniebuiging', heelraise:'Kuitkrachttest', brug1:'Eenbenige brug', rm1:'Maximale kracht (schatting)',
-  shoulderpress:'Schouderkracht (gewicht omhoog drukken)', pushup:'Opdrukken', ckcuest:'Schouderstabiliteitstest', armcurl:'Armkracht (30 seconden)',
-  sorensen:'Rugspiertest', sideplank:'Zijplank', plank:'Planktest', dll:'Rompcontrole (benen laten zakken)',
-  dnf:'Uithouding diepe nekspieren', mcgill_flex:'Uithouding buikspieren',
-  rom_sch:'Beweeglijkheid schouder', rom_elb:'Beweeglijkheid elleboog', rom_pols:'Beweeglijkheid pols', rom_heup:'Beweeglijkheid heup',
-  rom_knie:'Beweeglijkheid knie', rom_enkel:'Beweeglijkheid enkel', rom_nek:'Beweeglijkheid nek', rom_tws:'Draaien van de bovenrug',
-  lunge:'Beweeglijkheid enkel (knie naar de muur)', sitreach:'Reiktest zittend', wallangels:'Armen omhoog tegen de muur', ohsquat:'Diepe squat met armen omhoog',
-  hand_rug:'Hand achter de rug', vva:'Vingers naar de vloer', thomas:'Lengte heupbuigers', hams9090:'Lengte hamstrings', slr:'Gestrekt been heffen',
-  faber:'Beweeglijkheid heup (kleermakerszit)', schober:'Beweeglijkheid onderrug',
-  bbs:'Evenwichtstest (Berg Balance Scale)', minibest:'Evenwichtstest (Mini-BESTest)', tinetti:'Evenwicht en lopen (Tinetti)',
-  dgi:'Evenwicht tijdens het lopen (DGI)', fga:'Evenwicht tijdens het lopen (FGA)', ols:'Op één been staan', stage4:'Evenwicht in vier standen',
-  romberg:'Stabiel staan met voeten bij elkaar', ybal_oe:'Reiken op één been (Y-Balance)', ybal_be:'Reiken met één arm (Y-Balance)',
-  fr:'Naar voren reiken', fsst:'Stappen in vier vakken', tug:'Opstaan en lopen (Timed Up & Go)', mwt10:'Loopsnelheid (10 meter)',
-  shop:'Eenbenige sprong ver', thop:'Drie eenbenige sprongen', chop:'Zigzagsprongen op één been', hop6:'Hoppen op één been (6 meter)',
-  sidehop:'Zijwaarts springen op één been', slcmj:'Eenbenige sprong omhoog', cmj:'Sprong omhoog', broad:'Sprong vooruit',
-  ttest:'Wendbaarheidstest', tuck:'Landingstest (herhaald springen)', dropjump:'Landing na een sprong', slsq_kwal:'Kwaliteit eenbenige kniebuiging',
-  sppb:'Korte test van balans, lopen en opstaan (SPPB)', mwt6:'Wandeltest (6 minuten)', mwt2:'Wandeltest (2 minuten)', ymca:'Steptest (herstel van je hartslag)', chester:'Steptest (uithoudingsvermogen)',
-  astrand:'Fietstest', roei1000:'Roeitest (1000 meter)', shuttle:'Pendelloop', cooper:'Hardlooptest (12 minuten)', bmi:'Lengte en gewicht', buik:'Buikomvang'
+/* Overal (tool, PDF en AI-verslag) wordt de gangbare testnaam gebruikt; de uitleg in jip-en-janneketaal staat in PD. */
+const patName = t => t.n;
+
+/* Kwaliteit van bewegen: vaste observaties per test. [sleutel, label therapeut, omschrijving voor de patiënt] */
+const Q_LINE = [['lijn','Heup-knie-enkel niet in lijn','heup, knie en enkel bleven niet goed in één lijn'],['kneeing','Kneeing in','je knie zakte naar binnen'],['rompdev','Rompdeviatie','je romp week uit naar opzij'],['rompcor','Rompcorrectie','je corrigeerde met je romp om in balans te blijven']];
+const Q_HOP_HINT = 'Waar zit de beperkende factor: kwaliteit van bewegen, kracht (waar?) of stabiliteit? Bekijk ook het lateraal aanzicht (landingshoek knie/heup).';
+const Q_CORE = [['schouder','Beperkend: schouders/armen','je schouders en armen gaven als eerste aan'],['lumbaal','Beperkend: lumbaal','je onderrug gaf als eerste aan']];
+const Q_CORE_HINT = 'Zit de beperking in kracht van de armen, kracht van de core of in de basisaansturing (m. transversus abdominis en multifidus)?';
+const QUAL = {
+  vva:{opts:[['thor','Beweging vooral thoracaal','de beweging kwam vooral uit je bovenrug'],['lumb','Beweging vooral lumbaal','de beweging kwam vooral uit je onderrug'],['heup','Beweging vooral vanuit de heupen','de beweging kwam vooral vanuit je heupen']], hint:'Bij een beperking (>10 cm): kijk naar verschil links/rechts in lengte en naar de heupmobiliteit.'},
+  plank:{opts:Q_CORE, hint:Q_CORE_HINT},
+  sideplank:{opts:Q_CORE, hint:Q_CORE_HINT},
+  brug1:{opts:[['hams','Beperkend: hamstring','je hamstrings gaven als eerste aan'],['glut','Beperkend: gluteaal','je bilspieren gaven als eerste aan'],['lumb','Beperkend: lumbaal','je onderrug gaf als eerste aan'],['bekken','Bekken blijft niet recht','je bekken bleef niet recht']], hint:'Waar zit de beperkende factor?'},
+  abd_zij:{opts:[['kneeing','Relatie met kneeing in','dit past bij het naar binnen zakken van je knie'],['romp','Rompstabiliteit onvoldoende','je romp bleef niet stabiel']], hint:'Connectie met romp en mobiliteit lumbaal/heup.'},
+  shop:{opts:Q_LINE, hint:Q_HOP_HINT}, thop:{opts:Q_LINE, hint:Q_HOP_HINT}, chop:{opts:Q_LINE, hint:Q_HOP_HINT}, hop6:{opts:Q_LINE, hint:Q_HOP_HINT}, sidehop:{opts:Q_LINE, hint:Q_HOP_HINT},
+  slcmj:{opts:Q_LINE, hint:Q_HOP_HINT}, slsquat:{opts:Q_LINE, hint:Q_HOP_HINT}, slsq_kwal:{opts:Q_LINE, hint:Q_HOP_HINT}, dropjump:{opts:Q_LINE, hint:Q_HOP_HINT},
+  sideplank_hh:{opts:Q_CORE, hint:Q_CORE_HINT},
+  olsu:{opts:Q_LINE.concat([['bekken','Bekken zakt of kantelt','je bekken zakte of kantelde']]), hint:'Kijk naar kracht én stabiliteit: waar zit de beperkende factor?'},
+  slsu30:{opts:Q_LINE.concat([['bekken','Bekken zakt of kantelt','je bekken zakte of kantelde']]), hint:'Kijk naar kracht én stabiliteit: waar zit de beperkende factor?'}
 };
-const patName = t => PN[t.id] || t.n;
+// Een 'var'-keuze (uitvoering/variant) geldt bij links/rechts-testen voor beide zijden
+const isBoth = (t, f) => t.side && f.t === 'sel' && f.k === 'var';
+function normV(t, v){ v = v || {}; if(t.side && v.var && typeof v.var === 'object'){ v = Object.assign({}, v, {var:v.var.L || v.var.R || ''}); } return v; }
+function qualFor(t){ return QUAL[t.id] || null; }
+// Observaties als tekst; patient=true geeft de patiëntvriendelijke omschrijving
+function qualText(t, r, patient){
+  const Q = qualFor(t); if(!Q || !r.q) return '';
+  const lab = k => { const o = Q.opts.find(x => x[0] === k); return o ? (patient ? o[2] : o[1]) : null; };
+  const list = a => (a || []).map(lab).filter(Boolean);
+  if(t.side){
+    const L = list(r.q.L), R = list(r.q.R);
+    if(!L.length && !R.length) return '';
+    if(patient) return [L.length ? 'links: ' + L.join(', ') : '', R.length ? 'rechts: ' + R.join(', ') : ''].filter(Boolean).join('; ');
+    return [L.length ? 'L: ' + L.join(', ') : '', R.length ? 'R: ' + R.join(', ') : ''].filter(Boolean).join(' · ');
+  }
+  return list(r.q.V).join(', ');
+}
+
+/* Vaste testprotocollen. tests: [test-id, vooringevulde waarden] in de volgorde van het protocol */
+const PROTOCOLS = [
+  {id:'pc_oe', n:'Performance check OE', sub:'Jeugd (<18) met klachten onderste extremiteit en/of rug',
+   kw:'performance check pc oe jeugd kinderen tieners junioren sport onderste extremiteit rug knie enkel heup protocol',
+   tests:[['vva'],['plank',{var:'Gewone plank'}],['sideplank_hh'],['brug1',{var:'Op de grond'}],['abd_zij'],['shop'],['thop'],['olsu']],
+   fields:[{k:'voorkeur', l:'Voorkeursbeen', t:'sel', opts:[['','—'],['L','Links'],['R','Rechts']]}, {k:'sport', l:'Sport / positie', t:'text', ph:'bijv. voetbal, verdediger'}],
+   concl:[{k:'kwantiteit', l:'Kwantiteit', ph:'Wat valt op in de scores (kracht, uithouding, verschil links/rechts)?'}, {k:'kwaliteit', l:'Kwaliteit', ph:'Wat valt op in de kwaliteit van bewegen?'}, {k:'vervolg', l:'Vervolg', ph:'Afspraken, aandachtspunten, oefeningen, hertest'}]}
+];
+const protoById = id => PROTOCOLS.find(p => p.id === id);
+function protoMatches(q){ const w = norm(q).split(/[\s,]+/).filter(Boolean); return PROTOCOLS.filter(p => w.length && w.every(x => norm(p.n + ' ' + p.kw + ' ' + p.sub).includes(x))); }
 
 /* Krachtratio's binnen hetzelfde testmoment */
 const RATIOS = [
@@ -804,10 +840,11 @@ function signedVal(v, k, s){
 // Waarde netjes tonen, ook voor extensie met richting
 function fv(m, x){
   if(x == null) return '–';
+  if(m && m.cap && x > m.cap) return '>' + m.cap + (m.u ? ' ' + m.u : '');
   if(m && m.t === 'signed') return x > 0 ? fmt(x,'°') + '° hyper' : x < 0 ? fmt(-x,'°') + '° tekort' : '0° (recht)';
   return fmtU(x, m ? m.u : '');
 }
-const lsiTxt = m => !m.lsi ? '' : m.lsi.diff ? 'Verschil ' + fmtU(m.lsi.v, m.u) : m.lsi.label + ' ' + fmt(m.lsi.v,'%') + '%';
+const lsiTxt = m => !m.lsi ? '' : m.lsi.diff ? 'Verschil ' + fmtU(m.lsi.v, m.u) : m.lsi.label + ' ' + (m.lsi.pre || '') + fmt(m.lsi.v,'%') + '%';
 function fmtDate(iso){ if(!iso) return ''; const [y,m,d] = iso.split('-'); return d + '-' + m + '-' + y; }
 function today(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
@@ -849,7 +886,7 @@ function domainOf(id){ return DOMAINS.find(d => d.id === id) || {n:id, ic:'🧪'
 
 /* ---- Metrics: alle numerieke uitkomsten van één resultaat ---- */
 function metrics(t, r, ctx){
-  const v = (r && r.v) || {}; const out = [];
+  const v = normV(t, r && r.v); const out = [];
   if(t.items){
     const vals = t.items.map((_, i) => v.items ? v.items[i] : undefined);
     const ans = vals.filter(x => x !== undefined && x !== null && x !== '').length;
@@ -865,8 +902,8 @@ function metrics(t, r, ctx){
   }
   (t.f || []).forEach(f => {
     if(f.t === 'sel') return;
-    const p = f.t === 'mmss' ? parseMMSS : f.t === 'signed' ? (x, s) => signedVal(v, f.k, s) : toNum;
-    const m = {k:f.k, l:f.l, u:f.u, t:f.t, better:f.better};
+    const p = f.t === 'mmss' ? parseMMSS : f.t === 'signed' ? (x, s) => signedVal(v, f.k, s) : f.cap ? x => capV(x, f.cap) : toNum;
+    const m = {k:f.k, l:f.l, u:f.u, t:f.t, better:f.better, cap:f.cap};
     if(t.side){ m.L = f.t === 'signed' ? p(null, 'L') : p(v[f.k]?.L); m.R = f.t === 'signed' ? p(null, 'R') : p(v[f.k]?.R); if(m.L == null && m.R == null) return; if(f.norm){ m.normL = m.L != null ? f.norm(m.L, ctx, v) : null; m.normR = m.R != null ? f.norm(m.R, ctx, v) : null; } }
     else { m.V = f.t === 'signed' ? p(null, '') : p(v[f.k]); if(m.V == null) return; if(f.norm) m.norm = f.norm(m.V, ctx, v); }
     out.push(m);
@@ -883,14 +920,22 @@ function lsi(t, m, ctx){
   const better = m.better || t.better || 'hoog';
   const z = ctx.zijde;
   let val, label;
+  const over = x => m.cap && x > m.cap;   // waarde boven het maximum (>30): echte LSI is dan een grens
+  let pre = '';
   if(z === 'L' || z === 'R'){
     const inv = z === 'L' ? m.L : m.R, un = z === 'L' ? m.R : m.L;
     val = better === 'laag' ? un/inv*100 : inv/un*100; label = 'LSI';
-  } else { val = Math.min(m.L, m.R)/Math.max(m.L, m.R)*100; label = 'Symmetrie'; }
-  return {v:val, label, norm:(t.lsiNorm || LSI_NORM)(val)};
+    if(over(inv) && !over(un)) pre = '≥'; else if(over(un) && !over(inv)) pre = '≤';
+  } else {
+    val = Math.min(m.L, m.R)/Math.max(m.L, m.R)*100; label = 'Symmetrie';
+    if(over(Math.max(m.L, m.R)) && !over(Math.min(m.L, m.R))) pre = '≤';
+  }
+  if(over(m.L) && over(m.R)){ val = 100; pre = ''; label = label; }
+  val = Math.round(val * 10) / 10;
+  return {v:val, label, pre, norm:(t.lsiNorm || LSI_NORM)(val)};
 }
-function selTexts(t, r){ const v = (r && r.v) || {}; return (t.f || []).filter(f => f.t === 'sel').map(f => { if(t.side){ const L = v[f.k]?.L, R = v[f.k]?.R; return L || R ? {l:f.l, L, R} : null; } return v[f.k] ? {l:f.l, V:v[f.k]} : null; }).filter(Boolean); }
-function hasValue(r){ const walk = x => x == null ? false : typeof x === 'object' ? Object.values(x).some(walk) : String(x).trim() !== ''; return walk(r.v) ; }
+function selTexts(t, r){ const v = normV(t, r && r.v); return (t.f || []).filter(f => f.t === 'sel').map(f => { if(t.side && !isBoth(t, f)){ const L = v[f.k]?.L, R = v[f.k]?.R; return L || R ? {l:f.l, L, R} : null; } return v[f.k] ? {l:f.l, V:v[f.k]} : null; }).filter(Boolean); }
+function hasValue(r){ const walk = x => x == null ? false : typeof x === 'object' ? Object.values(x).some(walk) : String(x).trim() !== ''; return walk(r.v) || walk(r.q) || !!(r.kn && r.kn.trim()); }
 function ctxOf(moment){ return {geslacht:S.patient?.geslacht || '', leeftijd:toNum(moment?.leeftijd), zijde:moment?.zijde || ''}; }
 function ratiosFor(moment){
   const out = [];
@@ -1107,11 +1152,13 @@ function renderTestCard(t, rows){
   const keys = []; data.forEach(x => x.ms.forEach(mm => { if(!keys.find(k => k.k === mm.k)) keys.push({k:mm.k, l:mm.l, u:mm.u}); }));
   const hasSel = data.some(x => x.sel.length);
   const hasNote = data.some(x => x.r.o);
+  const hasQual = data.some(x => qualText(t, x.r) || x.r.kn);
   const rowsHTML = data.slice().reverse().map((x, i, arr) => {
     const prev = arr[i+1];
     return `<tr><td class="date">${fmtDate(x.m.datum)}<div class="muted small" style="font-weight:500">${esc(x.m.tester || '')}</div></td>
       ${hasSel ? '<td>' + x.sel.map(s => s.V !== undefined ? esc(s.V) : `<div><span class="lr muted small">L</span> ${esc(s.L || '–')}</div><div><span class="lr muted small">R</span> ${esc(s.R || '–')}</div>`).join('<br>') + '</td>' : ''}
       ${keys.map(k => { const mm = x.ms.find(z => z.k === k.k); const pm = prev ? prev.ms.find(z => z.k === k.k) : null; return '<td>' + cellHTML(mm) + deltaHTML(t, mm, pm) + '</td>'; }).join('')}
+      ${hasQual ? '<td class="small">' + esc(qualText(t, x.r)) + (x.r.kn ? (qualText(t, x.r) ? '<br>' : '') + '<i>' + esc(x.r.kn) + '</i>' : '') + '</td>' : ''}
       ${hasNote ? '<td class="small">' + esc(x.r.o || '') + '</td>' : ''}</tr>`;
   }).join('');
   // grafiek
@@ -1129,7 +1176,7 @@ function renderTestCard(t, rows){
   }
   return `<section class="card">
     <div class="testcard-head"><h3>${esc(t.n)}</h3><span class="tag purple">${dom.ic} ${esc(dom.n)}</span>${t.s ? `<span class="tag blue">${esc(t.s)}</span>` : ''}${t.custom ? '<span class="tag blue">Eigen test</span>' : ''}</div>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Datum</th>${hasSel ? '<th>' + esc((t.f || []).filter(f => f.t === 'sel').map(f => f.l).join(' / ')) + '</th>' : ''}${keys.map(k => `<th>${esc(k.l)}${k.u && k.u !== 'min:sec' && !k.u.startsWith('/') ? ' (' + esc(k.u) + ')' : ''}</th>`).join('')}${hasNote ? '<th>Opmerking</th>' : ''}</tr></thead><tbody>${rowsHTML}</tbody></table></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Datum</th>${hasSel ? '<th>' + esc((t.f || []).filter(f => f.t === 'sel').map(f => f.l).join(' / ')) + '</th>' : ''}${keys.map(k => `<th>${esc(k.l)}${k.u && k.u !== 'min:sec' && !k.u.startsWith('/') ? ' (' + esc(k.u) + ')' : ''}</th>`).join('')}${hasQual ? '<th>Kwaliteit van bewegen</th>' : ''}${hasNote ? '<th>Opmerking</th>' : ''}</tr></thead><tbody>${rowsHTML}</tbody></table></div>
     ${chart}
   </section>`;
 }
@@ -1162,6 +1209,11 @@ function resultSummary(t, r, m){
   });
   return parts.join('<br>');
 }
+function protoConclHTML(m){
+  const P = m.protocol && protoById(m.protocol); if(!P || !m.pf) return '';
+  const rows = P.concl.filter(c => m.pf[c.k]).map(c => `<div><b>${esc(c.l)}:</b> ${esc(m.pf[c.k])}</div>`).join('');
+  return rows ? `<div class="info" style="background:var(--accent-soft);margin-top:10px"><b>Conclusie ${esc(P.n)}</b>${rows}</div>` : '';
+}
 function renderMomentsTab(ms){
   return '<div class="moment-list">' + ms.slice().reverse().map(m => {
     const rs = ratiosFor(m);
@@ -1170,11 +1222,15 @@ function renderMomentsTab(ms){
         ${m.tester ? `<span class="tag purple">👤 ${esc(m.tester)}</span>` : ''}
         ${m.leeftijd ? `<span class="tag blue">${esc(m.leeftijd)} jaar</span>` : ''}
         ${m.zijde ? `<span class="tag blue">Aangedaan: ${m.zijde === 'L' ? 'links' : 'rechts'}</span>` : ''}
+        ${m.protocol && protoById(m.protocol) ? `<span class="tag purple">📋 ${esc(protoById(m.protocol).n)}</span>` : ''}
+        ${m.pf && m.pf.voorkeur ? `<span class="tag blue">Voorkeursbeen: ${m.pf.voorkeur === 'L' ? 'links' : 'rechts'}</span>` : ''}
+        ${m.pf && m.pf.sport ? `<span class="tag blue">${esc(m.pf.sport)}</span>` : ''}
         <span class="spacer"></span>
         <button class="btn small" data-act="editMoment" data-id="${m.id}">✏️ Bewerken</button>
         <button class="btn small danger" data-act="delMoment" data-id="${m.id}">Verwijderen</button></div>
       ${m.notitie ? `<p class="small" style="margin:8px 0 0"><b>Notitie:</b> ${esc(m.notitie)}</p>` : ''}
-      <div class="mres">${(m.results || []).map(r => { const t = testById(r.t); if(!t) return ''; return `<div class="r"><b>${esc(t.n)}</b>${resultSummary(t, r, m)}${r.o ? '<div class="muted" style="margin-top:3px">“' + esc(r.o) + '”</div>' : ''}</div>`; }).join('')}
+      ${protoConclHTML(m)}
+      <div class="mres">${(m.results || []).map(r => { const t = testById(r.t); if(!t) return ''; const qt = qualText(t, r); return `<div class="r"><b>${esc(t.n)}</b>${resultSummary(t, r, m)}${qt || r.kn ? '<div style="margin-top:3px"><b style="display:inline;font-weight:600">Kwaliteit:</b> ' + esc(qt) + (r.kn ? (qt ? ' · ' : '') + '<i>' + esc(r.kn) + '</i>' : '') + '</div>' : ''}${r.o ? '<div class="muted" style="margin-top:3px">“' + esc(r.o) + '”</div>' : ''}</div>`; }).join('')}
       ${rs.map(x => `<div class="r"><b>${esc(x.l)}</b>L ${fmtR(x.L)} ${badge(x.nL)} / R ${fmtR(x.R)} ${badge(x.nR)}</div>`).join('')}</div>
     </div>`;
   }).join('') + '</div>';
@@ -1214,12 +1270,40 @@ function renderMoment(){
         ${!S.patient.geslacht ? '<p class="small muted" style="margin:10px 0 0">💡 Geslacht is nog niet ingevuld bij de patiënt; sommige normen hebben dat nodig. <button class="linkbtn" data-act="editPatient">Invullen</button></p>' : ''}
         <p class="small muted" style="margin:6px 0 0">Met een aangedane zijde wordt de LSI berekend als aangedaan / niet-aangedaan. Zonder zijde toont de tool de symmetrie (zwakste / sterkste).</p>
       </section>
+      <div id="proto-box">${renderProtoBox()}</div>
       <div id="results">${renderResults()}</div>
+      <div id="proto-concl">${renderProtoConcl()}</div>
       <div class="savebar"><span class="muted small" id="save-info">${d.results.length} test${d.results.length === 1 ? '' : 'en'} in dit testmoment</span><span class="spacer"></span>
         <button class="btn only-mobile" data-act="openPicker">＋ Test</button><button class="btn" data-act="cancelMoment">Annuleren</button><button class="btn primary" data-act="saveMoment">💾 Opslaan</button></div>
     </div>
     <aside class="card picker" id="picker">${renderPicker()}</aside>
   </div>`;
+}
+function renderProtoBox(){
+  const d = S.draft, P = d.protocol && protoById(d.protocol); if(!P) return '';
+  const pf = d.pf || {};
+  return `<section class="card proto-card" style="margin-top:16px">
+    <div class="row"><span class="tag purple">📋 Protocol</span><h3 style="font-size:15px">${esc(P.n)}</h3><span class="spacer"></span><button class="linkbtn small" data-act="dropProto">Protocol loskoppelen</button></div>
+    <p class="muted small" style="margin:4px 0 0">${esc(P.sub)}. Je kunt gewoon testen toevoegen of verwijderen; lege testen worden bij opslaan weggelaten.</p>
+    <div class="fgrid" style="margin-top:10px">${P.fields.map(f => f.t === 'sel'
+      ? `<label class="f">${esc(f.l)}<select class="inp" data-pf="${f.k}">${f.opts.map(o => `<option value="${o[0]}" ${(pf[f.k] || '') === o[0] ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`
+      : `<label class="f">${esc(f.l)}<input class="inp" data-pf="${f.k}" value="${esc(pf[f.k] || '')}" placeholder="${esc(f.ph || '')}"></label>`).join('')}</div>
+  </section>`;
+}
+function renderProtoConcl(){
+  const d = S.draft, P = d.protocol && protoById(d.protocol); if(!P || !P.concl) return '';
+  const pf = d.pf || {};
+  return `<section class="card" style="margin-top:16px"><h3 style="font-size:15px">Conclusie ${esc(P.n)}</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${P.concl.map(c => `<label class="f">${esc(c.l)}<textarea class="inp" data-pf="${c.k}" placeholder="${esc(c.ph || '')}">${esc(pf[c.k] || '')}</textarea></label>`).join('')}</div></section>`;
+}
+function qualHTML(t, r, i){
+  const Q = qualFor(t); if(!Q) return '';
+  const q = r.q || {};
+  const row = (side, label) => `<div class="qrow">${label ? `<span class="qlbl">${label}</span>` : ''}<div class="chips" style="margin:0">${Q.opts.map(o => { const on = (q[side] || []).includes(o[0]); return `<button type="button" class="chip ${on ? 'active' : ''}" data-act="toggleQ" data-i="${i}" data-s="${side}" data-k="${o[0]}">${on ? '✓ ' : ''}${esc(o[1])}</button>`; }).join('')}</div></div>`;
+  return `<details class="qual" ${(r.kn || Object.values(q).some(a => a && a.length)) ? 'open' : ''}><summary>Kwaliteit van bewegen</summary>
+    <p class="muted small" style="margin:6px 0 8px">${esc(Q.hint)}</p>
+    ${t.side ? row('L','Links') + row('R','Rechts') : row('V','')}
+    <textarea class="inp" style="margin-top:8px;min-height:56px" data-r="${i}" data-kn="1" placeholder="Notities over kwaliteit van bewegen (bijv. landt stijf, valgus bij landing rechts)">${esc(r.kn || '')}</textarea></details>`;
 }
 function renderResults(){
   const d = S.draft;
@@ -1240,8 +1324,9 @@ function renderResultCard(r, i){
         <select class="inp" data-r="${i}" data-item="${k}"><option value="">—</option>${it.o.map(o => `<option value="${o[0]}" ${String(cur) === String(o[0]) ? 'selected' : ''}>${o[0]} – ${esc(o[1])}</option>`).join('')}</select></div>`;
     }).join('') + '</div>';
   } else if(t.side){
-    body = `<div class="sidegrid"><span class="h first"></span><span class="h">Links</span><span class="h">Rechts</span>
-      ${t.f.map(f => `<span class="lbl">${esc(f.l)}${f.u ? ' <small>(' + esc(f.u) + ')</small>' : ''}${f.hint ? '<br><small>' + esc(f.hint) + '</small>' : ''}</span>${['L','R'].map(s => inputHTML(f, v[f.k]?.[s], i, s, v[f.k + '_dir']?.[s])).join('')}`).join('')}</div>`;
+    const vn = normV(t, v), both = t.f.filter(f => isBoth(t, f));
+    body = (both.length ? '<div class="fgrid" style="margin-top:10px">' + both.map(f => `<label class="f">${esc(f.l)}${inputHTML(f, vn[f.k], i, '')}</label>`).join('') + '</div>' : '') + `<div class="sidegrid"><span class="h first"></span><span class="h">Links</span><span class="h">Rechts</span>
+      ${t.f.filter(f => !isBoth(t, f)).map(f => `<span class="lbl">${esc(f.l)}${f.u ? ' <small>(' + esc(f.u) + ')</small>' : ''}${f.hint ? '<br><small>' + esc(f.hint) + '</small>' : ''}</span>${['L','R'].map(s => inputHTML(f, v[f.k]?.[s], i, s, v[f.k + '_dir']?.[s])).join('')}`).join('')}</div>`;
   } else {
     body = '<div class="fgrid" style="margin-top:10px">' + t.f.map(f => `<label class="f">${esc(f.l)}${f.u ? ' (' + esc(f.u) + ')' : ''}${inputHTML(f, v[f.k], i, '', v[f.k + '_dir'])}</label>`).join('') + '</div>';
   }
@@ -1253,6 +1338,7 @@ function renderResultCard(r, i){
     ${show && t.info ? `<div class="info">${esc(infoText(t))}</div>` : ''}
     ${body}
     <div class="calc" id="calc-${i}">${calcHTML(t, r)}</div>
+    ${qualHTML(t, r, i)}
     <input class="inp" style="margin-top:10px;min-height:36px" data-r="${i}" data-note="1" value="${esc(r.o || '')}" placeholder="Opmerking (optioneel)">
   </div>`;
 }
@@ -1262,6 +1348,8 @@ function inputHTML(f, val, i, s, dir){
     const d = dir || (toNum(val) != null && toNum(val) > 0 ? 'pos' : 'neg');
     return `<div class="sgn"><select class="inp" data-r="${i}" data-k="${f.k}_dir" data-s="${s}" aria-label="Richting"><option value="neg" ${d === 'neg' ? 'selected' : ''}>Tekort</option><option value="pos" ${d === 'pos' ? 'selected' : ''}>Hyper</option></select><input class="inp num" ${attrs} data-sg="1" inputmode="decimal" value="${esc(val == null || val === '' ? '' : Math.abs(toNum(val) ?? 0))}" placeholder="°"></div>`;
   }
+  if(f.cap){ const over = String(val ?? '').trim().startsWith('>') || (toNum(val) != null && toNum(val) > f.cap);
+    return `<div class="sgn"><input class="inp num" ${attrs} inputmode="numeric" value="${esc(over ? '>' + f.cap : (val ?? ''))}" placeholder="${f.u || ''}"><button type="button" class="chip ${over ? 'active' : ''}" style="flex:0 0 auto" data-act="capSet" data-i="${i}" data-k="${f.k}" data-s="${s}" title="Meer dan ${f.cap} herhalingen">&gt;${f.cap}</button></div>`; }
   if(f.t === 'sel') return `<select class="inp" ${attrs}><option value="">—</option>${f.opts.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   return `<input class="inp num" ${attrs} inputmode="${f.t === 'mmss' ? 'text' : 'decimal'}" value="${esc(val ?? '')}" placeholder="${f.t === 'mmss' ? 'm:ss' : (f.u || '')}">`;
 }
@@ -1282,13 +1370,16 @@ function calcHTML(t, r){
   });
   return out.join('');
 }
+let ptile;
 function renderPicker(){
   const q = S.pq, added = new Set(S.draft.results.map(r => r.t));
   const titem = t => `<button class="titem ${added.has(t.id) ? 'added' : ''}" data-act="addTest" data-id="${t.id}"><span class="tn"><b>${esc(t.n)}</b><small>${domainOf(t.d).ic} ${esc(t.s)}${t.custom ? ' · eigen test' : ''}</small></span><span class="add">${added.has(t.id) ? '✓ Toegevoegd' : '+ Toevoegen'}</span></button>`;
   let content = '';
+  ptile = P => `<button class="ptile ${S.draft.protocol === P.id ? 'added' : ''}" data-act="addProto" data-id="${P.id}"><span style="font-size:20px">📋</span><span style="flex:1"><b>${esc(P.n)}</b><small>${esc(P.sub)} · ${P.tests.length} testen</small></span><span class="add" style="color:var(--accent);font-weight:700;font-size:12.5px">${S.draft.protocol === P.id ? '✓ Actief' : '+ Toevoegen'}</span></button>`;
   if(q.trim()){
-    const res = searchTests(q);
-    content = `<div class="muted small" style="margin:12px 0 8px">${res.length} resultaat${res.length === 1 ? '' : 'en'} voor “${esc(q)}”</div><div class="tlist">${res.map(titem).join('') || '<div class="muted small">Niets gevonden. Probeer een ander woord, of voeg een eigen test toe via ⚙️ Beheer.</div>'}</div>`;
+    const res = searchTests(q), pm = protoMatches(q);
+    content = pm.map(ptile).join('');
+    content += `<div class="muted small" style="margin:12px 0 8px">${res.length} resultaat${res.length === 1 ? '' : 'en'} voor “${esc(q)}”</div><div class="tlist">${res.map(titem).join('') || '<div class="muted small">Niets gevonden. Probeer een ander woord, of voeg een eigen test toe via ⚙️ Beheer.</div>'}</div>`;
   } else {
     const [dom, sub] = S.ppath, tests = allTests().filter(t => !t.archived);
     const crumbs = `<div class="crumbs"><button data-act="pnav" data-lvl="0">Alle domeinen</button>${dom ? `<span class="sep">›</span>${sub ? `<button data-act="pnav" data-lvl="1">${esc(domainOf(dom).n)}</button><span class="sep">›</span><span class="cur">${esc(sub)}</span>` : `<span class="cur">${esc(domainOf(dom).n)}</span>`}` : ''}</div>`;
@@ -1307,7 +1398,7 @@ function renderPicker(){
     <div class="chips">${prevIds.map(id => `<button class="chip ${added.has(id) ? 'active' : ''}" data-act="addTest" data-id="${id}">${added.has(id) ? '✓ ' : '+ '}${esc(testById(id).n)}</button>`).join('')}</div></div>` : '';
   return `<div class="row"><h3>Test toevoegen</h3><span class="spacer"></span><button class="btn small primary only-mobile" data-act="closePicker">Klaar${S.draft.results.length ? ' (' + S.draft.results.length + ')' : ''}</button></div>
     <div class="search" style="margin-top:10px"><input class="inp" id="pq" value="${esc(q)}" placeholder="Zoek op naam, regio of doel… (bijv. spierkracht, knie, valrisico)" autocomplete="off"></div>
-    <div class="scroll">${quick}${content}</div>`;
+    <div class="scroll">${!q.trim() && !S.ppath.length ? '<div class="muted small" style="margin-top:12px;font-weight:600">Testprotocollen</div>' + PROTOCOLS.map(ptile).join('') : ''}${quick}${content}</div>`;
 }
 function refreshPicker(){ const p = $('#picker'); if(!p) return; const pq = $('#pq'); const had = document.activeElement === pq; const pos = pq ? pq.selectionStart : 0; const sc = p.querySelector('.scroll')?.scrollTop || 0; p.innerHTML = renderPicker(); if(had){ const n = $('#pq'); n.focus(); n.setSelectionRange(pos, pos); } const s2 = p.querySelector('.scroll'); if(s2 && !S.pq) s2.scrollTop = sc; }
 function refreshResults(){ $('#results').innerHTML = renderResults(); $('#save-info').textContent = S.draft.results.length + ' test' + (S.draft.results.length === 1 ? '' : 'en') + ' in dit testmoment'; }
@@ -1393,6 +1484,8 @@ function pdfModal(aiPre){
       <label class="row small"><input type="checkbox" id="pdf-charts" checked> Grafiek van het verloop (bij 2 of meer metingen)</label>
       <label class="row small"><input type="checkbox" id="pdf-notes"> Opmerkingen van de tester toevoegen</label>
       <label class="row small"><input type="checkbox" id="pdf-ratios"> Krachtverhoudingen (zoals H/Q-ratio) toevoegen</label>
+      <label class="row small"><input type="checkbox" id="pdf-qual" checked> Observaties kwaliteit van bewegen toevoegen</label>
+      ${ms.some(m => m.protocol && m.pf && protoById(m.protocol) && protoById(m.protocol).concl.some(c => m.pf[c.k])) ? '<label class="row small"><input type="checkbox" id="pdf-concl"> Conclusie van het protocol toevoegen (kwantiteit, kwaliteit, vervolg)</label>' : ''}
       ${sums.length ? `<label class="f" style="margin-top:6px">AI-samenvatting als toelichting toevoegen<select class="inp" id="pdf-ai"><option value="">Nee</option>${sums.map(s => `<option value="${s.id}" ${s.id === aiPre ? 'selected' : ''}>Samenvatting van ${fmtDate((s.created || '').slice(0,10))}</option>`).join('')}</select></label>` : ''}
     </div>
     ${MAIL_ENABLED ? `<div class="mailbox">
@@ -1434,20 +1527,24 @@ function resultLines(t, r, m){
     const u = x.u && x.u !== 'min:sec' ? ' ' + x.u : '';
     if(x.side){
       let s = x.l + ': links ' + fv(x, x.L) + (x.normL ? ' (' + x.normL.t + ')' : '') + ', rechts ' + fv(x, x.R) + (x.normR ? ' (' + x.normR.t + ')' : '');
-      if(x.lsi) s += '; ' + (x.lsi.diff ? 'verschil links-rechts ' + fmtU(x.lsi.v, x.u) : (x.lsi.label === 'LSI' ? 'LSI (aangedaan t.o.v. niet-aangedaan)' : 'symmetrie (zwakste t.o.v. sterkste zijde)') + ' ' + fmt(x.lsi.v,'%') + '%');
+      if(x.lsi) s += '; ' + (x.lsi.diff ? 'verschil links-rechts ' + fmtU(x.lsi.v, x.u) : (x.lsi.label === 'LSI' ? 'LSI (aangedaan t.o.v. niet-aangedaan)' : 'symmetrie (zwakste t.o.v. sterkste zijde)') + ' ' + (x.lsi.pre === '≥' ? 'minstens ' : x.lsi.pre === '≤' ? 'hooguit ' : '') + fmt(x.lsi.v,'%') + '%');
       parts.push(s);
     } else parts.push(x.l + ': ' + fv(x, x.V) + (x.norm ? ' (' + x.norm.t + ')' : '') + (x.partial ? ' [onvolledig: ' + x.partial + ']' : ''));
   });
   if(t.items && r.v?.items){ const low = t.items.map((it,k) => ({it, s:r.v.items[k]})).filter(x => x.s !== undefined && x.s !== '' && +x.s < Math.max(...x.it.o.map(o => o[0]))); if(low.length) parts.push('Items met puntverlies: ' + low.map(x => x.it.n + ' (' + x.s + ')').join('; ')); }
+  { const qt = qualText(t, r, true); if(qt || r.kn) parts.push('Kwaliteit van bewegen: ' + [qt, r.kn].filter(Boolean).join('; ')); }
   if(r.o) parts.push('Opmerking tester: ' + r.o);
-  return '- ' + patName(t) + (patName(t) !== t.n ? ' (vaknaam: ' + t.n + ')' : '') + ' [' + domainOf(t.d).n + ']: ' + parts.join(' | ');
+  return '- ' + t.n + ' [' + domainOf(t.d).n + ']' + (PD[t.id] ? ' (wat de test meet: ' + PD[t.id] + ')' : '') + ': ' + parts.join(' | ');
 }
 function buildPrompt(moments, context){
   const p = S.patient;
   const data = moments.map(m => {
     const lines = (m.results || []).map(r => { const t = testById(r.t); return t ? resultLines(t, r, m) : null; }).filter(Boolean);
     ratiosFor(m).forEach(x => lines.push('- ' + x.l + ': links ' + fmtR(x.L) + ', rechts ' + fmtR(x.R)));
-    return 'TESTMOMENT ' + fmtDate(m.datum) + (m.leeftijd ? ' | leeftijd ' + m.leeftijd : '') + (m.zijde ? ' | aangedane zijde: ' + (m.zijde === 'L' ? 'links' : 'rechts') : '') + (m.notitie ? ' | notitie: ' + m.notitie : '') + '\n' + lines.join('\n');
+    const P = m.protocol && protoById(m.protocol), pf = m.pf || {};
+    const protoTxt = P ? ' | protocol: ' + P.n + (pf.voorkeur ? ' | voorkeursbeen: ' + (pf.voorkeur === 'L' ? 'links' : 'rechts') : '') + (pf.sport ? ' | sport/positie: ' + pf.sport : '') : '';
+    const conclTxt = P ? P.concl.filter(c => pf[c.k]).map(c => '\nConclusie therapeut, ' + c.l.toLowerCase() + ': ' + pf[c.k]).join('') : '';
+    return 'TESTMOMENT ' + fmtDate(m.datum) + protoTxt + (m.leeftijd ? ' | leeftijd ' + m.leeftijd : '') + (m.zijde ? ' | aangedane zijde: ' + (m.zijde === 'L' ? 'links' : 'rechts') : '') + (m.notitie ? ' | notitie: ' + m.notitie : '') + conclTxt + '\n' + lines.join('\n');
   }).join('\n\n');
   const latest = moments[moments.length-1];
   return `Je bent een fysiotherapeut bij Fyzio Totaal en schrijft een persoonlijk testverslag voor een patiënt, op basis van vrij gekozen testen.
@@ -1464,9 +1561,12 @@ TAAL EN STIJL:
 - Geen gedachtestreepjes als opsommingsteken of als leesteken in de lopende tekst.
 - Geen markdown-hekjes of sterretjes voor kopjes. Kopjes zijn gewone losse regels zonder leesteken aan het eind.
 - Begrijpelijke taal, maar behoud correcte medische termen waar dat gepast is (bijv. "hamstrings", "quadriceps", "rotator cuff", "voorste kruisbandreconstructie"). Vertaal alleen termen die echt niets zeggen (niet "valgus" maar "knieën zakken naar binnen").
-- TESTNAMEN: noem een test altijd bij de naam die vóór de haakjes in de testresultaten staat (bijv. "kuitkrachttest", "opstaan en lopen"), of omschrijf gewoon wat je hebt gedaan ("de test waarbij je zo vaak mogelijk op je tenen ging staan"). De vaknaam tussen haakjes mag je hooguit één keer erbij noemen.
+- TESTNAMEN: gebruik altijd exact de testnaam zoals die in de testresultaten staat (bijv. "single leg hop test", "triple hop test", "heel raise test", "zijwaartse plank", "Timed Up & Go"). Vertaal of herformuleer testnamen nooit en bedenk er geen Nederlandse varianten voor. Leg daarna in gewone taal uit wat de test meet; de uitleg staat bij elke test tussen haakjes.
 - VERZIN NOOIT ZELF WOORDEN. Gebruik geen zelfbedachte samenstellingen of namen voor testen, meetinstrumenten of lichaamsdelen, zoals "kuitmeter", "beenmeter", "kniekrachtmeting", "evenwichtsmeter" of "krachtwaarde". Gebruik alleen woorden die een fysiotherapeut ook echt hardop tegen een patiënt zou zeggen en die in een gewoon Nederlands woordenboek staan. Twijfel je over een woord, kies dan een eenvoudige omschrijving.
 - Wees ANATOMISCH SECUUR: benoem steeds het lichaamsdeel dat de test daadwerkelijk meet, en verwissel links en rechts nooit.
+- KWALITEIT VAN BEWEGEN: de observaties staan al in gewone taal. Gebruik geen vaktermen als "kneeing in", "valgus", "rompdeviatie" of "rompcorrectie"; zeg bijvoorbeeld "je knie zakte naar binnen" of "je romp week uit naar opzij".
+- Bij een jongere (onder 18): pas de toon aan de leeftijd aan (motiverend, eenvoudig) en vergelijk vooral links met rechts en met eerdere metingen; normwaarden voor volwassenen zijn voor jongeren minder bruikbaar.
+- Een "conclusie therapeut" mag je gebruiken als richting voor je verslag, maar neem vaktaal daaruit niet letterlijk over.
 - Leg LSI of symmetrie kort en eenvoudig uit als je het noemt (bijv. "je rechterbeen haalt 85% van de kracht van je linkerbeen").
 - Bij een balansschaal (zoals Berg Balance Scale): benoem de totaalscore en vat de items met puntverlies samen in gewone woorden.
 - Let op grammatica, ook bij meervoud.
@@ -1562,6 +1662,9 @@ const PD = {
   sts5:'Hoe snel je 5 keer uit een stoel opstaat en weer gaat zitten. Een lagere tijd is beter.',
   slsu30:'Hoe vaak je in 30 seconden op één been uit een stoel kunt opstaan.',
   slsquat:'Hoeveel eenbenige kniebuigingen je goed kunt uitvoeren.',
+  sideplank_hh:'Hoe vaak je in zijwaartse plank kunt bewegen: kracht en uithouding van de spieren aan de zijkant van je romp.',
+  olsu:'Hoe vaak je op één been van een bank kunt opstaan: kracht en stabiliteit van je been.',
+  abd_zij:'Hoe vaak je in zijlig je bovenste been zijwaarts kunt heffen: kracht en uithouding van de zijkant van je heup.',
   heelraise:'Hoe vaak je op één been op je tenen kunt gaan staan: kracht en uithouding van je kuit.',
   brug1:'Hoe vaak je op één been je heup kunt strekken: kracht en uithouding van hamstrings en bilspieren.',
   rm1:'Een schatting van het maximale gewicht dat je bij deze oefening één keer kunt tillen.',
@@ -1674,7 +1777,7 @@ function readPdfOpts(){
   const mids = [...document.querySelectorAll('input[data-g="pm"]:checked')].map(x => x.value);
   const tids = [...document.querySelectorAll('input[data-g="pt"]:checked')].map(x => x.value);
   if(!mids.length || !tids.length){ toast('Kies minimaal één testmoment en één test', true); return null; }
-  return {mids, tids, withCharts:$('#pdf-charts').checked, withNotes:$('#pdf-notes').checked, withRatios:$('#pdf-ratios').checked, aiId:$('#pdf-ai') ? $('#pdf-ai').value : ''};
+  return {mids, tids, withCharts:$('#pdf-charts').checked, withNotes:$('#pdf-notes').checked, withRatios:$('#pdf-ratios').checked, withQual:$('#pdf-qual').checked, withConcl:!!($('#pdf-concl') && $('#pdf-concl').checked), aiId:$('#pdf-ai') ? $('#pdf-ai').value : ''};
 }
 
 async function buildPdf(o){
@@ -1711,7 +1814,8 @@ async function buildPdf(o){
   /* --- Kop --- */
   if(logo){ const h = 11; try{ doc.addImage(logo.data, 'PNG', M, 12, h * logo.ar, h); } catch(e){} }
   else { font('bold', 17, PUR); doc.text('Fyzio', M, 20); const fw = doc.getTextWidth('Fyzio'); doc.setTextColor(...CY); doc.text('Totaal', M + fw, 20); }
-  font('bold', 17, PUR); doc.text('Testoverzicht', W - M, 18, {align:'right'});
+  const lastP = lastM.protocol && protoById(lastM.protocol);
+  font('bold', 17, PUR); doc.text(lastP ? lastP.n : 'Testoverzicht', W - M, 18, {align:'right'});
   font('normal', 9, MUT); doc.text(moments.length > 1 ? fmtDate(moments[0].datum) + ' t/m ' + fmtDate(lastM.datum) : fmtDate(lastM.datum), W - M, 23.5, {align:'right'});
   doc.setFillColor(...PUR); doc.rect(M, 29, CW * 0.72, 1.1, 'F'); doc.setFillColor(...CY); doc.rect(M + CW * 0.72, 29, CW * 0.28, 1.1, 'F');
   y = 36;
@@ -1728,8 +1832,13 @@ async function buildPdf(o){
 
   /* --- In één oogopslag --- */
   const hist = testHistory();
+  const pOrder = lastP ? lastP.tests.map(x => x[0]) : null;
   const tests = o.tids.map(testById).filter(Boolean)
-    .sort((a, b) => DOMAINS.findIndex(d => d.id === a.d) - DOMAINS.findIndex(d => d.id === b.d) || a.n.localeCompare(b.n))
+    .sort((a, b) => {
+      // Bij een protocol: volgorde van het protocol aanhouden, overige testen daarna
+      if(pOrder){ const ia = pOrder.indexOf(a.id), ib = pOrder.indexOf(b.id); if(ia !== ib) return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); }
+      return DOMAINS.findIndex(d => d.id === a.d) - DOMAINS.findIndex(d => d.id === b.d) || a.n.localeCompare(b.n);
+    })
     .map(t => {
       const rows = (hist[t.id] || []).filter(x => o.mids.includes(x.m.id)).map(({m, r}) => ({m, r, ms:metrics(t, r, ctxOf(m)), sel:selTexts(t, r)}));
       return rows.length ? {t, rows} : null;
@@ -1776,6 +1885,16 @@ async function buildPdf(o){
   });
   y += 9;
 
+  /* --- Conclusie protocol --- */
+  if(o.withConcl){
+    moments.filter(m => m.protocol && m.pf && protoById(m.protocol)).forEach(m => {
+      const P = protoById(m.protocol), rows = P.concl.filter(c => m.pf[c.k]); if(!rows.length) return;
+      heading('Conclusie ' + P.n + (moments.length > 1 ? ' (' + fmtDate(m.datum) + ')' : ''));
+      rows.forEach(c => { ensure(10); font('bold', 9.5, PUR); doc.text(c.l, M, y); y += 4.6; font('normal', 9.5); doc.splitTextToSize(m.pf[c.k], CW).forEach(w => { ensure(5); doc.text(w, M, y); y += 4.6; }); y += 1.5; });
+      y += 3;
+    });
+  }
+
   /* --- AI-toelichting --- */
   if(o.aiId){
     const s = p.samenvattingen.find(x => x.id === o.aiId);
@@ -1808,7 +1927,7 @@ async function buildPdf(o){
     const METHOD = ['var', 'oef', 'zijde'];
     const methodTxt = (t.f || []).filter(f => f.t === 'sel' && METHOD.includes(f.k)).map(f => last.r.v?.[f.k]).filter(Boolean).join(', ');
     font('normal', 7.5, MUT);
-    if(draw) doc.text((patName(t) !== t.n ? t.n + '  ·  ' : '') + 'Gemeten op ' + fmtDate(last.m.datum) + (methodTxt ? '  ·  ' + methodTxt : '') + (rows.length > 1 ? '  ·  ' + rows.length + ' metingen in dit overzicht' : ''), x + pad, cy + 0.6);
+    if(draw) doc.text('Gemeten op ' + fmtDate(last.m.datum) + (methodTxt ? '  ·  ' + methodTxt : '') + (rows.length > 1 ? '  ·  ' + rows.length + ' metingen in dit overzicht' : ''), x + pad, cy + 0.6);
     cy += 5.5;
 
     const nums = ms.filter(m => m.V != null || m.L != null || m.R != null);
@@ -1853,8 +1972,9 @@ async function buildPdf(o){
       if(main.lsi){
         let txt;
         if(main.lsi.diff) txt = 'Verschil tussen links en rechts: ' + fmtU(main.lsi.v, main.u) + '.';
-        else if(main.lsi.label === 'LSI') txt = 'Je aangedane kant (' + (zijde === 'L' ? 'links' : 'rechts') + ') haalt ' + fmt(main.lsi.v, '%') + '% van je andere kant.';
-        else txt = 'Je zwakste kant haalt ' + fmt(main.lsi.v, '%') + '% van je sterkste kant.';
+        else { const pw = main.lsi.pre === '≥' ? 'minstens ' : main.lsi.pre === '≤' ? 'hooguit ' : '';
+          if(main.lsi.label === 'LSI') txt = 'Je aangedane kant (' + (zijde === 'L' ? 'links' : 'rechts') + ') haalt ' + pw + fmt(main.lsi.v, '%') + '% van je andere kant.';
+          else txt = 'Je zwakste kant haalt ' + pw + fmt(main.lsi.v, '%') + '% van je sterkste kant.'; }
         font('normal', 8.8, TXT); const tw = doc.getTextWidth(txt);
         if(draw){ doc.text(txt, x + pad, cy + 2.5); if(main.lsi.norm) pill(x + pad + tw + 3, cy + 2.5, main.lsi.norm.lvl === 'good' ? 'In balans' : 'Aandachtspunt', main.lsi.norm.lvl); }
         cy += 4.2;
@@ -1873,7 +1993,7 @@ async function buildPdf(o){
           if(i % 2 === 0){ doc.setFillColor(...SOFT); doc.rect(x + pad - 1.5, cy - 0.2, IW + 3, 5.6, 'F'); }
           font('normal', 9); doc.text(m.l, cols[0], cy + 3.8);
           font('bold', 9); doc.text(fvp(m, m.L), cols[1], cy + 3.8); doc.text(fvp(m, m.R), cols[2], cy + 3.8);
-          if(m.lsi){ const lt = m.lsi.diff ? fmtU(m.lsi.v, m.u) : fmt(m.lsi.v, '%') + '%'; const c = m.lsi.norm ? PCOL[m.lsi.norm.lvl].f : TXT; font('bold', 9, c); doc.text(lt, cols[3], cy + 3.8); }
+          if(m.lsi){ const lt = m.lsi.diff ? fmtU(m.lsi.v, m.u) : (m.lsi.pre || '') + fmt(m.lsi.v, '%') + '%'; const c = m.lsi.norm ? PCOL[m.lsi.norm.lvl].f : TXT; font('bold', 9, c); doc.text(lt, cols[3], cy + 3.8); }
         }
         cy += 5.6;
       });
@@ -1910,6 +2030,7 @@ async function buildPdf(o){
       }
     }
     // F. Opmerking
+    if(o.withQual){ const qt = qualText(t, last.r, true); if(qt || last.r.kn){ font('normal', 8.5, TXT); const l = doc.splitTextToSize('Kwaliteit van bewegen: ' + [qt, o.withNotes ? last.r.kn : ''].filter(Boolean).join('. '), IW); if(qt || o.withNotes){ if(draw) doc.text(l, x + pad, cy + 2); cy += l.length * 3.8 + 1; } } }
     if(o.withNotes && last.r.o){ font('italic', 8.5, MUT); const l = doc.splitTextToSize('Opmerking: ' + last.r.o, IW); if(draw) doc.text(l, x + pad, cy + 2); cy += l.length * 3.8 + 1; }
     cy += 3;
     const h = cy - y0;
@@ -1923,10 +2044,11 @@ async function buildPdf(o){
   let lastDom = null;
   tests.forEach(({t, rows}, idx) => {
     const h = card(t, rows, 0, false);
-    if(t.d !== lastDom){
-      lastDom = t.d;
+    const grp = pOrder ? (pOrder.includes(t.id) ? 'Testen ' + lastP.n : 'Aanvullende testen') : domainOf(t.d).n;
+    if(grp !== lastDom){
+      lastDom = grp;
       if(y + 12 + h > BOTTOM) newPage();
-      heading(domainOf(t.d).n);
+      heading(grp);
     }
     ensure(h);
     card(t, rows, y, true);
@@ -2075,9 +2197,43 @@ const ACT = {
     if(c && window.innerWidth > 980){ c.scrollIntoView({behavior:'smooth', block:'center'}); }
     if(!document.body.classList.contains('picker-open')) toast('Toegevoegd: ' + testById(id).n);
   },
+  addProto(el){
+    const P = protoById(el.dataset.id); if(!P) return;
+    const d = S.draft;
+    if(d.protocol && d.protocol !== P.id && !confirm('Dit testmoment hoort al bij een ander protocol. Vervangen door ' + P.n + '?')) return;
+    d.protocol = P.id; d.pf = d.pf || {};
+    let n = 0;
+    P.tests.forEach(([id, pre]) => { if(!testById(id)) return; if(!d.results.find(r => r.t === id)){ d.results.push({t:id, v:pre ? JSON.parse(JSON.stringify(pre)) : {}, o:''}); n++; } });
+    S.dirty = true; $('#proto-box').innerHTML = renderProtoBox(); $('#proto-concl').innerHTML = renderProtoConcl(); refreshResults(); refreshPicker();
+    if(document.body.classList.contains('picker-open')) ACT.closePicker();
+    toast(P.n + ': ' + n + ' test' + (n === 1 ? '' : 'en') + ' toegevoegd');
+  },
+  dropProto(){
+    const d = S.draft, P = protoById(d.protocol); if(!P) return;
+    const hasConcl = P.concl.some(c => d.pf && d.pf[c.k]);
+    if(!confirm('Protocol loskoppelen? De testen blijven staan' + (hasConcl ? ', maar de conclusie en protocolvelden worden verwijderd.' : '.'))) return;
+    delete d.protocol; delete d.pf; S.dirty = true; $('#proto-box').innerHTML = ''; $('#proto-concl').innerHTML = ''; refreshPicker();
+  },
+  capSet(el){
+    const i = +el.dataset.i, r = S.draft.results[i]; if(!r) return; r.v = r.v || {};
+    const t = testById(r.t), f = t.f.find(x => x.k === el.dataset.k), s = el.dataset.s, cur = s ? r.v[f.k]?.[s] : r.v[f.k];
+    const on = !String(cur ?? '').trim().startsWith('>'), val = on ? '>' + f.cap : '';
+    if(s){ r.v[f.k] = r.v[f.k] || {}; r.v[f.k][s] = val; } else r.v[f.k] = val;
+    S.dirty = true; const c = document.getElementById('rc-' + i), tmp = document.createElement('div'); tmp.innerHTML = renderResultCard(r, i); c.replaceWith(tmp.firstElementChild);
+  },
+  toggleQ(el){
+    const r = S.draft.results[+el.dataset.i]; if(!r) return;
+    r.q = r.q || {}; const a = r.q[el.dataset.s] = r.q[el.dataset.s] || [], k = el.dataset.k, j = a.indexOf(k);
+    if(j >= 0) a.splice(j, 1); else a.push(k);
+    S.dirty = true; const on = j < 0; el.classList.toggle('active', on);
+    const t = testById(r.t), o = qualFor(t).opts.find(x => x[0] === k); el.textContent = (on ? '✓ ' : '') + o[1];
+  },
   repeatLast(){
     const ms = sortedMoments().filter(m => m.id !== S.draft.id), last = ms[ms.length-1]; if(!last) return;
-    let n = 0; (last.results || []).forEach(r => { if(testById(r.t) && !S.draft.results.find(x => x.t === r.t)){ S.draft.results.push({t:r.t, v:{}, o:''}); n++; } });
+    let n = 0; (last.results || []).forEach(r => { if(testById(r.t) && !S.draft.results.find(x => x.t === r.t)){
+      const pre = {}; const t = testById(r.t); (t.f || []).forEach(f => { if(f.t === 'sel' && ['var','oef','zijde'].includes(f.k) && r.v && r.v[f.k]) pre[f.k] = f.k === 'var' ? normV(t, r.v).var : JSON.parse(JSON.stringify(r.v[f.k])); });
+      S.draft.results.push({t:r.t, v:pre, o:''}); n++; } });
+    if(last.protocol && !S.draft.protocol){ S.draft.protocol = last.protocol; S.draft.pf = {voorkeur:(last.pf || {}).voorkeur || '', sport:(last.pf || {}).sport || ''}; $('#proto-box').innerHTML = renderProtoBox(); $('#proto-concl').innerHTML = renderProtoConcl(); }
     S.dirty = true; refreshResults(); refreshPicker(); toast(n + ' test' + (n === 1 ? '' : 'en') + ' toegevoegd van ' + fmtDate(last.datum));
   },
   removeResult(el){ const i = +el.dataset.i; const r = S.draft.results[i]; if(hasValue(r) && !confirm('Deze test bevat al waarden. Verwijderen uit het testmoment?')) return; S.draft.results.splice(i, 1); S.showInfo = {}; S.dirty = true; refreshResults(); refreshPicker(); },
@@ -2120,6 +2276,8 @@ document.addEventListener('input', e => {
   const el = e.target;
   if(el.id === 'pq'){ S.pq = el.value; refreshPicker(); return; }
   if(S.view !== 'moment' || !S.draft) return;
+  if(el.dataset.pf){ S.draft.pf = S.draft.pf || {}; S.draft.pf[el.dataset.pf] = el.value; S.dirty = true; return; }
+  if(el.dataset.kn){ const r = S.draft.results[+el.dataset.r]; if(r){ r.kn = el.value; S.dirty = true; } return; }
   if(el.dataset.draft){ S.draft[el.dataset.draft] = el.value; S.dirty = true; if(el.dataset.draft === 'leeftijd' || el.dataset.draft === 'zijde') refreshCalcs(); return; }
   if(el.dataset.r !== undefined){
     const i = +el.dataset.r, r = S.draft.results[i]; if(!r) return; r.v = r.v || {};
@@ -2141,6 +2299,7 @@ document.addEventListener('change', e => {
     return;
   }
   if(el.dataset.chartsel){ S.chartSel[el.dataset.chartsel] = el.value; render(); return; }
+  if(el.dataset.pf && S.draft){ S.draft.pf = S.draft.pf || {}; S.draft.pf[el.dataset.pf] = el.value; S.dirty = true; return; }
 
 });
 function refreshCalcs(){ S.draft.results.forEach((r, i) => { const t = testById(r.t), c = document.getElementById('calc-' + i); if(c && t) c.innerHTML = calcHTML(t, r); }); }
