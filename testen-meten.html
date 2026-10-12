@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-12.3 -->
+<!-- APP_VERSION: 2026-10-12.5 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-12.3";
+  const APP_VERSION = "2026-10-12.5";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -408,6 +408,39 @@ const plankNorm = (x, ctx, v) => {
   return null;
 };
 
+/* ---- Jeugdnormen hoptesten ----
+   9–15 jaar: Johnsen e.a. 2021 (531 gezonde Deense kinderen), per leeftijd en geslacht: [leeftijd, gem. beste been, SD, gem. andere been, SD].
+   16–17 jaar: Myers e.a. 2014 (high school basketbal- en voetbalspelers, 14–18 jaar, gemiddelde van 3 pogingen): [gem., SD]. */
+const HOPN = {
+  shop:{M:[[9,93.6,20.2,78.7,21.8],[10,99.9,18.3,87.2,22.5],[11,99.4,22.5,88.4,20.1],[12,117.5,29.4,105.7,29.1],[13,120.8,22.8,111.8,23.2],[14,134.8,26.1,114.5,22.7],[15,148.0,24.4,135.1,22.3]],
+        V:[[9,89.4,19.3,76.8,19.5],[10,101.1,20.7,86.2,21.5],[11,92.9,21.5,81.5,20.0],[12,108.6,26.6,97.5,26.1],[13,109.2,23.6,97.0,23.7],[14,113.5,20.3,100.5,19.6],[15,109.6,20.2,99.8,18.5]],
+        HS:{M:[181,20], V:[129,18]}},
+  thop:{M:[[9,308.0,60.6,278.0,60.5],[10,313.9,52.0,289.7,54.5],[11,338.7,61.1,309.6,53.6],[12,379.4,84.4,351.4,79.5],[13,393.4,70.4,359.7,74.6],[14,436.2,74.0,391.8,61.8],[15,492.5,60.9,467.5,72.2]],
+        V:[[9,291.8,47.0,258.2,52.0],[10,312.2,64.7,288.1,64.7],[11,304.2,54.6,272.8,45.4],[12,350.8,73.5,317.1,83.3],[13,362.9,66.2,331.0,57.7],[14,363.5,50.0,332.2,55.0],[15,353.6,62.5,334.5,65.7]],
+        HS:{M:[583,72], V:[428,54]}},
+  chop:{M:[[9,248.1,60.4,208.8,53.9],[10,259.6,47.1,235.6,51.5],[11,273.8,61.9,240.7,56.0],[12,322.4,87.8,292.2,88.1],[13,345.9,77.8,309.7,78.8],[14,366.8,71.6,335.9,60.9],[15,427.9,79.8,395.8,78.9]],
+        V:[[9,228.9,62.9,203.0,54.1],[10,256.3,55.6,230.9,55.2],[11,251.6,56.5,216.3,47.3],[12,285.4,75.0,257.3,73.8],[13,298.5,67.3,276.3,69.8],[14,293.5,58.3,271.5,50.2],[15,277.9,62.7,261.3,62.7]],
+        HS:{M:[522,77], V:[375,60]}},
+  hop6:{M:[[9,2.5,0.3,2.8,0.8],[10,2.5,0.5,2.8,0.6],[11,2.5,0.5,2.8,0.6],[12,2.4,0.5,2.7,0.5],[13,2.1,0.4,2.4,0.5],[14,2.0,0.3,2.2,0.3],[15,1.9,0.3,2.1,0.3]],
+        V:[[9,2.6,0.4,2.9,0.5],[10,2.5,0.4,2.7,0.4],[11,2.7,0.5,2.9,0.5],[12,2.5,0.4,2.8,0.5],[13,2.3,0.4,2.6,0.5],[14,2.3,0.6,2.5,0.5],[15,2.4,0.3,2.6,0.4]],
+        HS:{M:[1.91,0.23], V:[2.25,0.24]}, low:true}
+};
+// Vergelijkt een been met het leeftijdsgemiddelde: het beste been met 'beste been', het andere been met 'andere been'
+const hopNorm = (id, key) => (x, c, v) => {
+  const N = HOPN[id], a = c.leeftijd, g = c.geslacht, u = key === 's' ? ' s' : ' cm';
+  if(a && a >= 18) return null;
+  if(!a || !g) return NB('grey','Vul leeftijd + geslacht in voor jeugdnorm');
+  if(a < 9) return null;
+  const vals = [toNum(v[key]?.L), toNum(v[key]?.R)].filter(n => n != null);
+  const best = N.low ? x <= Math.min(...vals) : x >= Math.max(...vals);
+  let mean, sd;
+  if(a <= 15){ const r = N[g].find(r => r[0] === Math.floor(a)); if(!r) return null; [mean, sd] = best ? [r[1], r[2]] : [r[3], r[4]]; }
+  else [mean, sd] = N.HS[g];
+  const z = N.low ? (mean - x) / sd : (x - mean) / sd, ref = ' (gem. ' + fmt(mean, '') + u + ')';
+  return z >= 0 ? NB('good','Gemiddeld of beter voor leeftijd' + ref) : z >= -1 ? NB('neutral','Iets onder gemiddeld' + ref) : NB('warn','Onder gemiddeld voor leeftijd' + ref);
+};
+const HOP_NORM_INFO = '\nJeugdnorm (9–17 jaar): de tool vergelijkt elk been met het gemiddelde voor leeftijd en geslacht. Het beste been wordt vergeleken met het gemiddelde beste been, het andere been met het gemiddelde andere been. Groen = gemiddeld of beter, blauw = tot 1 SD onder gemiddeld, oranje = meer dan 1 SD onder gemiddeld. Voor 16–17 jaar zijn de waarden afkomstig van sporters (basketbal/voetbal), dus hoger. De LSI blijft de belangrijkste maat.';
+
 /* ---- Itemschalen ---- */
 const generic = (max, labels) => Array.from({length:max+1}, (_,i) => [max-i, labels[i]]);
 const BBS_ITEMS = [
@@ -471,7 +504,7 @@ const SRC = {
   stage4:'CDC STEADI', fr:'meetinstrumentenzorg.nl (toelichtingsformulier Functional Reach Test)', fsst:'Dite & Temple 2002; Whitney e.a. 2007 (vestibulair)',
   tug:'CDC STEADI (≥12 s); Shumway-Cook e.a. 2000 (≥13,5 s); meetinstrumentenzorg.nl (revalidatie: 20 / 30 s); Steffen e.a. 2002 (gemiddelden)', mwt10:'Studenski e.a. 2011',
   ybal_oe:'Plisky e.a. 2006 (verschil anterieur >4 cm)', lunge:'Powden e.a. 2015 (meetfout ±1,9 cm)', schober:'Gemodificeerde Schober-test',
-  bmi:'meetinstrumentenzorg.nl (toelichtingsformulier BMI, WHO-indeling)', buik:'Fitheidstest Fyzio Totaal (buikomvang); meetinstrumentenzorg.nl (middel-heupratio)', mwt6:'meetinstrumentenzorg.nl (toelichtingsformulier 6MWT, formule 30 m-baan)', mwt2:'meetinstrumentenzorg.nl (toelichtingsformulier 2MWT)', astrand:'meetinstrumentenzorg.nl (toelichtingsformulier Åstrand; Shvartz & Reibold 1990)', sppb:'meetinstrumentenzorg.nl (toelichtingsformulier SPPB)', shop:SRC_LSI, thop:SRC_LSI, chop:SRC_LSI, hop6:SRC_LSI, sidehop:SRC_LSI
+  bmi:'meetinstrumentenzorg.nl (toelichtingsformulier BMI, WHO-indeling)', buik:'Fitheidstest Fyzio Totaal (buikomvang); meetinstrumentenzorg.nl (middel-heupratio)', mwt6:'meetinstrumentenzorg.nl (toelichtingsformulier 6MWT, formule 30 m-baan)', mwt2:'meetinstrumentenzorg.nl (toelichtingsformulier 2MWT)', astrand:'meetinstrumentenzorg.nl (toelichtingsformulier Åstrand; Shvartz & Reibold 1990)', sppb:'meetinstrumentenzorg.nl (toelichtingsformulier SPPB)', shop:SRC_LSI + '; jeugd: ' + 'Johnsen e.a. 2021 (9–15 jr), Myers e.a. 2014 (16–17 jr)', thop:SRC_LSI + '; jeugd: Johnsen e.a. 2021 (9–15 jr), Myers e.a. 2014 (16–17 jr)', chop:SRC_LSI + '; jeugd: Johnsen e.a. 2021 (9–15 jr), Myers e.a. 2014 (16–17 jr)', hop6:SRC_LSI + '; jeugd: Johnsen e.a. 2021 (9–15 jr), Myers e.a. 2014 (16–17 jr)', vva:'Fyzio Totaal (eigen norm)', sidehop:SRC_LSI
 };
 const infoText = t => (t.info || '') + (SRC[t.id] ? '\nBron: ' + SRC[t.id] : (t.id.startsWith('hhd_') ? '\nBron: ' + SRC_LSI : ''));
 
@@ -614,8 +647,8 @@ const LIB = [
     info:'Voeten op schouderbreedte, stok gestrekt boven het hoofd. Let op knieën naar binnen, hakken los, romp naar voren, armen zakken.'},
   {id:'hand_rug', n:'Hand-achter-rug (duim–C7)', d:'mob', s:'Functionele mobiliteit', kw:'schouder apley scratch endorotatie hand achter rug frozen shoulder', side:true, better:'laag',
     f:[num('cm','Afstand duim–C7','cm')], info:'Hand zo hoog mogelijk achter de rug. Afstand duim tot processus spinosus C7. Kleiner is beter.'},
-  {id:'vva', n:'Vinger-vloer-afstand (VBA)', d:'mob', s:'Functionele mobiliteit', kw:'vinger vloer bodem vba vva rug flexie lenigheid hamstrings lage rug performance check', better:'laag', f:[num('cm','Afstand','cm')],
-    info:'Staand, knieën gestrekt, maximaal vooroverbuigen. Afstand middelvinger tot de vloer (0 = vloer raken).\nBij een beperking (>10 cm): kijk naar verschil links/rechts in lengte en naar de heupmobiliteit.'},
+  {id:'vva', n:'Vinger-bodem-afstand (VBA)', d:'mob', s:'Functionele mobiliteit', kw:'vinger-vloer-afstand vinger bodem vloer vba vva rug flexie lenigheid hamstrings lage rug performance check', better:'laag', f:[num('cm','Afstand','cm',{norm:x => x <= 5 ? NB('good','Goed (0–5 cm)') : x <= 10 ? NB('warn','Matig (5–10 cm)') : NB('bad','Aandachtspunt (>10 cm)')})],
+    info:'Staand, knieën gestrekt, maximaal vooroverbuigen. Afstand middelvinger tot de bodem (0 = bodem raken).\nNorm: 0–5 cm goed, 5–10 cm matig, >10 cm aandachtspunt.\nBij een beperking (>10 cm): kijk naar verschil links/rechts in lengte en naar de heupmobiliteit.'},
   {id:'thomas', n:'Thomas test', d:'mob', s:'Spierlengte', kw:'heupflexoren iliopsoas rectus femoris verkorting heup lies', side:true,
     f:[sel('uit','Uitslag',['Negatief','Positief iliopsoas','Positief rectus femoris','Positief beide']), num('deg','Heupextensie-hoek (optioneel)','°')],
     info:'Ruglig aan de rand van de bank, niet-geteste knie naar de borst. Beoordeel of het bovenbeen de bank raakt (iliopsoas) en of de knie ≥80° gebogen blijft (rectus femoris).'},
@@ -702,10 +735,10 @@ const LIB = [
     info:'Meet de middelste 10 m van een traject van 14 m (2 m aanloop en uitloop).\nEen comfortabele loopsnelheid onder 0,8 m/s hangt samen met een verhoogd risico op nadelige gezondheidsuitkomsten bij ouderen.'},
 
   /* ===== SPORT & SPRONG ===== */
-  {id:'shop', n:'Single leg hop test', d:'sport', s:'Hoptesten', kw:'single hop for distance single hop afstand hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Eenbenig zo ver mogelijk springen en stabiel landen (2 s). Beste van 2–3 geldige pogingen.\nLSI ≥90% als streefwaarde voor terugkeer naar sport.'},
-  {id:'thop', n:'Triple hop test', d:'sport', s:'Hoptesten', kw:'triple hop for distance triple hop drie sprongen hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Drie opeenvolgende eenbenige sprongen, stabiel landen. Beste van 2–3 pogingen.'},
-  {id:'chop', n:'Crossover hop test', d:'sport', s:'Hoptesten', kw:'crossover hop for distance crossover hop zigzag hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm')], info:'Drie eenbenige sprongen kruislings over een lijn van 15 cm breed. Beste van 2–3 pogingen.'},
-  {id:'hop6', n:'6 meter timed hop test', d:'sport', s:'Hoptesten', kw:'6m timed hop 6 meter timed hop tijd hoptest vkb acl knie', side:true, better:'laag', f:[num('s','Tijd','s')], info:'6 meter eenbenig hoppen zo snel mogelijk. Beste van 2 pogingen. Lager is beter.'},
+  {id:'shop', n:'Single leg hop test', d:'sport', s:'Hoptesten', kw:'single hop for distance single hop afstand hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm',{norm:hopNorm('shop','cm')})], info:'Eenbenig zo ver mogelijk springen en stabiel landen (2 s). Beste van 2–3 geldige pogingen.\nLSI ≥90% als streefwaarde voor terugkeer naar sport.' + HOP_NORM_INFO},
+  {id:'thop', n:'Triple hop test', d:'sport', s:'Hoptesten', kw:'triple hop for distance triple hop drie sprongen hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm',{norm:hopNorm('thop','cm')})], info:'Drie opeenvolgende eenbenige sprongen, stabiel landen. Beste van 2–3 pogingen.\nLSI ≥90% als streefwaarde voor terugkeer naar sport.' + HOP_NORM_INFO},
+  {id:'chop', n:'Crossover hop test', d:'sport', s:'Hoptesten', kw:'crossover hop for distance crossover hop zigzag hoptest vkb acl knie return to sport', side:true, f:[num('cm','Afstand (beste poging)','cm',{norm:hopNorm('chop','cm')})], info:'Drie eenbenige sprongen kruislings over een lijn van 15 cm breed. Beste van 2–3 pogingen.' + HOP_NORM_INFO},
+  {id:'hop6', n:'6 meter timed hop test', d:'sport', s:'Hoptesten', kw:'6m timed hop 6 meter timed hop tijd hoptest vkb acl knie', side:true, better:'laag', f:[num('s','Tijd','s',{norm:hopNorm('hop6','s')})], info:'6 meter eenbenig hoppen zo snel mogelijk. Beste van 2 pogingen. Lager is beter.' + HOP_NORM_INFO},
   {id:'sidehop', n:'Side hop test', d:'sport', s:'Hoptesten', kw:'side hop test side hop zijwaarts enkel enkeldistorsie knie vkb', side:true, f:[num('aant','Aantal (30 s)','x')], info:'Eenbenig zijwaarts heen en weer springen over twee lijnen 40 cm uit elkaar, 30 s. Aantal geldige sprongen.'},
   {id:'slcmj', n:'Single Leg Countermovement Jump', d:'sport', s:'Sprongkracht', kw:'cmj counter movement jump spronghoogte eenbenig vertical jump my jump', side:true, f:[num('cm','Spronghoogte','cm')], info:'Eenbenige verticale sprong met tegenbeweging, handen in de zij. Beste van 3 pogingen (app of springmat).'},
   {id:'cmj', n:'Countermovement Jump (tweebenig)', d:'sport', s:'Sprongkracht', kw:'cmj counter movement jump spronghoogte verticaal vertical jump', f:[num('cm','Spronghoogte','cm')], info:'Tweebenige verticale sprong met tegenbeweging, handen in de zij. Beste van 3 pogingen.'},
