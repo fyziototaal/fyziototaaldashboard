@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
-<!-- APP_VERSION: 2026-10-05.4 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-10-13.1 (ophogen bij elke update — hier én in de constante hieronder) -->
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -19,7 +19,7 @@
 // versie beschikbaar is. Na die ene herlaad komen de versies
 // overeen en gebeurt er niets meer — geen oneindige lus.
 (function () {
-  var APP_VERSION = "2026-10-05.4";
+  var APP_VERSION = "2026-10-13.1";
   try {
     fetch(location.pathname + "?_fresh=" + Date.now(), { cache: "no-store" })
       .then(function (res) { return res.text(); })
@@ -107,7 +107,7 @@ if (!window.storage) {
 "use strict";
 var STORAGE_KEY = "fyzio-verlof-v1";
 // Moet gelijk blijven aan de APP_VERSION in de <script> bovenaan de <head>.
-var APP_VERSION_DISPLAY = "2026-10-05.4";
+var APP_VERSION_DISPLAY = "2026-10-13.1";
 var h = React.createElement;
 var useState = React.useState, useEffect = React.useEffect, useCallback = React.useCallback, useMemo = React.useMemo, useRef = React.useRef;
 
@@ -312,20 +312,32 @@ function suggestedAnnualLeaveHours(schedule) {
   return Math.round((weekly / FULLTIME_WEEKLY_HOURS) * FULLTIME_ANNUAL_LEAVE_HOURS * 10) / 10;
 }
 
-function saldoFor(emp, requests) {
-  var base = Number(emp.baseSaldo) || 0;
+// Het saldo loopt per kalenderjaar en begint elk jaar opnieuw (geen
+// overdracht). Een aanvraag telt mee in het jaar van de begindatum.
+function currentYear() { return new Date().getFullYear(); }
+function yearOf(iso) { return Number(String(iso).slice(0, 4)); }
+// Basissaldo voor een jaar: een jaarspecifieke waarde als die is ingesteld,
+// anders het standaard jaarsaldo van de medewerker.
+function baseSaldoFor(emp, year) {
+  var by = emp.baseSaldoByYear;
+  if (by && by[year] !== undefined && by[year] !== null && by[year] !== "") return Number(by[year]) || 0;
+  return Number(emp.baseSaldo) || 0;
+}
+
+function saldoFor(emp, requests, year) {
+  var base = baseSaldoFor(emp, year);
   var used = 0, overtime = 0;
   for (var i = 0; i < requests.length; i++) {
     var r = requests[i];
-    if (r.employeeId !== emp.id || r.status !== "approved") continue;
+    if (r.employeeId !== emp.id || r.status !== "approved" || yearOf(r.startDate) !== year) continue;
     if (r.type === "verlof") used += Number(r.hours) || 0;
     if (r.type === "overuren") overtime += Number(r.hours) || 0;
   }
   return base - used + overtime;
 }
-function sumHours(requests, empId, type, status) {
+function sumHours(requests, empId, type, status, year) {
   return requests
-    .filter(function (r) { return r.employeeId === empId && r.type === type && r.status === status; })
+    .filter(function (r) { return r.employeeId === empId && r.type === type && r.status === status && yearOf(r.startDate) === year; })
     .reduce(function (s, r) { return s + (Number(r.hours) || 0); }, 0);
 }
 
@@ -347,6 +359,23 @@ function findOverlappingColleagues(requests, employees, excludeEmployeeId, start
 var INPUT_CLS = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm transition focus:border-[#82176D] focus:outline-none focus:ring-4 focus:ring-[#f3e3ef]";
 var BTN_PRIMARY = "rounded-xl bg-gradient-to-r from-[#82176D] to-[#a8368f] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:from-[#6b1259] hover:to-[#8f2d78] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#f3e3ef] disabled:opacity-40 disabled:shadow-none";
 var BTN_SECONDARY = "rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200";
+
+function YearPicker(props) {
+  var year = props.year, onChange = props.onChange, requests = props.requests || [];
+  var cur = currentYear();
+  var min = cur, max = cur + 1;
+  requests.forEach(function (r) { var y = yearOf(r.startDate); if (y < min) min = y; if (y > max) max = y; });
+  if (year < min) min = year;
+  if (year > max) max = year;
+  var opts = [];
+  for (var y = max; y >= min; y--) opts.push(y);
+  return h("label", { className: "flex items-center gap-2 text-sm text-slate-600" },
+    h("span", { className: "text-xs font-semibold uppercase tracking-wide text-slate-400" }, "Jaar"),
+    h("select", { className: INPUT_CLS + " !w-auto !py-1.5", value: year, onChange: function (e) { onChange(Number(e.target.value)); } },
+      opts.map(function (y) { return h("option", { key: y, value: y }, y === cur ? y + " (huidig)" : String(y)); })
+    )
+  );
+}
 
 function Card(props) {
   return h("div", { className: "rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_2px_14px_rgba(130,23,109,0.08)] " + (props.className || "") }, props.children);
@@ -606,11 +635,12 @@ function Nav(props) {
 function Overzicht(props) {
   var user = props.user, data = props.data, persist = props.persist;
   var _confirmId = useState(null), confirmId = _confirmId[0], setConfirmId = _confirmId[1];
-  var beschikbaar = saldoFor(user, data.requests);
-  var inAanvraag = sumHours(data.requests, user.id, "verlof", "pending");
-  var opgenomen = sumHours(data.requests, user.id, "verlof", "approved");
-  var overurenGoedgekeurd = sumHours(data.requests, user.id, "overuren", "approved");
-  var mijn = data.requests.filter(function (r) { return r.employeeId === user.id; })
+  var _year = useState(currentYear()), year = _year[0], setYear = _year[1];
+  var beschikbaar = saldoFor(user, data.requests, year);
+  var inAanvraag = sumHours(data.requests, user.id, "verlof", "pending", year);
+  var opgenomen = sumHours(data.requests, user.id, "verlof", "approved", year);
+  var overurenGoedgekeurd = sumHours(data.requests, user.id, "overuren", "approved", year);
+  var mijn = data.requests.filter(function (r) { return r.employeeId === user.id && yearOf(r.startDate) === year; })
     .sort(function (a, b) { return b.createdAt.localeCompare(a.createdAt); });
 
   function verwijder(id) {
@@ -619,6 +649,10 @@ function Overzicht(props) {
   }
 
   return h("div", { className: "space-y-6" },
+    h("div", { className: "flex flex-wrap items-center justify-between gap-2" },
+      h("h3", { className: "text-base font-bold text-slate-900" }, "Mijn saldo " + year),
+      h(YearPicker, { year: year, onChange: setYear, requests: data.requests.filter(function (r) { return r.employeeId === user.id; }) })
+    ),
     h("div", { className: "grid grid-cols-2 gap-3 sm:grid-cols-4" },
       h(StatCard, { label: "Beschikbaar saldo", value: fmtNum(beschikbaar) + " uur", accent: "text-[#82176D]", bar: "from-[#82176D] to-[#a8368f]" }),
       h(StatCard, { label: "In aanvraag", value: fmtNum(inAanvraag) + " uur", accent: "text-amber-600", bar: "from-amber-400 to-orange-300" }),
@@ -626,9 +660,9 @@ function Overzicht(props) {
       h(StatCard, { label: "Goedgekeurde overuren", value: fmtNum(overurenGoedgekeurd) + " uur", accent: "text-[#00728e]", bar: "from-[#00728e] to-[#00B6E8]" })
     ),
     h(Card, null,
-      h("h3", { className: "mb-3 text-base font-bold text-slate-900" }, "Mijn aanvragen"),
+      h("h3", { className: "mb-3 text-base font-bold text-slate-900" }, "Mijn aanvragen " + year),
       mijn.length === 0
-        ? h("p", { className: "text-sm text-slate-500" }, "Nog geen aanvragen. Dien je eerste verlofaanvraag in via het tabblad hierboven.")
+        ? h("p", { className: "text-sm text-slate-500" }, "Geen aanvragen in " + year + ". Dien een verlofaanvraag in via het tabblad hierboven.")
         : h("ul", { className: "divide-y divide-slate-100" },
             mijn.map(function (r) {
               return h("li", { key: r.id, className: "flex flex-wrap items-center gap-x-4 gap-y-1 py-3" },
@@ -696,8 +730,9 @@ function VerlofForm(props) {
   var uren = parseNum(urenStr);
   var handmatigAangepast = dagen !== autoDagen || uren !== autoUren;
 
-  var beschikbaar = saldoFor(user, data.requests);
-  var inAanvraag = sumHours(data.requests, user.id, "verlof", "pending");
+  var saldoJaar = yearOf(startDate);
+  var beschikbaar = saldoFor(user, data.requests, saldoJaar);
+  var inAanvraag = sumHours(data.requests, user.id, "verlof", "pending", saldoJaar);
   var overBudget = uren > 0 && uren + inAanvraag > beschikbaar;
   var overlaps = useMemo(function () {
     return findOverlappingColleagues(data.requests, data.employees, user.id, startDate, endDate);
@@ -738,7 +773,7 @@ function VerlofForm(props) {
   return h(Card, { className: "mx-auto max-w-md" },
     h("h3", { className: "mb-1 text-base font-bold text-slate-900" }, "Verlof aanvragen"),
     h("p", { className: "mb-4 text-sm text-slate-500" },
-      "Beschikbaar saldo: ", h("strong", null, fmtNum(beschikbaar) + " uur"),
+      "Beschikbaar saldo " + saldoJaar + ": ", h("strong", null, fmtNum(beschikbaar) + " uur"),
       inAanvraag > 0 && (" · al in aanvraag: " + fmtNum(inAanvraag) + " uur")
     ),
     h("div", { className: "space-y-3" },
@@ -1038,13 +1073,14 @@ function AllRequestsList(props) {
 function SaldoOverzicht(props) {
   var data = props.data;
   var _sort = useState("naam"), sortBy = _sort[0], setSortBy = _sort[1];
+  var _year = useState(currentYear()), year = _year[0], setYear = _year[1];
 
   var rows = data.employees.map(function (emp) {
-    var opgenomen = sumHours(data.requests, emp.id, "verlof", "approved");
-    var inAanvraag = sumHours(data.requests, emp.id, "verlof", "pending");
-    var overurenGoedgekeurd = sumHours(data.requests, emp.id, "overuren", "approved");
-    var overurenInAanvraag = sumHours(data.requests, emp.id, "overuren", "pending");
-    var beschikbaar = saldoFor(emp, data.requests);
+    var opgenomen = sumHours(data.requests, emp.id, "verlof", "approved", year);
+    var inAanvraag = sumHours(data.requests, emp.id, "verlof", "pending", year);
+    var overurenGoedgekeurd = sumHours(data.requests, emp.id, "overuren", "approved", year);
+    var overurenInAanvraag = sumHours(data.requests, emp.id, "overuren", "pending", year);
+    var beschikbaar = saldoFor(emp, data.requests, year);
     return {
       emp: emp, opgenomen: opgenomen, inAanvraag: inAanvraag,
       overurenGoedgekeurd: overurenGoedgekeurd, overurenInAanvraag: overurenInAanvraag, beschikbaar: beschikbaar
@@ -1057,7 +1093,7 @@ function SaldoOverzicht(props) {
     return a.emp.name.localeCompare(b.emp.name);
   });
 
-  var totaalBasis = rows.reduce(function (s, r) { return s + (Number(r.emp.baseSaldo) || 0); }, 0);
+  var totaalBasis = rows.reduce(function (s, r) { return s + baseSaldoFor(r.emp, year); }, 0);
   var totaalBeschikbaar = rows.reduce(function (s, r) { return s + r.beschikbaar; }, 0);
 
   function SortBtn(sortProps) {
@@ -1069,6 +1105,10 @@ function SaldoOverzicht(props) {
   }
 
   return h("div", { className: "space-y-4" },
+    h("div", { className: "flex flex-wrap items-center justify-between gap-2" },
+      h("h3", { className: "text-base font-bold text-slate-900" }, "Saldo " + year),
+      h(YearPicker, { year: year, onChange: setYear, requests: data.requests })
+    ),
     h("div", { className: "grid grid-cols-2 gap-3 sm:grid-cols-3" },
       h(StatCard, { label: "Totaal basissaldo", value: fmtNum(totaalBasis) + " uur", accent: "text-[#82176D]", bar: "from-[#82176D] to-[#a8368f]" }),
       h(StatCard, { label: "Totaal beschikbaar nu", value: fmtNum(totaalBeschikbaar) + " uur", accent: "text-[#00728e]", bar: "from-[#00728e] to-[#00B6E8]" }),
@@ -1076,7 +1116,7 @@ function SaldoOverzicht(props) {
     ),
     h(Card, { className: "!p-0" },
       h("div", { className: "flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3" },
-        h("h3", { className: "text-base font-bold text-slate-900" }, "Saldo per collega"),
+        h("h3", { className: "text-base font-bold text-slate-900" }, "Saldo per collega · " + year),
         h("div", { className: "ml-auto flex items-center gap-3" },
           h("span", { className: "text-xs text-slate-400" }, "Sorteer op:"),
           h(SortBtn, { value: "naam" }, "Naam"),
@@ -1102,7 +1142,7 @@ function SaldoOverzicht(props) {
               var negatief = r.beschikbaar < 0;
               return h("tr", { key: r.emp.id },
                 h("td", { className: "px-4 py-2.5 font-medium text-slate-800" }, r.emp.name),
-                h("td", { className: "px-4 py-2.5 text-slate-600" }, fmtNum(r.emp.baseSaldo) + " uur"),
+                h("td", { className: "px-4 py-2.5 text-slate-600" }, fmtNum(baseSaldoFor(r.emp, year)) + " uur"),
                 h("td", { className: "px-4 py-2.5 text-slate-600" }, fmtNum(r.opgenomen) + " uur"),
                 h("td", { className: "px-4 py-2.5 text-slate-600" }, r.inAanvraag > 0 ? fmtNum(r.inAanvraag) + " uur" : "—"),
                 h("td", { className: "px-4 py-2.5 text-slate-600" }, fmtNum(r.overurenGoedgekeurd) + " uur"),
@@ -1114,7 +1154,7 @@ function SaldoOverzicht(props) {
         )
       )
     ),
-    h("p", { className: "text-xs text-slate-400" }, "\"Beschikbaar saldo\" = basissaldo − opgenomen verlof + goedgekeurde overuren. Aanvragen die nog in behandeling zijn, tellen hier nog niet in mee.")
+    h("p", { className: "text-xs text-slate-400" }, "\"Beschikbaar saldo\" = basissaldo − opgenomen verlof + goedgekeurde overuren. Aanvragen die nog in behandeling zijn, tellen hier nog niet in mee. Het saldo begint elk kalenderjaar opnieuw; een aanvraag telt mee in het jaar van de begindatum.")
   );
 }
 
@@ -1161,7 +1201,8 @@ function Goedkeuren(props) {
       ? h(Card, null, h("p", { className: "text-sm text-slate-500" }, "Alles is bijgewerkt: er staan geen aanvragen open. 🎉"))
       : pending.map(function (r) {
           var emp = data.employees.find(function (e) { return e.id === r.employeeId; });
-          var saldo = emp ? saldoFor(emp, data.requests) : 0;
+          var saldoJaar = yearOf(r.startDate);
+          var saldo = emp ? saldoFor(emp, data.requests, saldoJaar) : 0;
           var teVeel = r.type === "verlof" && Number(r.hours) > saldo;
           var overlaps = r.type === "verlof" ? findOverlappingColleagues(data.requests, data.employees, r.employeeId, r.startDate, r.endDate) : [];
           return h(Card, { key: r.id },
@@ -1174,7 +1215,7 @@ function Goedkeuren(props) {
             ),
             r.note && h("p", { className: "mt-2 text-sm text-slate-500" }, "Toelichting: " + r.note),
             h("p", { className: "mt-1 text-xs text-slate-500" },
-              "Huidig saldo " + name(r.employeeId) + ": " + fmtNum(saldo) + " uur",
+              "Huidig saldo " + name(r.employeeId) + " (" + saldoJaar + "): " + fmtNum(saldo) + " uur",
               teVeel && h("span", { className: "ml-2 font-medium text-amber-700" }, "· aanvraag is groter dan het saldo")
             ),
             overlaps.length > 0 && h("div", { className: "mt-2" }, h(OverlapWarning, { overlaps: overlaps })),
@@ -1369,6 +1410,7 @@ function Team(props) {
   var _newPin = useState(""), newPin = _newPin[0], setNewPinStr = _newPin[1];
   var _delId = useState(null), delId = _delId[0], setDelId = _delId[1];
   var _baseEdits = useState({}), baseEdits = _baseEdits[0], setBaseEdits = _baseEdits[1];
+  var _year = useState(currentYear()), year = _year[0], setYear = _year[1];
   var _empEmailEdits = useState({}), empEmailEdits = _empEmailEdits[0], setEmpEmailEdits = _empEmailEdits[1];
   var _schedEdit = useState(null), schedEditId = _schedEdit[0], setSchedEditId = _schedEdit[1];
   var _email = useState((data.settings && data.settings.notifyEmail) || ""), email = _email[0], setEmail = _email[1];
@@ -1401,6 +1443,10 @@ function Team(props) {
   }
 
   return h("div", { className: "space-y-6" },
+    h("div", { className: "flex flex-wrap items-center justify-between gap-2" },
+      h("p", { className: "text-xs text-slate-500" }, "Basissaldo en saldo gelden per jaar. Een aangepast basissaldo geldt alleen voor het gekozen jaar; jaren zonder eigen waarde gebruiken het standaard jaarsaldo."),
+      h(YearPicker, { year: year, onChange: function (y) { setYear(y); setBaseEdits({}); }, requests: data.requests })
+    ),
     h(Card, { className: "!p-0" },
       h("div", { className: "overflow-x-auto rounded-2xl" },
         h("table", { className: "w-full text-sm" },
@@ -1408,8 +1454,8 @@ function Team(props) {
             h("tr", { className: "border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500" },
               h("th", { className: "px-4 py-3" }, "Naam"),
               h("th", { className: "px-4 py-3" }, "E-mail"),
-              h("th", { className: "px-4 py-3" }, "Basissaldo (uren/jaar)"),
-              h("th", { className: "px-4 py-3" }, "Huidig saldo"),
+              h("th", { className: "px-4 py-3" }, "Basissaldo " + year + " (uren)"),
+              h("th", { className: "px-4 py-3" }, "Saldo " + year),
               h("th", { className: "px-4 py-3" }, "Beheerder"),
               h("th", { className: "px-4 py-3" }, "Pincode"),
               h("th", { className: "px-4 py-3" }, "Rooster"),
@@ -1418,7 +1464,8 @@ function Team(props) {
           ),
           h("tbody", { className: "divide-y divide-slate-100" },
             data.employees.map(function (emp) {
-              var current = saldoFor(emp, data.requests);
+              var current = saldoFor(emp, data.requests, year);
+              var baseYear = baseSaldoFor(emp, year);
               var voorstel = suggestedAnnualLeaveHours(emp.schedule);
               return h(React.Fragment, { key: emp.id },
                 h("tr", null,
@@ -1445,19 +1492,19 @@ function Team(props) {
                     h("div", { className: "flex items-center gap-2" },
                       h("input", {
                         className: INPUT_CLS + " !w-24 !py-1", type: "number", step: "0.5",
-                        value: baseEdits[emp.id] !== undefined ? baseEdits[emp.id] : emp.baseSaldo,
+                        value: baseEdits[emp.id] !== undefined ? baseEdits[emp.id] : baseYear,
                         onChange: function (e) { setBaseEdits(Object.assign({}, baseEdits, { [emp.id]: e.target.value })); }
                       }),
-                      baseEdits[emp.id] !== undefined && Number(baseEdits[emp.id]) !== Number(emp.baseSaldo) &&
+                      baseEdits[emp.id] !== undefined && Number(baseEdits[emp.id]) !== baseYear &&
                         h("button", {
                           className: "text-xs font-semibold text-[#82176D] hover:underline",
                           onClick: function () {
-                            updateEmployee(emp.id, { baseSaldo: Number(baseEdits[emp.id]) || 0 });
+                            updateEmployee(emp.id, { baseSaldoByYear: Object.assign({}, emp.baseSaldoByYear || {}, { [year]: Number(baseEdits[emp.id]) || 0 }) });
                             var next = Object.assign({}, baseEdits); delete next[emp.id]; setBaseEdits(next);
                           }
                         }, "Opslaan")
                     ),
-                    Number(emp.baseSaldo) !== voorstel &&
+                    baseYear !== voorstel &&
                       h("p", { className: "mt-1 text-xs text-slate-400" },
                         "Voorstel o.b.v. rooster: " + fmtNum(voorstel) + " uur — ",
                         h("button", {
