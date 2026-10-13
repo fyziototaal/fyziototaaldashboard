@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-10-09.1 -->
+<!-- APP_VERSION: 2026-10-13.1 -->
 <html lang="nl">
 <head>
   <script>
     /* ── VERSIECHECK: altijd de nieuwste versie laden ──
        Verhoog APP_VERSION bij élke wijziging, zowel hier als in de HTML-comment bovenaan. */
-    var APP_VERSION = "2026-10-09.1";
+    var APP_VERSION = "2026-10-13.1";
     (function () {
       try {
         if (location.protocol === "file:") return;
@@ -335,8 +335,12 @@ const BA_INIT=[
   {id:4,day:"Vrijdag",time:"09:15",colleague:"Lynn",niveau:"",members:[mkM("Rianne"),mkM("Renate"),mkM("Jolanda"),mkM("Judith"),mkM("Julia")]},
 ];
 
-const FT_MAX=8,BA_MAX=6;
-const KEYS={ftg:"fyziototaal_training_groups_v4",ftw:"fyziototaal_training_waitlist_v4",bag:"fyziototaal_balance_groups_v2",baw:"fyziototaal_balance_waitlist_v2"};
+/* Maximale groepsgrootte per onderdeel. Standaardwaarden; de echte waarden staan in de database
+   (sleutel KEYS.settings) en zijn in de tool zelf aan te passen via "Max. … per groep". */
+var SETTINGS={max:{ft:8,ba:8}};
+var MAX_LIMIT=30;
+function getMax(mod){var v=parseInt(SETTINGS.max&&SETTINGS.max[mod],10);return v>0?v:8;}
+const KEYS={settings:"fyziototaal_groepsbeheer_settings_v1",ftg:"fyziototaal_training_groups_v4",ftw:"fyziototaal_training_waitlist_v4",bag:"fyziototaal_balance_groups_v2",baw:"fyziototaal_balance_waitlist_v2"};
 
 function stamp(){return Date.now()+Math.random();}
 function dateStr(ts){return new Date(ts).toLocaleDateString("nl-NL",{day:"2-digit",month:"2-digit",year:"numeric"});}
@@ -446,6 +450,32 @@ window.addEventListener("beforeunload",function(e){
   if(hasUnsaved("ft")||hasUnsaved("ba")){e.preventDefault();e.returnValue="";}
 });
 
+async function loadSettings(){
+  try{
+    var v=await dbGet(KEYS.settings);
+    if(v){var o=JSON.parse(v);if(o&&o.max){SETTINGS.max.ft=parseInt(o.max.ft,10)||SETTINGS.max.ft;SETTINGS.max.ba=parseInt(o.max.ba,10)||SETTINGS.max.ba;}}
+  }catch(e){}
+  render();
+}
+async function saveSettings(mod){
+  STATE[mod].saveStatus="saving";updateSaveBadge(mod);
+  var ok=await dbSet(KEYS.settings,JSON.stringify(SETTINGS));
+  STATE[mod].saveStatus=ok?"":"error";updateSaveBadge(mod);
+  if(!ok)setTimeout(function(){saveSettings(mod);},5000);
+}
+function applyMax(mod){
+  var S=STATE[mod],n=parseInt(S.maxDraft,10);
+  if(!(n>=1&&n<=MAX_LIMIT)){alert("Vul een getal in tussen 1 en "+MAX_LIMIT+".");return;}
+  if(n===getMax(mod)){S.editMax=false;render();return;}
+  var over=(S.groups||[]).filter(function(g){return g.members.filter(function(m){return !m.stopped;}).length>n;})
+    .map(function(g){return g.day+" "+g.time;});
+  var naam=mod==="ft"?"Fyziotraining":"Balance";
+  var msg="Maximale groepsgrootte voor "+naam+" wijzigen van "+getMax(mod)+" naar "+n+"?\n\nDit geldt direct voor iedereen die de tool gebruikt.";
+  if(over.length)msg+="\n\nLet op: deze groepen hebben nu meer dan "+n+" deelnemers (incl. reserveringen) en tonen daarna 'Vol':\n• "+over.join("\n• ");
+  if(!confirm(msg))return;
+  SETTINGS.max[mod]=n;S.editMax=false;render();saveSettings(mod);
+}
+
 async function loadModule(mod,gKey,wKey,init){
   try{
     var gv=await dbGet(gKey);var wv=await dbGet(wKey);
@@ -532,6 +562,20 @@ function buildModule(mod,MAX,accent,accentLight){
   var statBar=el("div",{className:"stat-bar"});
   statBar.appendChild(el("span",{style:{fontSize:"13px",color:accent,fontWeight:"600"}},statText));
   var statBtns=el("div",{className:"stat-bar-btns",style:{display:"flex",alignItems:"center",gap:"8px"}});
+  if(S.editMax){
+    var mxInp=el("input",{type:"number",min:"1",max:String(MAX_LIMIT),value:String(S.maxDraft),style:inp({width:"64px",padding:"4px 8px",minHeight:"32px"}),
+      onInput:function(e){S.maxDraft=e.target.value;},
+      onKeydown:function(e){if(e.key==="Enter")applyMax(mod);if(e.key==="Escape"){S.editMax=false;render();}}});
+    statBtns.appendChild(el("span",{style:{display:"flex",alignItems:"center",gap:"5px",fontSize:"12px",color:accent,fontWeight:"600"}},[
+      "Max. per groep:",mxInp,
+      el("button",{className:"btn-primary",style:{padding:"3px 10px",borderRadius:"10px",fontSize:"12px",minHeight:"32px"},onClick:function(){applyMax(mod);}},"✓"),
+      el("button",{className:"btn-secondary",style:{padding:"3px 10px",borderRadius:"10px",fontSize:"12px",minHeight:"32px"},onClick:function(){S.editMax=false;render();}},"✕")
+    ]));
+    setTimeout(function(){mxInp.focus();mxInp.select();},0);
+  } else {
+    statBtns.appendChild(el("button",{title:"Maximale groepsgrootte aanpassen",style:{padding:"4px 12px",borderRadius:"999px",fontSize:"12px",fontWeight:"600",background:"#fff",color:accent,border:"1px solid "+accent,minHeight:"32px",whiteSpace:"nowrap"},
+      onClick:function(){S.editMax=true;S.maxDraft=getMax(mod);render();}},"👥 Max. "+MAX+" per groep ✏"));
+  }
   statBtns.appendChild(saveBtn);
   statBar.appendChild(statBtns);
   statBarWrap.appendChild(statBar);
@@ -906,12 +950,13 @@ function buildApp(){
   app.appendChild(hdr);
 
   var body=el("div",{style:{margin:"14px 12px 0",border:"1px solid "+G.border,borderRadius:"20px",overflow:"hidden",background:"#fff",boxShadow:SHADOW}});
-  if(STATE.mainTab==="ft")body.appendChild(buildModule("ft",FT_MAX,G.purple,G.purpleLight));
-  else body.appendChild(buildModule("ba",BA_MAX,G.blue,G.blueLight));
+  if(STATE.mainTab==="ft")body.appendChild(buildModule("ft",getMax("ft"),G.purple,G.purpleLight));
+  else body.appendChild(buildModule("ba",getMax("ba"),G.blue,G.blueLight));
   app.appendChild(body);
   return app;
 }
 
+loadSettings();
 loadModule("ft",KEYS.ftg,KEYS.ftw,FT_INIT);
 loadModule("ba",KEYS.bag,KEYS.baw,BA_INIT);
 </script>
