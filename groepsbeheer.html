@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-10-13.1 -->
+<!-- APP_VERSION: 2026-10-13.2 -->
 <html lang="nl">
 <head>
   <script>
     /* ── VERSIECHECK: altijd de nieuwste versie laden ──
        Verhoog APP_VERSION bij élke wijziging, zowel hier als in de HTML-comment bovenaan. */
-    var APP_VERSION = "2026-10-13.1";
+    var APP_VERSION = "2026-10-13.2";
     (function () {
       try {
         if (location.protocol === "file:") return;
@@ -339,6 +339,9 @@ const BA_INIT=[
    (sleutel KEYS.settings) en zijn in de tool zelf aan te passen via "Max. … per groep". */
 var SETTINGS={max:{ft:8,ba:8}};
 var MAX_LIMIT=30;
+/* Groepsmaximum: eigen maximum van de groep (g.maxOverride) als dat is ingesteld, anders het standaardmaximum van het onderdeel */
+function hasOverride(g){return parseInt(g&&g.maxOverride,10)>0;}
+function groupMax(g,def){return hasOverride(g)?parseInt(g.maxOverride,10):def;}
 function getMax(mod){var v=parseInt(SETTINGS.max&&SETTINGS.max[mod],10);return v>0?v:8;}
 const KEYS={settings:"fyziototaal_groepsbeheer_settings_v1",ftg:"fyziototaal_training_groups_v4",ftw:"fyziototaal_training_waitlist_v4",bag:"fyziototaal_balance_groups_v2",baw:"fyziototaal_balance_waitlist_v2"};
 
@@ -467,11 +470,13 @@ function applyMax(mod){
   var S=STATE[mod],n=parseInt(S.maxDraft,10);
   if(!(n>=1&&n<=MAX_LIMIT)){alert("Vul een getal in tussen 1 en "+MAX_LIMIT+".");return;}
   if(n===getMax(mod)){S.editMax=false;render();return;}
-  var over=(S.groups||[]).filter(function(g){return g.members.filter(function(m){return !m.stopped;}).length>n;})
+  var over=(S.groups||[]).filter(function(g){return !hasOverride(g)&&g.members.filter(function(m){return !m.stopped;}).length>n;})
     .map(function(g){return g.day+" "+g.time;});
   var naam=mod==="ft"?"Fyziotraining":"Balance";
   var msg="Maximale groepsgrootte voor "+naam+" wijzigen van "+getMax(mod)+" naar "+n+"?\n\nDit geldt direct voor iedereen die de tool gebruikt.";
   if(over.length)msg+="\n\nLet op: deze groepen hebben nu meer dan "+n+" deelnemers (incl. reserveringen) en tonen daarna 'Vol':\n• "+over.join("\n• ");
+  var eigen=(S.groups||[]).filter(hasOverride).map(function(g){return g.day+" "+g.time+" (max. "+g.maxOverride+")";});
+  if(eigen.length)msg+="\n\nDeze groepen hebben een eigen maximum en veranderen niet mee:\n• "+eigen.join("\n• ");
   if(!confirm(msg))return;
   SETTINGS.max[mod]=n;S.editMax=false;render();saveSettings(mod);
 }
@@ -530,10 +535,11 @@ function calcNotifs(groups,waitlist,MAX){
   for(var i=0;i<groups.length;i++){
     var g=groups[i],ac=0,sc=0,rc=0;
     for(var j=0;j<g.members.length;j++){var m=g.members[j];if(m.reserved)rc++;else if(m.stopped)sc++;else ac++;}
-    if(ac+rc<MAX){
+    var GM=groupMax(g,MAX);
+    if(ac+rc<GM){
       var matches=[];
       for(var k=0;k<waitlist.length;k++){var w=waitlist[k];if(w.availability&&w.availability[g.day]&&w.availability[g.day][g.time])matches.push(w.naam||"");}
-      if(matches.length>0){var pp=plekParts(ac,sc,rc,MAX);n.push({group:g.day+" "+g.time,matches:matches,plekInfo:plekLabel(ac,sc,rc,MAX),onlyTemp:pp.perm===0});}
+      if(matches.length>0){var pp=plekParts(ac,sc,rc,GM);n.push({group:g.day+" "+g.time,matches:matches,plekInfo:plekLabel(ac,sc,rc,GM),onlyTemp:pp.perm===0});}
     }
   }
   return n;
@@ -613,7 +619,7 @@ function buildModule(mod,MAX,accent,accentLight){
       var active=S.filterFree===val;
       fRow.appendChild(el("button",{style:{padding:"6px 14px",borderRadius:"16px",border:"1px solid "+(active?accent:G.border),background:active?accentLight:"#fff",color:active?accent:G.textMuted,fontSize:"12px",fontWeight:active?"600":"400",minHeight:"34px"},onClick:function(){S.filterFree=val;render();}},val?"Alleen met plek":"Alle groepen"));
     });
-    var freeCount=groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<MAX;}).length;
+    var freeCount=groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<groupMax(g,MAX);}).length;
     fRow.appendChild(el("span",{className:"filter-row-count"},freeCount+" / "+groups.length+" groepen hebben plek"));
     fRow.appendChild(el("button",{className:S.showAddGroup?"btn-secondary":"btn-primary",style:{padding:"6px 14px",borderRadius:"16px",fontSize:"12px",fontWeight:"600",minHeight:"34px"},onClick:function(){S.showAddGroup=!S.showAddGroup;render();}},S.showAddGroup?"Annuleren":"+ Groep"));
     gWrap.appendChild(fRow);
@@ -646,7 +652,7 @@ function buildModule(mod,MAX,accent,accentLight){
       gWrap.appendChild(agf);
     }
 
-    var displayed=S.filterFree?groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<MAX;}):groups;
+    var displayed=S.filterFree?groups.filter(function(g){var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;var rc=g.members.filter(function(m){return m.reserved;}).length;return ac+rc<groupMax(g,MAX);}):groups;
 
     var outerWrap=el("div",{className:"days-scroll-outer"});
     var scrollWrap=el("div",{className:"days-scroll-wrap"});
@@ -673,7 +679,8 @@ function buildModule(mod,MAX,accent,accentLight){
         var ac=g.members.filter(function(m){return !m.stopped&&!m.reserved;}).length;
         var sc=g.members.filter(function(m){return m.stopped;}).length;
         var rc=g.members.filter(function(m){return m.reserved;}).length;
-        var st=gStatus(ac,sc,rc,MAX);
+        var GM=groupMax(g,MAX);
+        var st=gStatus(ac,sc,rc,GM);
         var bc=st==="full"?G.grayBorder:st==="temp"?G.tempBorder:G.successGreen;
         var hbg=st==="full"?G.gray:st==="temp"?G.tempBg:G.successLight;
         var hb=st==="full"?G.grayBorder:st==="temp"?G.tempBorder:G.successBorder;
@@ -690,6 +697,7 @@ function buildModule(mod,MAX,accent,accentLight){
         var headLeft=el("div",{});
         headLeft.appendChild(el("div",{style:{fontSize:"16px",fontWeight:"700",color:tc,marginBottom:"1px"}},g.time));
         headLeft.appendChild(el("div",{style:{fontSize:"12px",color:G.textMuted}},g.colleague));
+        if(hasOverride(g))headLeft.appendChild(el("span",{title:"Deze groep heeft een eigen maximum (standaard is "+MAX+")",style:{display:"inline-block",marginTop:"3px",fontSize:"10px",fontWeight:"600",padding:"1px 7px",borderRadius:"8px",background:accentLight,color:accent,border:"1px solid "+accent}},"👥 Eigen max. "+GM));
         headRow.appendChild(headLeft);
         if(g.niveau){
           headRow.appendChild(el("div",{style:{fontSize:"10px",color:tc,fontWeight:"600",textAlign:"right",maxWidth:"55%",lineHeight:"1.3",wordBreak:"break-word",flexShrink:"0"}},g.niveau));
@@ -698,9 +706,9 @@ function buildModule(mod,MAX,accent,accentLight){
         card.appendChild(cardHead);
 
         var cardFoot=el("div",{className:"card-foot-tap",style:{background:"#fff"},onClick:function(){S.expandedGroup=open?null:g.id;S.expandedEdit=null;render();}});
-        cardFoot.appendChild(el("span",{style:{fontSize:"12px",fontWeight:"600",padding:"3px 8px",borderRadius:"10px",background:pb,color:pc}},ac+"/"+MAX+(rc>0?" (+"+rc+"📌)":"")));
+        cardFoot.appendChild(el("span",{style:{fontSize:"12px",fontWeight:"600",padding:"3px 8px",borderRadius:"10px",background:pb,color:pc}},ac+"/"+GM+(rc>0?" (+"+rc+"📌)":"")));
         var plekDiv=el("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"1px",flex:"1",marginLeft:"6px"}});
-        var pp=plekParts(ac,sc,rc,MAX);
+        var pp=plekParts(ac,sc,rc,GM);
         if(st==="full")plekDiv.appendChild(el("span",{style:{fontSize:"11px",color:G.grayText,fontWeight:"600"}},"Vol"));
         if(pp.perm>0)plekDiv.appendChild(el("span",{style:{fontSize:"11px",color:G.successGreen,fontWeight:"600",textAlign:"right"}},txtVast(pp.perm)));
         if(pp.tmp>0)plekDiv.appendChild(el("span",{title:"Vrij zolang "+(pp.tmp===1?"een deelnemer":"deelnemers")+" gepauzeerd "+(pp.tmp===1?"is":"zijn"),style:{fontSize:"11px",color:G.tempText,fontWeight:"600",textAlign:"right"}},"⏸ "+txtTijd(pp.tmp)));
@@ -716,9 +724,18 @@ function buildModule(mod,MAX,accent,accentLight){
             eDiv.appendChild(el("div",{style:lblStyle()},"Fysiotherapeut"));
             eDiv.appendChild(el("input",{style:inp({width:"100%",marginBottom:"6px"}),value:S.editColleague,onInput:function(e){S.editColleague=e.target.value;}}));
             eDiv.appendChild(el("div",{style:lblStyle()},"Niveau"));
-            var eRow=el("div",{style:{display:"flex",gap:"6px"}});
-            eRow.appendChild(el("input",{style:inp({flex:"1"}),value:S.editNiveau||"",onInput:function(e){S.editNiveau=e.target.value;}}));
-            eRow.appendChild(el("button",{className:"btn-primary",style:{padding:"7px 12px",borderRadius:"10px",fontSize:"13px",minHeight:"38px"},onClick:function(){g.colleague=S.editColleague;g.niveau=S.editNiveau;S.expandedEdit=null;render();}},"✓"));
+            eDiv.appendChild(el("input",{style:inp({width:"100%",marginBottom:"6px"}),value:S.editNiveau||"",onInput:function(e){S.editNiveau=e.target.value;}}));
+            eDiv.appendChild(el("div",{style:lblStyle()},"Max. deelnemers in deze groep"));
+            var eRow=el("div",{style:{display:"flex",gap:"6px",alignItems:"center"}});
+            eRow.appendChild(el("input",{type:"number",min:"1",max:String(MAX_LIMIT),style:inp({width:"90px"}),placeholder:String(MAX),value:S.editMaxG||"",onInput:function(e){S.editMaxG=e.target.value;}}));
+            eRow.appendChild(el("span",{style:{fontSize:"11px",color:G.textMuted,flex:"1",lineHeight:"1.3"}},"Leeg = standaard ("+MAX+")"));
+            eRow.appendChild(el("button",{className:"btn-primary",style:{padding:"7px 12px",borderRadius:"10px",fontSize:"13px",minHeight:"38px"},onClick:function(){
+              var raw=String(S.editMaxG||"").trim(),n=parseInt(raw,10);
+              if(raw!==""&&!(n>=1&&n<=MAX_LIMIT)){alert("Vul bij max. deelnemers een getal in tussen 1 en "+MAX_LIMIT+", of laat het leeg voor de standaard ("+MAX+").");return;}
+              g.colleague=S.editColleague;g.niveau=S.editNiveau;
+              if(raw===""||n===MAX)delete g.maxOverride;else g.maxOverride=n;
+              S.expandedEdit=null;render();
+            }},"✓"));
             eRow.appendChild(el("button",{style:{background:"none",border:"none",cursor:"pointer",color:G.red,fontSize:"18px",minHeight:"38px"},onClick:function(){S.expandedEdit=null;render();}},"✕"));
             eDiv.appendChild(eRow);
             panel.appendChild(eDiv);
@@ -726,7 +743,7 @@ function buildModule(mod,MAX,accent,accentLight){
             var hRow=el("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}});
             hRow.appendChild(el("span",{style:{fontSize:"10px",color:G.textMuted,fontWeight:"600",letterSpacing:".5px"}},"DEELNEMERS"));
             var btnRow=el("div",{style:{display:"flex",gap:"6px"}});
-            btnRow.appendChild(el("button",{style:{fontSize:"12px",padding:"4px 10px",background:accentLight,color:accent,border:"1px solid "+accent,borderRadius:"10px",minHeight:"32px",fontWeight:"600"},onClick:function(){S.expandedEdit=g.id;S.editColleague=g.colleague;S.editNiveau=g.niveau||"";render();}},"✏ Bewerk"));
+            btnRow.appendChild(el("button",{style:{fontSize:"12px",padding:"4px 10px",background:accentLight,color:accent,border:"1px solid "+accent,borderRadius:"10px",minHeight:"32px",fontWeight:"600"},onClick:function(){S.expandedEdit=g.id;S.editColleague=g.colleague;S.editNiveau=g.niveau||"";S.editMaxG=hasOverride(g)?String(g.maxOverride):"";render();}},"✏ Bewerk"));
             btnRow.appendChild(el("button",{style:{fontSize:"12px",padding:"4px 8px",background:G.redLight,color:G.red,border:"1px solid "+G.red,borderRadius:"10px",minHeight:"32px"},onClick:function(){if(confirm("Groep verwijderen?")){STATE[mod].groups=sortG(groups.filter(function(x){return x.id!==g.id;}));S.expandedGroup=null;render();}}},"🗑"));
             hRow.appendChild(btnRow);
             panel.appendChild(hRow);
@@ -777,7 +794,7 @@ function buildModule(mod,MAX,accent,accentLight){
             }
           });
 
-          if(ac+rc<MAX){
+          if(ac+rc<GM){
             var addWrap=el("div",{style:{marginTop:"10px",borderTop:"1px solid "+G.border,paddingTop:"10px"}});
             var rf=S.reserveForm[g.id]||{naam:"",from:""};
 
