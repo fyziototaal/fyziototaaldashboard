@@ -1,0 +1,1226 @@
+<!-- APP_VERSION: 2026-10-13.1 -->
+<!doctype html>
+<html lang="nl">
+<head>
+<script>
+  // ===== Versiecheck — moet het allereerste script blijven =====
+  // VERHOOG APP_VERSION BIJ ELKE WIJZIGING, op beide plekken: de comment op regel 1 én deze constante.
+  const APP_VERSION = "2026-10-13.1";
+  (function(){
+    function check(){
+      fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
+        .then(function(r){ return r.ok ? r.text() : null; })
+        .then(function(html){
+          if(!html) return;
+          var m = html.match(/<!--\s*APP_VERSION:\s*([^\s]+)\s*-->/);
+          if(!m || m[1] === APP_VERSION) return;
+          // Maximaal één automatische herlaad per nieuwe versie, zodat er nooit een lus ontstaat.
+          var key = "bb_reload_" + m[1], done = false;
+          try{ done = sessionStorage.getItem(key) === "1"; }catch(e){ done = new URLSearchParams(location.search).has("_v"); }
+          if(done){ console.warn("Versiecheck: live " + m[1] + ", geladen " + APP_VERSION + " — niet opnieuw herladen."); return; }
+          // Niet herladen terwijl iemand aan het uploaden/bewerken is: dan eerst een melding.
+          if(window.bbCanReload && !window.bbCanReload()){ if(window.bbShowUpdate) window.bbShowUpdate(m[1]); return; }
+          try{ sessionStorage.setItem(key, "1"); }catch(e){}
+          location.replace(location.pathname + "?_v=" + Date.now() + location.hash);
+        })
+        .catch(function(){ /* offline of fout: doorgaan met de geladen versie */ });
+    }
+    check();
+    // Tabbladen blijven vaak dagen open: opnieuw checken zodra de tool weer in beeld komt.
+    document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") check(); });
+  })();
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Bibliotheek — Fyzio Totaal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3eef2; --surface:#fff; --surface-2:#f8f3f7; --text:#2A1626; --muted:#7A6478; --border:#e2d5df;
+    --accent:#82176D; --accent-soft:#f3e3ef; --cyan:#00B6E8; --cyan-strong:#00728e; --cyan-soft:#dcf4fb;
+    --good:#2E8B57; --good-soft:#E5F4EB; --warn:#B4711F; --warn-soft:#FBEEDE; --bad:#B8433A; --bad-soft:#FBE7E5;
+    --shadow:0 2px 14px rgba(130,23,109,0.08); --shadow-lg:0 8px 30px rgba(130,23,109,0.16);
+    --header-gradient:linear-gradient(120deg,#4a0f42 0%,#82176D 45%,#a8368f 100%);
+    --btn-gradient:linear-gradient(135deg,#82176D 0%,#a8368f 100%);
+    --btn-gradient-hover:linear-gradient(135deg,#6b1259 0%,#8f2d78 100%);
+    --mark:#fde9a8;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1220; --surface:#241A29; --surface-2:#2C1F31; --text:#F3EAF1; --muted:#B79CB3; --border:#3C2C3A;
+      --accent:#d063b6; --accent-soft:#3A2438; --cyan:#3FD1F0; --cyan-strong:#7FE3F7; --cyan-soft:#123B44;
+      --good:#7BCB98; --good-soft:#183625; --warn:#E0A85C; --warn-soft:#332615; --bad:#E58E86; --bad-soft:#3A1E1B;
+      --shadow:0 2px 14px rgba(0,0,0,0.35); --shadow-lg:0 8px 30px rgba(0,0,0,0.5); --mark:#6b5418;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B1220; --surface:#241A29; --surface-2:#2C1F31; --text:#F3EAF1; --muted:#B79CB3; --border:#3C2C3A;
+    --accent:#d063b6; --accent-soft:#3A2438; --cyan:#3FD1F0; --cyan-strong:#7FE3F7; --cyan-soft:#123B44;
+    --good:#7BCB98; --good-soft:#183625; --warn:#E0A85C; --warn-soft:#332615; --bad:#E58E86; --bad-soft:#3A1E1B;
+    --shadow:0 2px 14px rgba(0,0,0,0.35); --shadow-lg:0 8px 30px rgba(0,0,0,0.5); --mark:#6b5418;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--text);font-family:'Poppins','Segoe UI',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  #root{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+  h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+  button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+  .num{font-variant-numeric:tabular-nums}
+  mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+  [hidden]{display:none !important}
+
+  /* Header */
+  header.top{position:sticky;top:0;z-index:30;background:var(--header-gradient);border-bottom:4px solid var(--cyan);color:#fff}
+  .top-inner{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .logo-ring{width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:13px;color:#82176D}
+  .brand h1{font-size:17px;color:#fff;line-height:1.2}
+  .brand small{display:block;color:rgba(255,255,255,.75);font-size:12px;font-weight:500}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#fff}
+  .top-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .hbtn{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer;min-height:38px;white-space:nowrap}
+  .hbtn:hover{background:rgba(255,255,255,.24)}
+  .hbtn.solid{background:#fff;color:#82176D;border-color:#fff}
+  .hbtn.solid:hover{background:#f3e3ef}
+
+  main{flex:1 0 auto;width:100%;max-width:1180px;margin:0 auto;padding:22px 16px 60px}
+  footer.app-footer{background:#4a0f42;color:rgba(255,255,255,.5);text-align:center;padding:16px;font-size:12.5px}
+  footer.app-footer strong{color:rgba(255,255,255,.85)}
+
+  /* Hero + zoeken */
+  .hero{background:var(--header-gradient);border-radius:24px;color:#fff;padding:26px 24px 22px;position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
+  .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;border:30px solid rgba(0,182,232,.18);pointer-events:none}
+  .hero h2{font-size:24px;margin-bottom:4px}
+  .hero p{margin:0;color:rgba(255,255,255,.82);max-width:620px}
+  .searchbox{position:relative;margin-top:16px;max-width:760px;z-index:1}
+  .searchbox input{width:100%;border:none;border-radius:16px;padding:14px 44px 14px 46px;font-size:15.5px;font-weight:500;background:#fff;color:#2A1626;box-shadow:0 6px 24px rgba(42,22,38,.25);outline:none;min-height:52px}
+  .searchbox input:focus{box-shadow:0 0 0 4px rgba(0,182,232,.45),0 6px 24px rgba(42,22,38,.25)}
+  .searchbox input::-webkit-search-cancel-button{display:none;-webkit-appearance:none}
+  .searchbox .ico{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:17px;opacity:.6;color:#2A1626}
+  .searchbox .clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:#f3e3ef;border:none;color:#82176D;border-radius:10px;width:32px;height:32px;cursor:pointer;font-size:15px;font-weight:700}
+  .hero .hint{font-size:12px;color:rgba(255,255,255,.7);margin-top:8px;position:relative;z-index:1}
+
+  /* Layout */
+  .lib{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;margin-top:18px;align-items:start}
+  .lib > *{min-width:0}
+  aside.side{position:sticky;top:84px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:14px 10px}
+  .side h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:8px 10px 4px}
+  .navlist{display:flex;flex-direction:column;gap:2px}
+  .nav{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;border-radius:11px;padding:8px 10px;cursor:pointer;font-weight:500;color:var(--text);min-height:38px}
+  .nav:hover{background:var(--surface-2)}
+  .nav.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .nav .ic{width:20px;text-align:center;flex-shrink:0}
+  .nav .lb{flex:1;min-width:0}
+  .nav .ct{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--surface-2);border-radius:99px;padding:0 8px;min-width:24px;text-align:center}
+  .nav.active .ct{background:var(--surface);color:var(--accent)}
+  .nav.warnnav .ct{background:var(--warn-soft);color:var(--warn)}
+  .side hr{border:none;border-top:1px solid var(--border);margin:8px 6px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;padding:4px 8px}
+  .chip{border:1px solid var(--border);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);white-space:nowrap;min-height:32px}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+  /* Resultaten */
+  .reshead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .reshead h2{font-size:18px}
+  .reshead .cnt{color:var(--muted);font-weight:500;font-size:13px}
+  .spacer{flex:1}
+  .sortsel{border:1px solid var(--border);background:var(--surface);border-radius:11px;padding:7px 10px;font-weight:500;min-height:38px;color:var(--text)}
+  .active-filters{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
+  .fchip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);border:none;border-radius:99px;padding:4px 6px 4px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .fchip span{background:var(--surface);border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+
+  .doclist{display:flex;flex-direction:column;gap:10px}
+  .doc{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:14px 16px;display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:start;border:1px solid transparent;transition:border-color .15s}
+  .doc:hover{border-color:var(--border)}
+  .doc.flash{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .ftype{width:48px;height:56px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;letter-spacing:.04em;background:var(--accent-soft);color:var(--accent);position:relative}
+  .ftype .fi{font-size:20px;line-height:1;margin-bottom:3px}
+  .ftype.doc-w{background:var(--cyan-soft);color:var(--cyan-strong)}
+  .ftype.other{background:var(--surface-2);color:var(--muted)}
+  .dtitle{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .dtitle button{background:none;border:none;padding:0;text-align:left;cursor:pointer;font-weight:700;font-size:15px;color:var(--text);line-height:1.35}
+  .dtitle button:hover{color:var(--accent);text-decoration:underline}
+  .dtags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .tag.purple{background:var(--accent-soft);color:var(--accent)}
+  .tag.blue{background:var(--cyan-soft);color:var(--cyan-strong)}
+  .tag.grey{background:var(--surface-2);color:var(--muted)}
+  button.tag{border:none;cursor:pointer}
+  button.tag:hover{filter:brightness(.95);text-decoration:underline}
+  .badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:7px;font-size:11px;font-weight:700;white-space:nowrap}
+  .badge.good{background:var(--good-soft);color:var(--good)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--bad-soft);color:var(--bad)}
+  .badge.neutral{background:var(--cyan-soft);color:var(--cyan-strong)}
+  .ddesc{margin:6px 0 0;color:var(--text);opacity:.85;font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .snip{margin:6px 0 0;font-size:12.5px;color:var(--muted);background:var(--surface-2);border-radius:10px;padding:6px 10px;border-left:3px solid var(--cyan)}
+  .snip b{color:var(--cyan-strong);font-weight:600}
+  .dmeta{margin-top:6px;font-size:12px;color:var(--muted)}
+  .dact{display:flex;gap:6px;align-items:center}
+  .star{background:none;border:1px solid var(--border);border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:17px;color:var(--muted);display:inline-flex;align-items:center;justify-content:center}
+  .star:hover{border-color:var(--accent)}
+  .star.on{color:#E0A100;border-color:#f1d27a;background:#fff8e0}
+
+  /* Knoppen */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:8px 14px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);min-height:38px;transition:background .15s,box-shadow .15s,transform .05s;white-space:nowrap;text-decoration:none;font-size:13.5px}
+  .btn:hover{background:var(--surface-2)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--btn-gradient);color:#fff;border:none;box-shadow:0 2px 8px rgba(130,23,109,.25)}
+  .btn.primary:hover{background:var(--btn-gradient-hover);box-shadow:0 4px 14px rgba(130,23,109,.32)}
+  .btn.primary:focus-visible{outline:none;box-shadow:0 0 0 4px var(--accent-soft)}
+  .btn.danger{color:var(--bad)}
+  .btn.danger:hover{background:var(--bad-soft)}
+  .btn.small{padding:5px 10px;min-height:32px;font-size:12.5px;border-radius:10px}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .linkbtn{background:none;border:none;color:var(--accent);font-weight:600;cursor:pointer;padding:4px 2px}
+  .linkbtn:hover{text-decoration:underline}
+
+  /* Lege staat / setup */
+  .empty{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:34px 24px;text-align:center;color:var(--muted)}
+  .empty .big{font-size:38px;margin-bottom:6px}
+  .empty h3{color:var(--text);font-size:16px;margin-bottom:4px}
+  .card{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:20px}
+  pre.sql{background:#2A1626;color:#f3e3ef;border-radius:14px;padding:14px;overflow:auto;font-size:12px;max-height:360px;text-align:left}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(42,22,38,.55);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:36px 12px;overflow-y:auto}
+  .modal{background:var(--surface);border-radius:22px;box-shadow:var(--shadow-lg);width:100%;max-width:640px;padding:22px;position:relative}
+  .modal.wide{max-width:900px}
+  .modal.viewer{max-width:1100px;padding:0;overflow:hidden}
+  .modal h2{font-size:18px;margin-bottom:4px;padding-right:36px}
+  .modal .x{position:absolute;right:12px;top:12px;background:var(--surface-2);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;font-size:16px;color:var(--muted);z-index:2}
+  .modal .x:hover{color:var(--text)}
+  .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;align-items:center}
+  .seg{display:inline-flex;background:var(--surface-2);border-radius:12px;padding:3px;gap:2px;margin:10px 0 4px}
+  .seg button{border:none;background:none;border-radius:10px;padding:7px 14px;font-weight:600;color:var(--muted);cursor:pointer;min-height:36px}
+  .seg button.on{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+  .notice{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:9px 12px;font-size:12.5px;font-weight:500;margin-top:10px}
+  .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px dashed var(--border);border-radius:18px;padding:26px 16px;text-align:center;cursor:pointer;margin-top:12px;color:var(--muted);transition:all .15s}
+  .drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .drop .big{font-size:30px}
+  .drop b{color:var(--text)}
+  .items{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .item{border:1px solid var(--border);border-radius:16px;padding:14px}
+  .item-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+  .item-head .fn{font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+  .rm{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;border-radius:8px;width:30px;height:30px}
+  .rm:hover{background:var(--bad-soft);color:var(--bad)}
+  label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+  label.f .opt{font-weight:400}
+  .inp,select.inp,textarea.inp{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:9px 12px;min-height:40px;font-weight:500;color:var(--text);width:100%;outline:none;transition:border-color .15s,box-shadow .15s}
+  .inp:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  textarea.inp{min-height:62px;resize:vertical}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .fgrid .full{grid-column:1/-1}
+  .rchips{display:flex;gap:5px;flex-wrap:wrap}
+  .rchips .chip{font-size:12px;padding:4px 10px;min-height:30px}
+
+  /* Viewer */
+  .vhead{display:flex;align-items:flex-start;gap:12px;padding:18px 64px 14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .vhead .ttl{flex:1;min-width:220px}
+  .vhead h2{padding-right:0}
+  .vbar{display:flex;gap:6px;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  .vbody{background:var(--surface-2)}
+  .vbody iframe{display:block;width:100%;height:76vh;border:none;background:#fff}
+  .vbody img{display:block;max-width:100%;margin:0 auto;padding:16px}
+  .docview{background:#fff;color:#222;max-width:820px;margin:16px auto;padding:36px 44px;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.08);font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:14px;line-height:1.5}
+  .docview table{border-collapse:collapse;margin:8px 0}
+  .docview td,.docview th{border:1px solid #ccc;padding:4px 8px;vertical-align:top}
+  .docview p{margin:0 0 6px}
+  .docview img{max-width:100%}
+  .vinfo{padding:28px 24px;text-align:center;color:var(--muted)}
+  .vmeta{padding:12px 20px 16px;font-size:12.5px;color:var(--muted);display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 16px;border-top:1px solid var(--border)}
+  .vmeta b{color:var(--text);font-weight:600}
+
+  /* Toast / update / overlay */
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#2A1626;color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .2s;z-index:300;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{background:#B8433A}
+  #updbar{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:#2A1626;color:#fff;border-radius:14px;padding:8px 8px 8px 16px;display:flex;gap:10px;align-items:center;z-index:250;box-shadow:var(--shadow-lg);font-size:13px}
+  #dropall{position:fixed;inset:0;z-index:400;background:rgba(130,23,109,.82);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:20px;font-weight:700;pointer-events:none;border:6px dashed rgba(255,255,255,.6)}
+  #dropall .big{font-size:56px}
+  .spinner{display:inline-block;width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .skel{height:84px;border-radius:18px;background:linear-gradient(90deg,var(--surface) 0%,var(--surface-2) 50%,var(--surface) 100%);background-size:200% 100%;animation:sk 1.2s infinite}
+  @keyframes sk{to{background-position:-200% 0}}
+
+  /* Mobiel */
+  .only-mobile{display:none}
+  @media(max-width:900px){
+    .lib{grid-template-columns:1fr;gap:12px}
+    aside.side{position:static;padding:8px 0;border-radius:16px;background:transparent;box-shadow:none}
+    .side h3{display:none}
+    .side hr{display:none}
+    .navlist{flex-direction:row;overflow-x:auto;gap:6px;padding:2px 0 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .navlist::-webkit-scrollbar{display:none}
+    .nav{width:auto;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:6px 12px;min-height:36px;font-size:13px}
+    .nav .lb{white-space:nowrap}
+    .nav.active{border-color:var(--accent)}
+    .side .chips{flex-wrap:nowrap;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+    .side .chips::-webkit-scrollbar{display:none}
+    .side .navlist + .navlist{margin-top:2px}
+  }
+  @media(max-width:600px){
+    main{padding:12px 12px 40px}
+    .hero{padding:20px 16px 16px;border-radius:20px}
+    .hero h2{font-size:20px}
+    .hero p{font-size:13px}
+    .pill,.hbtn .lbl{display:none}
+    .inp,select.inp,textarea.inp,.searchbox input{font-size:16px}
+    .doc{grid-template-columns:40px minmax(0,1fr);padding:12px;gap:10px}
+    .ftype{width:40px;height:48px;font-size:9.5px}
+    .ftype .fi{font-size:16px}
+    .dact{grid-column:1/-1;justify-content:flex-end}
+    .fgrid{grid-template-columns:1fr}
+    .modal-bg{padding:0;align-items:stretch}
+    .modal{border-radius:0;min-height:100%;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+    .modal.viewer{padding:0}
+    .vbody iframe{height:calc(100dvh - 210px)}
+    .docview{padding:20px 16px;margin:8px}
+    .only-mobile{display:inline-flex}
+    #updbar{top:auto;bottom:20px}
+  }
+  @media print{header.top,footer,aside,.hero{display:none}}
+</style>
+</head>
+<body>
+<div id="root">
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand">
+        <span class="logo-ring">F</span>
+        <div><h1>Bibliotheek</h1><small>Fyzio Totaal</small></div>
+      </div>
+      <span class="pill">🔒 Intern</span>
+      <div class="top-actions">
+        <button class="hbtn" data-act="naam" id="btn-naam" title="Wie ben je?">👤 <span class="lbl" id="naam-lbl">Kies je naam</span></button>
+        <button class="hbtn solid" data-act="add">＋ <span class="lbl">Toevoegen</span></button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <h2>Bibliotheek</h2>
+      <p>Protocollen, formats voor rapportages, invuldocumenten en patiëntinformatie van het hele team, op één plek.</p>
+      <div class="searchbox">
+        <span class="ico">🔍</span>
+        <input id="q" type="search" autocomplete="off" placeholder="Zoek op titel, trefwoord of tekst in het document…" aria-label="Zoeken in de bibliotheek">
+        <button class="clear" data-act="clearq" id="clearq" hidden aria-label="Zoekopdracht wissen">✕</button>
+      </div>
+      <div class="hint">Zoekt ook in de tekst van PDF- en Word-bestanden. Tip: druk op <b>/</b> om direct te zoeken.</div>
+    </section>
+    <div class="lib">
+      <aside class="side" id="side"></aside>
+      <section id="results"><div class="doclist"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></section>
+    </div>
+  </main>
+  <footer class="app-footer"><strong>Fyzio Totaal</strong> · Bibliotheek · versie <span class="num" id="app-version"></span></footer>
+</div>
+<div id="modal-root"></div>
+<div id="toast"></div>
+<div id="updbar" hidden><span>Er is een nieuwe versie van de bibliotheek.</span><button class="btn small primary" data-act="reload">Vernieuwen</button></div>
+<div id="dropall" hidden><div class="big">📥</div>Laat los om toe te voegen aan de bibliotheek</div>
+
+<script>
+/* =====================================================================
+   INSTELLINGEN
+   ===================================================================== */
+const SB_URL = 'https://szunargvsmtzbbnmnghc.supabase.co';
+const SB_KEY = 'sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5';
+const TABLE  = 'fyzio_bibliotheek';
+const BUCKET = 'bibliotheek';
+const MAX_MB = 50;                 // Supabase-limiet per bestand
+const MAX_TEXT = 60000;            // max. aantal tekens doorzoekbare inhoud per document
+const PRULLENBAK_DAGEN = 30;
+const NIEUW_DAGEN = 14;
+const TEAM = ['Ellen','Jan Willem','Jesper','Julia','Lars','Laura','Lonneke','Lynn','Matthijs','Mayke','Nikita','Rob','Thomas'];
+
+const CATS = [
+  {id:'protocol',   label:'Protocollen & richtlijnen',        icon:'📋'},
+  {id:'rapportage', label:'Rapportages & brieven',            icon:'✉️'},
+  {id:'formulier',  label:'Invuldocumenten & formulieren',    icon:'📝'},
+  {id:'meet',       label:'Meetinstrumenten & vragenlijsten', icon:'📏'},
+  {id:'patient',    label:'Patiëntinformatie',                icon:'💬'},
+  {id:'oefen',      label:'Oefenprogramma\'s',                icon:'🏋️'},
+  {id:'praktijk',   label:'Werkafspraken & praktijk',         icon:'🏥'},
+  {id:'scholing',   label:'Scholing & literatuur',            icon:'📚'},
+  {id:'overig',     label:'Overig',                           icon:'📁'}
+];
+const REGIOS = ['Schouder','Elleboog/pols/hand','Nek','Rug','Heup','Knie','Enkel/voet','Algemeen'];
+
+// Synoniemen: zoeken op het ene woord vindt ook documenten met het andere
+const SYN = [
+  ['vkb','voorste kruisband','kruisband','acl'],
+  ['akb','achterste kruisband','pcl'],
+  ['thp','heupprothese','totale heup'],
+  ['tkp','knieprothese','totale knie'],
+  ['brief','rapportage','terugkoppeling','verslag','terugrapportage'],
+  ['formulier','invuldocument','format','sjabloon','template'],
+  ['folder','patientinformatie','leaflet','patientenfolder'],
+  ['vragenlijst','questionnaire','prom'],
+  ['oefeningen','oefenprogramma','huiswerk','oefenschema'],
+  ['orthopeed','orthopedie','specialist'],
+  ['postoperatief','postop','na operatie'],
+  ['richtlijn','protocol','kngf']
+];
+
+/* =====================================================================
+   HULPFUNCTIES
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const catOf = id => CATS.find(c => c.id === id) || CATS[CATS.length - 1];
+const daysAgo = iso => iso ? (Date.now() - new Date(iso).getTime()) / 86400000 : 9999;
+function fmtDate(iso){ if(!iso) return ''; const d = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso); return d.toLocaleDateString('nl-NL', {day:'numeric', month:'short', year:'numeric'}); }
+function fmtSize(b){ if(!b) return ''; if(b < 1024*1024) return Math.max(1, Math.round(b/1024)) + ' kB'; return (b/1024/1024).toFixed(1).replace('.', ',') + ' MB'; }
+function today(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function uuid(){ if(crypto.randomUUID) return crypto.randomUUID(); return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c === 'x' ? r : (r&3|8)).toString(16); }); }
+function toast(msg, err){ const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(t._h); t._h = setTimeout(() => t.className = '', err ? 6000 : 2600); }
+function lsGet(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function ext(name){ const m = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/); return m ? m[1] : ''; }
+function kind(d){
+  if(d.soort === 'link') return 'link';
+  const e = ext(d.bestandsnaam), m = d.mime || '';
+  if(e === 'pdf' || m === 'application/pdf') return 'pdf';
+  if(e === 'docx') return 'docx';
+  if(e === 'doc') return 'doc';
+  if(['xlsx','xls','csv'].includes(e)) return 'xls';
+  if(['pptx','ppt'].includes(e)) return 'ppt';
+  if(/^image\//.test(m) || ['png','jpg','jpeg','gif','webp','svg'].includes(e)) return 'img';
+  if(['txt','md'].includes(e)) return 'txt';
+  if(/^video\//.test(m) || ['mp4','mov','webm'].includes(e)) return 'video';
+  return 'other';
+}
+const KIND_UI = {
+  pdf:{lb:'PDF', fi:'📄', cls:''}, docx:{lb:'WORD', fi:'📃', cls:'doc-w'}, doc:{lb:'WORD', fi:'📃', cls:'doc-w'},
+  xls:{lb:'EXCEL', fi:'📊', cls:'other'}, ppt:{lb:'PPT', fi:'📽️', cls:'other'}, img:{lb:'AFB.', fi:'🖼️', cls:'doc-w'},
+  txt:{lb:'TEKST', fi:'🗒️', cls:'other'}, video:{lb:'VIDEO', fi:'🎬', cls:'other'}, link:{lb:'LINK', fi:'🔗', cls:'doc-w'}, other:{lb:'BEST.', fi:'📎', cls:'other'}
+};
+function copyText(txt, okMsg){
+  const done = () => toast(okMsg || 'Gekopieerd');
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(txt).then(done, () => fallback()); }
+  else fallback();
+  function fallback(){ const ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(e){ toast('Kopiëren lukte niet', true); } ta.remove(); }
+}
+const _scripts = {};
+function loadScript(src){
+  // Eén promise per script, zodat gelijktijdige aanroepen wachten tot het script écht geladen is
+  if(!_scripts[src]) _scripts[src] = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => { delete _scripts[src]; s.remove(); rej(new Error('Kon ' + src + ' niet laden')); };
+    document.head.appendChild(s);
+  });
+  return _scripts[src];
+}
+
+/* ---- Supabase (REST + Storage) ---- */
+function sbHeaders(extra){ return Object.assign({apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY}, extra || {}); }
+async function sb(path, opt = {}){
+  const headers = sbHeaders({'Content-Type':'application/json'});
+  if(opt.prefer) headers.Prefer = opt.prefer;
+  const r = await fetch(SB_URL + '/rest/v1/' + path, {method:opt.method || 'GET', headers, body:opt.body ? JSON.stringify(opt.body) : undefined, cache:'no-store'});
+  if(!r.ok){ const t = await r.text(); const e = new Error(r.status + ' ' + t); e.status = r.status; e.body = t; throw e; }
+  if(r.status === 204) return null;
+  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
+}
+function isMissingTable(e){ return e && (e.status === 404 || /PGRST205|42P01|does not exist|Could not find the table/i.test(e.body || e.message || '')); }
+const encPath = p => p.split('/').map(encodeURIComponent).join('/');
+const publicUrl = d => d.soort === 'link' ? d.url : SB_URL + '/storage/v1/object/public/' + BUCKET + '/' + encPath(d.pad);
+const downloadUrl = d => publicUrl(d) + '?download=' + encodeURIComponent(d.bestandsnaam || 'bestand');
+async function storageUpload(path, file){
+  const r = await fetch(SB_URL + '/storage/v1/object/' + BUCKET + '/' + encPath(path), {
+    method:'POST', headers:sbHeaders({'Content-Type':file.type || 'application/octet-stream', 'x-upsert':'true', 'cache-control':'3600'}), body:file
+  });
+  if(!r.ok){
+    const t = await r.text();
+    if(/bucket not found/i.test(t)) throw new Error('De opslagmap "' + BUCKET + '" bestaat nog niet in Supabase (zie de installatie-SQL).');
+    if(/row-level security|unauthorized|403/i.test(t) || r.status === 403) throw new Error('Supabase staat uploaden nog niet toe (opslag-policies ontbreken, zie de installatie-SQL).');
+    if(r.status === 413 || /too large|exceeded/i.test(t)) throw new Error('Bestand is te groot voor Supabase (max. ' + MAX_MB + ' MB).');
+    throw new Error('Upload mislukt (' + r.status + '): ' + t.slice(0, 160));
+  }
+}
+async function storageRemove(paths){
+  paths = paths.filter(Boolean); if(!paths.length) return;
+  try{ await fetch(SB_URL + '/storage/v1/object/' + BUCKET, {method:'DELETE', headers:sbHeaders({'Content-Type':'application/json'}), body:JSON.stringify({prefixes:paths})}); }
+  catch(e){ console.warn('Opslag opruimen mislukt', e); }
+}
+const COLS = 'id,titel,omschrijving,categorie,regio,tags,soort,bestandsnaam,pad,mime,grootte,url,bron,controle_datum,toegevoegd_door,bijgewerkt_door,aantal_geopend,created_at,updated_at,verwijderd_op';
+
+/* ---- Tekst uit bestanden halen (voor zoeken in de inhoud) ---- */
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const MAMMOTH = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+const cleanText = t => String(t || '').replace(/\u0000/g, '').replace(/[ \t ]+/g, ' ').replace(/\s*\n\s*/g, '\n').replace(/\n{2,}/g, '\n').trim().slice(0, MAX_TEXT);
+async function extractText(file){
+  const e = ext(file.name);
+  try{
+    if(e === 'pdf' || file.type === 'application/pdf'){
+      await loadScript(PDFJS);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+      const pdf = await window.pdfjsLib.getDocument({data: await file.arrayBuffer()}).promise;
+      let out = '';
+      for(let i = 1; i <= Math.min(pdf.numPages, 60) && out.length < MAX_TEXT; i++){
+        const tc = await (await pdf.getPage(i)).getTextContent();
+        out += tc.items.map(it => it.str + (it.hasEOL ? '\n' : ' ')).join('') + '\n';
+      }
+      return cleanText(out);
+    }
+    if(e === 'docx'){
+      await loadScript(MAMMOTH);
+      const r = await window.mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()});
+      return cleanText(r.value);
+    }
+    if(['txt','md','csv'].includes(e)) return cleanText(await file.text());
+  }catch(err){ console.warn('Tekst lezen mislukt voor', file.name, err); }
+  return '';
+}
+
+/* ---- Slimme suggesties bij uploaden ---- */
+function suggestTitle(name){
+  let t = String(name).replace(/\.[a-z0-9]+$/i, '');
+  t = t.replace(/^[0-9a-f]{8}-(?=\S)/i, '');            // prefix zoals "e119ffe3-"
+  t = t.replace(/[_-][0-9a-f]{8,}$/i, '');                // hash-staart zoals "_6569f934dc"
+  t = t.replace(/(_\d|\s\(\d\))$/, '');                    // "_1" of " (1)" van een kopie
+  t = t.replace(/(\d)_(\d)/g, '$1-$2').replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if(!/\s/.test(t)) t = t.replace(/-/g, (m, i) => /\d/.test(t[i-1] || '') && /\d/.test(t[i+1] || '') ? '-' : ' ');
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+const CAT_RULES = [
+  ['rapportage', /terugkoppel|rapportage|verslag|\bbrief|verwijzer|terugrapport|aan de huisarts|aan de orthopeed|geachte collega/],
+  ['formulier',  /invuldocument|invulformulier|formulier|checklist|screening|intakeformulier/],
+  ['protocol',   /protocol|richtlijn|revalidatieschema|nabehandeling/],
+  ['meet',       /vragenlijst|questionnaire|meetinstrument|\bkoos\b|\bhoos\b|\bpsk\b|\bnprs\b|\bspadi\b|\bndi\b|\bodi\b|\bacl-rsi\b/],
+  ['oefen',      /oefening|oefenprogramma|oefenschema|huiswerk/],
+  ['patient',    /folder|leaflet|patienteninformatie|patientinformatie|informatie voor patient/],
+  ['praktijk',   /werkinstructie|werkafspra|beleid|procedure|praktijkafspra/],
+  ['scholing',   /artikel|literatuur|scholing|cursus|presentatie|review/]
+];
+const REG_RULES = [
+  ['Knie', /\bknie|vkb|kruisband|\bacl\b|menisc|patella|\btkp\b/g],
+  ['Heup', /\bheup|\bthp\b|coxartr|liesklacht/g],
+  ['Enkel/voet', /\benkel|\bvoet|achilles|fasciitis/g],
+  ['Schouder', /schouder|rotator|cuff|\bglenohum/g],
+  ['Elleboog/pols/hand', /elleboog|\bpols\b|\bhand\b|vinger|epicondyl/g],
+  ['Nek', /\bnek\b|cervic|whiplash/g],
+  ['Rug', /lage rug|\brug\b|lumba|bekken|thoracal/g]
+];
+function suggestMeta(name, text){
+  const n = norm(name).replace(/[_-]/g, ' '), t = norm(text).slice(0, 8000);
+  let cat = (CAT_RULES.find(([, re]) => re.test(n)) || [])[0];
+  if(!cat && t) cat = (CAT_RULES.find(([, re]) => re.test(t.slice(0, 1500))) || [])[0];
+  const regio = [];
+  REG_RULES.forEach(([r, re]) => {
+    const inName = (n.match(re) || []).length > 0, inText = (t.match(re) || []).length;
+    if(inName || inText >= 5) regio.push(r);
+  });
+  return {categorie: cat || 'overig', regio};
+}
+
+/* =====================================================================
+   STATUS
+   ===================================================================== */
+const S = {
+  docs: [], loaded: false, missing: false, loadError: null,
+  q: '', view: 'alle', cat: null, regio: null, tag: null, sort: lsGet('ft_bieb_sort', 'relevant'),
+  content: {q:'', hits:{}, loading:false},
+  favs: new Set(lsGet('ft_bieb_favs', [])),
+  naam: lsGet('ft_bieb_naam', ''),
+  modal: null, busy: false
+};
+window.bbCanReload = () => !S.modal && !S.busy;
+window.bbShowUpdate = () => { $('#updbar').hidden = false; };
+
+/* =====================================================================
+   DATA
+   ===================================================================== */
+async function loadDocs(silent){
+  try{
+    const rows = await sb(TABLE + '?select=' + COLS + '&order=created_at.desc');
+    S.docs = (rows || []).map(r => Object.assign(r, {regio: r.regio || [], tags: r.tags || []}));
+    S.loaded = true; S.missing = false; S.loadError = null;
+    purgeOldTrash();
+  }catch(e){
+    S.loaded = true;
+    if(isMissingTable(e)) S.missing = true;
+    else { S.loadError = e.message; if(silent) return; }
+  }
+  renderAll();
+}
+function purgeOldTrash(){
+  const old = S.docs.filter(d => d.verwijderd_op && daysAgo(d.verwijderd_op) > PRULLENBAK_DAGEN);
+  old.forEach(async d => {
+    try{ await sb(TABLE + '?id=eq.' + d.id, {method:'DELETE'}); await storageRemove([d.pad]); }catch(e){}
+  });
+  if(old.length) S.docs = S.docs.filter(d => !old.includes(d));
+}
+const active = () => S.docs.filter(d => !d.verwijderd_op);
+const trash  = () => S.docs.filter(d => d.verwijderd_op);
+const needsCheck = d => d.controle_datum && d.controle_datum <= today();
+const isRecent = d => daysAgo(d.created_at) <= 30 || daysAgo(d.updated_at) <= 30;
+
+async function bumpOpened(d){
+  d.aantal_geopend = (d.aantal_geopend || 0) + 1;
+  try{ await sb(TABLE + '?id=eq.' + d.id, {method:'PATCH', prefer:'return=minimal', body:{aantal_geopend:d.aantal_geopend}}); }catch(e){}
+}
+
+/* ---- Zoeken ---- */
+function queryWords(q){ return norm(q).split(/[^a-z0-9]+/).filter(w => w.length >= 1); }
+function expand(w){
+  const set = new Set([w]);
+  SYN.forEach(group => { const g = group.map(norm); if(g.some(x => x === w || (w.length >= 4 && x.startsWith(w)))) g.forEach(x => set.add(x)); });
+  return [...set];
+}
+function hay(d){
+  return {
+    titel: norm(d.titel), tags: norm((d.tags || []).join(' ') + ' ' + (d.regio || []).join(' ')),
+    cat: norm(catOf(d.categorie).label), desc: norm(d.omschrijving),
+    rest: norm([d.bestandsnaam, d.bron, d.toegevoegd_door, d.url].join(' '))
+  };
+}
+function scoreDoc(d, words){
+  if(!words.length) return 1;
+  const h = hay(d), contentHit = !!S.content.hits[d.id];
+  let score = 0;
+  for(const w of words){
+    const alts = expand(w); let best = 0;
+    for(const a of alts){
+      const s = (h.titel.includes(a) ? 10 + (h.titel.startsWith(a) ? 4 : 0) : 0) || (h.tags.includes(a) ? 7 : 0) || (h.cat.includes(a) ? 5 : 0) || (h.desc.includes(a) ? 4 : 0) || (h.rest.includes(a) ? 2 : 0);
+      if(s > best) best = s;
+    }
+    if(!best && !contentHit) return 0;
+    score += best;
+  }
+  return score + (contentHit ? 3 : 0);
+}
+let contentTimer = null;
+function scheduleContentSearch(){
+  clearTimeout(contentTimer);
+  const words = queryWords(S.q).filter(w => w.length >= 3).slice(0, 4);
+  const key = words.join(' ');
+  if(!words.length){ S.content = {q:'', hits:{}, loading:false}; return; }
+  if(key === S.content.q) return;
+  contentTimer = setTimeout(async () => {
+    S.content.loading = true;
+    try{
+      const cond = words.map(w => 'inhoud.ilike.*' + w + '*').join(',');
+      const rows = await sb(TABLE + '?select=id,inhoud&verwijderd_op=is.null&and=(' + encodeURIComponent(cond) + ')&limit=40');
+      const hits = {};
+      (rows || []).forEach(r => { hits[r.id] = makeSnippet(r.inhoud, words); });
+      if(queryWords(S.q).filter(w => w.length >= 3).slice(0, 4).join(' ') === key){ S.content = {q:key, hits, loading:false}; renderResults(); }
+    }catch(e){ S.content.loading = false; console.warn('Inhoud zoeken mislukt', e); }
+  }, 300);
+}
+function makeSnippet(text, words){
+  const t = String(text || '').replace(/\s+/g, ' '), n = norm(t);
+  let pos = -1; for(const w of words){ pos = n.indexOf(w); if(pos >= 0) break; }
+  if(pos < 0) return '';
+  const a = Math.max(0, pos - 70), b = Math.min(t.length, pos + 110);
+  return (a > 0 ? '…' : '') + t.slice(a, b).trim() + (b < t.length ? '…' : '');
+}
+function highlight(text, words){
+  let s = esc(text); if(!words.length) return s;
+  // markeer op genormaliseerde posities, zodat ook "patiënt" gevonden wordt met "patient"
+  const raw = String(text || ''), n = norm(raw);
+  if(n.length !== raw.length) return s;                // veiligheidsklep bij afwijkende lengte
+  const marks = [];
+  words.filter(w => w.length >= 2).forEach(w => { let i = 0; while((i = n.indexOf(w, i)) >= 0){ marks.push([i, i + w.length]); i += w.length; } });
+  if(!marks.length) return s;
+  marks.sort((x, y) => x[0] - y[0]);
+  const merged = []; marks.forEach(m => { const l = merged[merged.length - 1]; if(l && m[0] <= l[1]) l[1] = Math.max(l[1], m[1]); else merged.push(m.slice()); });
+  let out = '', last = 0;
+  merged.forEach(([a, b]) => { out += esc(raw.slice(last, a)) + '<mark>' + esc(raw.slice(a, b)) + '</mark>'; last = b; });
+  return out + esc(raw.slice(last));
+}
+function filtered(){
+  const words = queryWords(S.q);
+  let list = S.view === 'prullenbak' ? trash() : active();
+  if(S.view === 'fav') list = list.filter(d => S.favs.has(d.id));
+  if(S.view === 'recent') list = list.filter(isRecent);
+  if(S.view === 'controle') list = list.filter(needsCheck);
+  if(S.cat) list = list.filter(d => d.categorie === S.cat);
+  if(S.regio) list = list.filter(d => (d.regio || []).includes(S.regio));
+  if(S.tag) list = list.filter(d => (d.tags || []).some(t => norm(t) === norm(S.tag)));
+  list = list.map(d => ({d, s: scoreDoc(d, words)})).filter(x => x.s > 0);
+  const sort = S.view === 'recent' && S.sort === 'relevant' && !words.length ? 'nieuw' : S.sort;
+  const by = {
+    relevant: (a, b) => words.length ? b.s - a.s || a.d.titel.localeCompare(b.d.titel, 'nl') : a.d.titel.localeCompare(b.d.titel, 'nl'),
+    nieuw: (a, b) => (b.d.updated_at || b.d.created_at).localeCompare(a.d.updated_at || a.d.created_at),
+    az: (a, b) => a.d.titel.localeCompare(b.d.titel, 'nl'),
+    populair: (a, b) => (b.d.aantal_geopend || 0) - (a.d.aantal_geopend || 0) || a.d.titel.localeCompare(b.d.titel, 'nl')
+  };
+  list.sort(by[sort] || by.relevant);
+  return list.map(x => x.d);
+}
+
+/* =====================================================================
+   WEERGAVE
+   ===================================================================== */
+function renderAll(){ renderNaam(); renderSide(); renderResults(); }
+function renderNaam(){ $('#naam-lbl').textContent = S.naam || 'Kies je naam'; }
+
+function renderSide(){
+  const act = active();
+  const nav = (view, ic, lb, ct, extra = '') => `<button class="nav ${S.view === view && !S.cat ? 'active' : ''} ${extra}" data-act="view" data-v="${view}"><span class="ic">${ic}</span><span class="lb">${lb}</span><span class="ct num">${ct}</span></button>`;
+  const nControle = act.filter(needsCheck).length;
+  const catCount = id => act.filter(d => d.categorie === id).length;
+  const usedRegios = REGIOS.filter(r => act.some(d => (d.regio || []).includes(r)));
+  $('#side').innerHTML = `
+    <h3>Weergave</h3>
+    <div class="navlist">
+      ${nav('alle', '📚', 'Alle documenten', act.length)}
+      ${nav('fav', '⭐', 'Mijn favorieten', act.filter(d => S.favs.has(d.id)).length)}
+      ${nav('recent', '🆕', 'Nieuw & bijgewerkt', act.filter(isRecent).length)}
+      ${nControle ? nav('controle', '⚠️', 'Controle nodig', nControle, 'warnnav') : ''}
+    </div>
+    <hr>
+    <h3>Categorieën</h3>
+    <div class="navlist">
+      ${CATS.filter(c => c.id !== 'overig' || catCount('overig')).map(c => `<button class="nav ${S.cat === c.id ? 'active' : ''}" data-act="cat" data-v="${c.id}"><span class="ic">${c.icon}</span><span class="lb">${esc(c.label)}</span><span class="ct num">${catCount(c.id)}</span></button>`).join('')}
+    </div>
+    ${usedRegios.length ? `<hr><h3>Lichaamsregio</h3><div class="chips">${usedRegios.map(r => `<button class="chip ${S.regio === r ? 'active' : ''}" data-act="regiofilter" data-v="${esc(r)}">${esc(r)}</button>`).join('')}</div>` : ''}
+    <hr>
+    <div class="navlist">${nav('prullenbak', '🗑️', 'Prullenbak', trash().length)}</div>`;
+}
+
+function docCard(d, words){
+  const k = kind(d), ui = KIND_UI[k], c = catOf(d.categorie);
+  const badges = [];
+  if(d.verwijderd_op){ badges.push(`<span class="badge bad">Verwijderd ${fmtDate(d.verwijderd_op)}</span>`); }
+  else{
+    if(daysAgo(d.created_at) <= NIEUW_DAGEN) badges.push('<span class="badge good">Nieuw</span>');
+    else if(daysAgo(d.updated_at) <= NIEUW_DAGEN) badges.push('<span class="badge neutral">Bijgewerkt</span>');
+    if(needsCheck(d)) badges.push('<span class="badge warn" title="Controleer of dit document nog actueel is">Controle nodig</span>');
+  }
+  const snip = S.content.hits[d.id];
+  const meta = [d.toegevoegd_door ? 'Toegevoegd door ' + esc(d.toegevoegd_door) : '', fmtDate(d.created_at), d.bron ? esc(d.bron) : '', fmtSize(d.grootte), d.aantal_geopend ? d.aantal_geopend + '× geopend' : ''].filter(Boolean).join(' · ');
+  const actions = d.verwijderd_op
+    ? `<button class="btn small" data-act="restore" data-id="${d.id}">↩ Terugzetten</button><button class="btn small danger" data-act="purge" data-id="${d.id}">Definitief verwijderen</button>`
+    : `<button class="star ${S.favs.has(d.id) ? 'on' : ''}" data-act="fav" data-id="${d.id}" title="${S.favs.has(d.id) ? 'Uit favorieten halen' : 'Aan favorieten toevoegen'}" aria-label="Favoriet">${S.favs.has(d.id) ? '★' : '☆'}</button>
+       ${k === 'link' ? `<a class="btn small" href="${esc(d.url)}" target="_blank" rel="noopener" data-act="openlink" data-id="${d.id}">Openen ↗</a>` : `<a class="btn small" href="${esc(downloadUrl(d))}" data-act="download" data-id="${d.id}" title="Downloaden">⬇<span class="only-mobile"> Download</span></a>`}
+       <button class="btn small" data-act="edit" data-id="${d.id}" title="Bewerken">✏️</button>`;
+  return `<article class="doc" id="doc-${d.id}">
+    <div class="ftype ${ui.cls}"><span class="fi">${ui.fi}</span>${ui.lb}</div>
+    <div>
+      <div class="dtitle"><button data-act="view-doc" data-id="${d.id}">${highlight(d.titel, words)}</button>${badges.join('')}</div>
+      <div class="dtags">
+        <button class="tag purple" data-act="cat" data-v="${c.id}">${c.icon} ${esc(c.label)}</button>
+        ${(d.regio || []).map(r => `<button class="tag blue" data-act="regiofilter" data-v="${esc(r)}">${esc(r)}</button>`).join('')}
+        ${(d.tags || []).map(t => `<button class="tag grey" data-act="tagfilter" data-v="${esc(t)}">#${highlight(t, words)}</button>`).join('')}
+      </div>
+      ${d.omschrijving ? `<p class="ddesc">${highlight(d.omschrijving, words)}</p>` : ''}
+      ${snip ? `<p class="snip"><b>In het document:</b> ${highlight(snip, queryWords(S.q))}</p>` : ''}
+      <div class="dmeta">${meta}</div>
+    </div>
+    <div class="dact">${actions}</div>
+  </article>`;
+}
+
+function renderResults(){
+  const box = $('#results');
+  if(!S.loaded){ return; }
+  if(S.missing){ box.innerHTML = setupHtml(); return; }
+  if(S.loadError){
+    box.innerHTML = `<div class="empty"><div class="big">⚠️</div><h3>De bibliotheek kon niet geladen worden</h3><p>${esc(S.loadError.slice(0, 200))}</p><button class="btn primary" data-act="retry">Opnieuw proberen</button></div>`;
+    return;
+  }
+  const words = queryWords(S.q), list = filtered();
+  const titles = {alle:'Alle documenten', fav:'Mijn favorieten', recent:'Nieuw & bijgewerkt', controle:'Controle nodig', prullenbak:'Prullenbak'};
+  const title = S.cat ? catOf(S.cat).icon + ' ' + catOf(S.cat).label : titles[S.view];
+  const chips = [];
+  if(S.q) chips.push(`<button class="fchip" data-act="clearq">“${esc(S.q)}” <span>✕</span></button>`);
+  if(S.regio) chips.push(`<button class="fchip" data-act="regiofilter" data-v="${esc(S.regio)}">${esc(S.regio)} <span>✕</span></button>`);
+  if(S.tag) chips.push(`<button class="fchip" data-act="tagfilter" data-v="${esc(S.tag)}">#${esc(S.tag)} <span>✕</span></button>`);
+  let body;
+  if(list.length){
+    body = `<div class="doclist">${list.map(d => docCard(d, words)).join('')}</div>`;
+  } else if(!active().length && S.view === 'alle' && !S.q){
+    body = `<div class="empty"><div class="big">📚</div><h3>De bibliotheek is nog leeg</h3><p>Voeg het eerste protocol, format of document toe. Je kunt ook bestanden direct op deze pagina slepen.</p><button class="btn primary" data-act="add">＋ Document toevoegen</button></div>`;
+  } else if(S.view === 'prullenbak'){
+    body = `<div class="empty"><div class="big">🗑️</div><h3>De prullenbak is leeg</h3><p>Verwijderde documenten blijven hier ${PRULLENBAK_DAGEN} dagen staan, zodat je ze kunt terugzetten.</p></div>`;
+  } else if(S.view === 'fav' && !S.q){
+    body = `<div class="empty"><div class="big">⭐</div><h3>Nog geen favorieten</h3><p>Klik op het sterretje bij een document dat je vaak gebruikt. Favorieten worden op dit apparaat bewaard.</p></div>`;
+  } else {
+    body = `<div class="empty"><div class="big">🔍</div><h3>Niets gevonden${S.q ? ' voor “' + esc(S.q) + '”' : ''}</h3><p>${S.content.loading ? '<span class="spinner"></span> Ook de inhoud van documenten wordt doorzocht…' : 'Probeer een ander woord of haal een filter weg.'}</p>${(S.cat || S.regio || S.tag || S.view !== 'alle') ? '<button class="btn" data-act="resetfilters">Alle filters wissen</button>' : ''}</div>`;
+  }
+  box.innerHTML = `
+    <div class="reshead">
+      <h2>${title}</h2><span class="cnt num">${list.length} ${list.length === 1 ? 'document' : 'documenten'}${S.content.loading ? ' · <span class="spinner"></span>' : ''}</span>
+      <span class="spacer"></span>
+      ${S.view !== 'prullenbak' ? `<select class="sortsel" id="sort" aria-label="Sorteren">
+        <option value="relevant" ${S.sort === 'relevant' ? 'selected' : ''}>${words.length ? 'Beste resultaat' : 'Op naam (A–Z)'}</option>
+        <option value="nieuw" ${S.sort === 'nieuw' ? 'selected' : ''}>Nieuwste eerst</option>
+        <option value="populair" ${S.sort === 'populair' ? 'selected' : ''}>Meest geopend</option>
+        ${words.length ? '<option value="az" ' + (S.sort === 'az' ? 'selected' : '') + '>Op naam (A–Z)</option>' : ''}
+      </select>` : ''}
+    </div>
+    ${S.view === 'prullenbak' && list.length ? `<p class="small" style="margin:-6px 0 12px;color:var(--muted)">Documenten in de prullenbak worden na ${PRULLENBAK_DAGEN} dagen automatisch definitief verwijderd.</p>` : ''}
+    ${chips.length ? `<div class="active-filters">${chips.join('')}</div>` : ''}
+    ${body}`;
+}
+
+function setupHtml(){
+  return `<div class="card">
+    <h2 style="font-size:18px">Eenmalige installatie nodig</h2>
+    <p class="muted" style="color:var(--muted)">De tabel <b>${TABLE}</b> bestaat nog niet in Supabase. Open in Supabase de <b>SQL Editor</b>, plak onderstaande SQL, klik op <b>Run</b> en herlaad daarna deze pagina. Dit maakt de tabel én de opslagmap voor de bestanden aan.</p>
+    <div class="row" style="display:flex;gap:8px;margin:10px 0"><button class="btn primary" data-act="copysql">📋 SQL kopiëren</button><button class="btn" data-act="retry">Opnieuw laden</button></div>
+    <pre class="sql">${esc(SETUP_SQL)}</pre>
+  </div>`;
+}
+const SETUP_SQL = `-- Bibliotheek Fyzio Totaal: tabel + opslagmap (eenmalig uitvoeren)
+create table if not exists public.fyzio_bibliotheek (
+  id uuid primary key default gen_random_uuid(),
+  titel text not null,
+  omschrijving text not null default '',
+  categorie text not null default 'overig',
+  regio text[] not null default '{}',
+  tags text[] not null default '{}',
+  soort text not null default 'bestand',      -- 'bestand' of 'link'
+  bestandsnaam text, pad text, mime text, grootte bigint,
+  url text,
+  inhoud text not null default '',            -- tekst uit het document, om in te zoeken
+  bron text not null default '',
+  controle_datum date,
+  toegevoegd_door text not null default '',
+  bijgewerkt_door text not null default '',
+  aantal_geopend integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  verwijderd_op timestamptz
+);
+alter table public.fyzio_bibliotheek enable row level security;
+drop policy if exists "bieb_alles" on public.fyzio_bibliotheek;
+create policy "bieb_alles" on public.fyzio_bibliotheek for all using (true) with check (true);
+
+-- Opslagmap voor de bestanden (max. 50 MB per bestand)
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('bibliotheek', 'bibliotheek', true, 52428800)
+on conflict (id) do update set public = true, file_size_limit = 52428800;
+
+drop policy if exists "bieb_lezen" on storage.objects;
+drop policy if exists "bieb_uploaden" on storage.objects;
+drop policy if exists "bieb_wijzigen" on storage.objects;
+drop policy if exists "bieb_verwijderen" on storage.objects;
+create policy "bieb_lezen" on storage.objects for select using (bucket_id = 'bibliotheek');
+create policy "bieb_uploaden" on storage.objects for insert with check (bucket_id = 'bibliotheek');
+create policy "bieb_wijzigen" on storage.objects for update using (bucket_id = 'bibliotheek') with check (bucket_id = 'bibliotheek');
+create policy "bieb_verwijderen" on storage.objects for delete using (bucket_id = 'bibliotheek');`;
+
+/* =====================================================================
+   MODALS
+   ===================================================================== */
+function openModal(html, cls = ''){
+  $('#modal-root').innerHTML = `<div class="modal-bg" data-bg="1"><div class="modal ${cls}" role="dialog" aria-modal="true"><button class="x" data-act="close" aria-label="Sluiten">✕</button>${html}</div></div>`;
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(force){
+  if(S.busy && !force) return;
+  if(!force && S.modal && S.modal.dirty && !confirmDiscard()) return;
+  S.modal = null; $('#modal-root').innerHTML = ''; document.body.style.overflow = '';
+  if(location.hash.startsWith('#doc=')) history.replaceState(null, '', location.pathname + location.search);
+}
+function confirmDiscard(){ return window.confirm('Je wijzigingen zijn nog niet opgeslagen. Toch sluiten?'); }
+
+/* ---- Naam kiezen ---- */
+function openNaam(then){
+  S.modal = {type:'naam', then};
+  const known = TEAM.includes(S.naam);
+  openModal(`<h2>Wie ben je?</h2>
+    <p style="color:var(--muted);margin:0 0 12px">Je naam komt bij documenten die je toevoegt of bijwerkt, zodat collega's weten bij wie ze terecht kunnen. Dit wordt op dit apparaat onthouden.</p>
+    <div class="rchips" id="naamchips">${TEAM.map(n => `<button class="chip ${S.naam === n ? 'active' : ''}" data-act="pick-naam" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+    <label class="f" style="margin-top:12px">Of typ je naam<input class="inp" id="naam-anders" value="${known ? '' : esc(S.naam)}" placeholder="Bijv. stagiaire Sanne"></label>
+    <div class="actions"><button class="btn primary" data-act="save-naam">Opslaan</button></div>`);
+}
+function saveNaam(n){
+  n = String(n || '').trim(); if(!n){ toast('Kies of typ je naam', true); return; }
+  S.naam = n; lsSet('ft_bieb_naam', n); renderNaam();
+  const then = S.modal && S.modal.then; closeModal(true); if(then) then();
+}
+function needNaam(then){ if(S.naam) then(); else openNaam(then); }
+
+/* ---- Metadata-formulier (toevoegen en bewerken) ---- */
+function metaForm(k, m, opts = {}){
+  return `<div class="fgrid">
+    ${opts.link ? `<label class="f full">Webadres (URL)<input class="inp" data-k="${k}" data-f="url" value="${esc(m.url || '')}" placeholder="https://…" inputmode="url"></label>` : ''}
+    <label class="f full">Titel<input class="inp" data-k="${k}" data-f="titel" value="${esc(m.titel)}" placeholder="Bijv. Melbourne VKB revalidatieprotocol 2.0"></label>
+    <label class="f">Categorie<select class="inp" data-k="${k}" data-f="categorie">${CATS.map(c => `<option value="${c.id}" ${m.categorie === c.id ? 'selected' : ''}>${c.icon} ${esc(c.label)}</option>`).join('')}</select></label>
+    <label class="f"><span>Bron / versie <span class="opt">(optioneel)</span></span><input class="inp" data-k="${k}" data-f="bron" value="${esc(m.bron || '')}" placeholder="Bijv. OCON, versie 2024"></label>
+    <div class="f full"><label class="f" style="margin-bottom:4px"><span>Lichaamsregio <span class="opt">(optioneel, meerdere mogelijk)</span></span></label>
+      <div class="rchips">${REGIOS.map(r => `<button type="button" class="chip ${m.regio.includes(r) ? 'active' : ''}" data-act="regio-toggle" data-k="${k}" data-v="${esc(r)}">${esc(r)}</button>`).join('')}</div></div>
+    <label class="f full"><span>Trefwoorden <span class="opt">(optioneel, scheiden met komma's)</span></span><input class="inp" data-k="${k}" data-f="tags" value="${esc(m.tags || '')}" placeholder="Bijv. postoperatief, sportfysiotherapie, UMOOOVE"></label>
+    <label class="f full"><span>Korte omschrijving <span class="opt">(optioneel: waarvoor gebruik je dit?)</span></span><textarea class="inp" data-k="${k}" data-f="omschrijving" placeholder="Bijv. Format voor terugkoppeling aan de orthopeed bij afwijkend beloop na 6–8 weken.">${esc(m.omschrijving || '')}</textarea></label>
+    <label class="f"><span>Controleren op <span class="opt">(optioneel)</span></span><input class="inp" type="date" data-k="${k}" data-f="controle_datum" value="${esc(m.controle_datum || '')}"></label>
+    <div class="f" style="justify-content:flex-end;font-weight:400;font-size:12px">Handig voor protocollen: na deze datum krijgt het document een melding “Controle nodig”.</div>
+  </div>`;
+}
+const emptyMeta = () => ({titel:'', categorie:'overig', regio:[], tags:'', omschrijving:'', bron:'', controle_datum:'', url:''});
+const tagsToArr = s => [...new Set(String(s || '').split(/[,;]+/).map(t => t.trim().replace(/^#/, '')).filter(Boolean))].slice(0, 15);
+
+/* ---- Toevoegen ---- */
+function openAdd(files, mode){
+  needNaam(() => {
+    S.modal = {type:'add', mode: mode || 'bestand', items: [], link: {key:'link', meta: emptyMeta()}, dirty:false};
+    renderAdd();
+    if(files && files.length) addFiles(files);
+  });
+}
+function renderAdd(){
+  const M = S.modal;
+  const busy = S.busy;
+  openModal(`<h2>Toevoegen aan de bibliotheek</h2>
+    <div class="seg"><button class="${M.mode === 'bestand' ? 'on' : ''}" data-act="addmode" data-v="bestand" ${busy ? 'disabled' : ''}>📎 Bestand(en)</button><button class="${M.mode === 'link' ? 'on' : ''}" data-act="addmode" data-v="link" ${busy ? 'disabled' : ''}>🔗 Link naar website</button></div>
+    <div class="notice">🔒 Alleen lege formats, protocollen en algemene informatie. Upload geen documenten met patiëntgegevens.</div>
+    ${M.mode === 'bestand' ? `
+      <label class="drop" id="dropzone">
+        <span class="big">📥</span><b>Sleep bestanden hierheen of klik om te kiezen</b>
+        <span class="small">PDF, Word, Excel, PowerPoint, afbeeldingen… max. ${MAX_MB} MB per bestand. Meerdere tegelijk kan.</span>
+        <input type="file" id="fileinput" multiple hidden>
+      </label>
+      <div class="items" id="items">${M.items.map(itemHtml).join('')}</div>`
+    : `<div style="margin-top:14px">${metaForm('link', M.link.meta, {link:true})}</div>
+       <p style="font-size:12.5px;color:var(--muted);margin:10px 0 0">Bijvoorbeeld een KNGF-richtlijn, een meetinstrument op meetinstrumentenzorg.nl of een oefenvideo.</p>`}
+    <div class="actions">
+      <span id="addstatus" style="margin-right:auto;font-size:12.5px;color:var(--muted)"></span>
+      <button class="btn" data-act="close" ${busy ? 'disabled' : ''}>Annuleren</button>
+      <button class="btn primary" data-act="save-add" id="save-add" ${busy || (M.mode === 'bestand' && !M.items.length) ? 'disabled' : ''}>${busy ? '<span class="spinner"></span> Bezig…' : M.mode === 'bestand' && M.items.length > 1 ? M.items.length + ' documenten opslaan' : 'Opslaan'}</button>
+    </div>`, 'wide');
+}
+function itemStatus(it){
+  return {lezen:'<span class="badge neutral"><span class="spinner" style="width:10px;height:10px"></span>&nbsp;Tekst lezen…</span>', klaar: it.inhoud ? '<span class="badge good">Doorzoekbaar</span>' : '<span class="badge neutral" title="Van dit bestandstype kan de tekst niet gelezen worden; zoeken werkt op titel, trefwoorden en omschrijving">Alleen titel doorzoekbaar</span>',
+    upload:'<span class="badge neutral"><span class="spinner" style="width:10px;height:10px"></span>&nbsp;Uploaden…</span>', ok:'<span class="badge good">✓ Opgeslagen</span>', fout:'<span class="badge bad">Mislukt</span>'}[it.status] || '';
+}
+function itemHtml(it){
+  return `<div class="item" id="it-${it.key}">
+    <div class="item-head"><span>${KIND_UI[kind({bestandsnaam:it.file.name, mime:it.file.type})].fi}</span><span class="fn" title="${esc(it.file.name)}">${esc(it.file.name)}</span><span>${fmtSize(it.file.size)}</span><span class="ist">${itemStatus(it)}</span>
+      ${it.status !== 'ok' && !S.busy ? `<button class="rm" data-act="rm-item" data-k="${it.key}" title="Niet toevoegen">✕</button>` : ''}</div>
+    ${it.dupe ? `<div class="notice" style="margin:-4px 0 10px">Let op: “${esc(it.dupe)}” staat al in de bibliotheek met hetzelfde bestand.</div>` : ''}
+    ${it.error ? `<div class="notice" style="margin:-4px 0 10px;background:var(--bad-soft);color:var(--bad)">${esc(it.error)}</div>` : ''}
+    ${metaForm(it.key, it.meta)}
+  </div>`;
+}
+function refreshItem(it){ const el = document.getElementById('it-' + it.key); if(el) el.outerHTML = itemHtml(it); }
+function refreshItemStatus(it){ const el = document.querySelector('#it-' + it.key + ' .ist'); if(el) el.innerHTML = itemStatus(it); }
+function addFiles(fileList){
+  const M = S.modal; if(!M || M.type !== 'add') return;
+  if(M.mode !== 'bestand'){ M.mode = 'bestand'; }
+  const files = [...fileList];
+  files.forEach(file => {
+    if(file.size > MAX_MB * 1024 * 1024){ toast('“' + file.name + '” is groter dan ' + MAX_MB + ' MB en kan niet worden toegevoegd', true); return; }
+    const sug = suggestMeta(file.name, '');
+    const dupe = active().find(d => d.bestandsnaam === file.name && Number(d.grootte) === file.size);
+    const it = {key: 'i' + Math.random().toString(36).slice(2, 8), file, status:'lezen', inhoud:'', touched:false, dupe: dupe ? dupe.titel : '',
+      meta: Object.assign(emptyMeta(), {titel: suggestTitle(file.name), categorie: sug.categorie, regio: sug.regio})};
+    M.items.push(it); M.dirty = true;
+    it.promise = extractText(file).then(txt => {
+      it.inhoud = txt; it.status = 'klaar';
+      if(!it.touched && txt){
+        const s2 = suggestMeta(file.name, txt);
+        if(it.meta.categorie === 'overig') it.meta.categorie = s2.categorie;
+        it.meta.regio = [...new Set([...it.meta.regio, ...s2.regio])];
+        refreshItem(it);
+      } else refreshItemStatus(it);
+    });
+  });
+  renderAdd();
+}
+
+async function saveAdd(){
+  const M = S.modal; if(!M || S.busy) return;
+  if(M.mode === 'link') return saveLink();
+  const todo = M.items.filter(it => it.status !== 'ok');
+  for(const it of todo){ if(!it.meta.titel.trim()){ toast('Geef elk document een titel', true); document.querySelector('#it-' + it.key + ' [data-f="titel"]')?.focus(); return; } }
+  S.busy = true; renderAdd();
+  let ok = 0;
+  for(const it of todo){
+    try{
+      await it.promise;
+      it.status = 'upload'; it.error = ''; refreshItemStatus(it);
+      const id = uuid(), safe = norm(it.file.name).replace(/[^a-z0-9._-]+/g, '_').replace(/_+/g, '_').slice(-120) || 'bestand';
+      const pad = id + '/' + safe;
+      await storageUpload(pad, it.file);
+      const row = rowFromMeta(it.meta, {id, soort:'bestand', bestandsnaam: it.file.name, pad, mime: it.file.type || '', grootte: it.file.size, inhoud: it.inhoud, toegevoegd_door: S.naam, bijgewerkt_door: S.naam});
+      try{ await sb(TABLE, {method:'POST', prefer:'return=minimal', body: row}); }
+      catch(e){ await storageRemove([pad]); throw e; }
+      it.status = 'ok'; ok++;
+    }catch(e){ it.status = 'fout'; it.error = e.message; }
+    refreshItem(it);
+  }
+  S.busy = false;
+  const failed = M.items.filter(it => it.status === 'fout');
+  await loadDocs(true);
+  if(!failed.length){ closeModal(true); toast(ok === 1 ? 'Document toegevoegd' : ok + ' documenten toegevoegd'); }
+  else { M.items = M.items.filter(it => it.status !== 'ok'); renderAdd(); toast(failed.length + ' bestand(en) niet gelukt, zie de melding', true); }
+}
+function rowFromMeta(m, extra){
+  return Object.assign({
+    titel: m.titel.trim(), omschrijving: (m.omschrijving || '').trim(), categorie: m.categorie, regio: m.regio,
+    tags: tagsToArr(m.tags), bron: (m.bron || '').trim(), controle_datum: m.controle_datum || null, updated_at: new Date().toISOString()
+  }, extra || {});
+}
+async function saveLink(){
+  const m = S.modal.link.meta;
+  let url = (m.url || '').trim();
+  if(!url){ toast('Vul het webadres in', true); return; }
+  if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try{ new URL(url); }catch(e){ toast('Dit is geen geldig webadres', true); return; }
+  if(!m.titel.trim()){ try{ m.titel = new URL(url).hostname.replace(/^www\./, ''); }catch(e){} }
+  S.busy = true; renderAdd();
+  try{
+    await sb(TABLE, {method:'POST', prefer:'return=minimal', body: rowFromMeta(m, {id: uuid(), soort:'link', url, toegevoegd_door: S.naam, bijgewerkt_door: S.naam})});
+    S.busy = false; closeModal(true); toast('Link toegevoegd'); loadDocs(true);
+  }catch(e){ S.busy = false; renderAdd(); toast('Opslaan mislukt: ' + e.message.slice(0, 120), true); }
+}
+
+/* ---- Bewerken ---- */
+function openEdit(id){
+  const d = S.docs.find(x => x.id === id); if(!d) return;
+  needNaam(() => {
+    S.modal = {type:'edit', id, dirty:false, newFile:null, meta: {titel:d.titel, categorie:d.categorie, regio:[...(d.regio || [])], tags:(d.tags || []).join(', '), omschrijving:d.omschrijving || '', bron:d.bron || '', controle_datum:d.controle_datum || '', url:d.url || ''}};
+    renderEdit();
+  });
+}
+function renderEdit(){
+  const M = S.modal, d = S.docs.find(x => x.id === M.id), isLink = d.soort === 'link';
+  openModal(`<h2>Bewerken</h2>
+    <p style="color:var(--muted);margin:0 0 12px;font-size:12.5px">Toegevoegd door ${esc(d.toegevoegd_door || 'onbekend')} op ${fmtDate(d.created_at)}${d.bijgewerkt_door && d.updated_at !== d.created_at ? ' · laatst bijgewerkt door ' + esc(d.bijgewerkt_door) + ' op ' + fmtDate(d.updated_at) : ''}</p>
+    ${metaForm('edit', M.meta, {link:isLink})}
+    ${!isLink ? `<div class="item" style="margin-top:14px">
+      <div style="font-weight:600;font-size:13px">Nieuwe versie van het bestand</div>
+      <p style="margin:2px 0 8px;font-size:12.5px;color:var(--muted)">Huidig: ${esc(d.bestandsnaam)} (${fmtSize(d.grootte)}). Bij vervangen blijven titel, categorie en favorieten behouden.</p>
+      <label class="btn small">📎 ${M.newFile ? 'Ander bestand kiezen' : 'Bestand vervangen'}<input type="file" id="edit-file" hidden></label>
+      ${M.newFile ? `<span style="font-size:12.5px;margin-left:8px">→ <b>${esc(M.newFile.name)}</b> (${fmtSize(M.newFile.size)})</span>` : ''}
+    </div>` : ''}
+    <div class="actions">
+      <button class="btn danger" data-act="soft-delete" data-id="${d.id}" style="margin-right:auto" ${S.busy ? 'disabled' : ''}>🗑️ Verwijderen</button>
+      <button class="btn" data-act="close" ${S.busy ? 'disabled' : ''}>Annuleren</button>
+      <button class="btn primary" data-act="save-edit" ${S.busy ? 'disabled' : ''}>${S.busy ? '<span class="spinner"></span> Bezig…' : 'Opslaan'}</button>
+    </div>`, 'wide');
+}
+async function saveEdit(){
+  const M = S.modal, d = S.docs.find(x => x.id === M.id); if(!d || S.busy) return;
+  if(!M.meta.titel.trim()){ toast('Titel mag niet leeg zijn', true); return; }
+  const patch = rowFromMeta(M.meta, {bijgewerkt_door: S.naam});
+  if(d.soort === 'link'){
+    let url = (M.meta.url || '').trim(); if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try{ new URL(url); }catch(e){ toast('Dit is geen geldig webadres', true); return; }
+    patch.url = url;
+  }
+  S.busy = true; renderEdit();
+  let oldPad = null;
+  try{
+    if(M.newFile){
+      const f = M.newFile, safe = norm(f.name).replace(/[^a-z0-9._-]+/g, '_').replace(/_+/g, '_').slice(-120) || 'bestand';
+      const pad = d.id + '/' + Date.now().toString(36) + '-' + safe;
+      const inhoud = await extractText(f);
+      await storageUpload(pad, f);
+      Object.assign(patch, {bestandsnaam: f.name, pad, mime: f.type || '', grootte: f.size, inhoud});
+      oldPad = d.pad;
+    }
+    await sb(TABLE + '?id=eq.' + d.id, {method:'PATCH', prefer:'return=minimal', body: patch});
+    if(oldPad && oldPad !== patch.pad) storageRemove([oldPad]);
+    S.busy = false; closeModal(true); toast(M.newFile ? 'Nieuwe versie opgeslagen' : 'Wijzigingen opgeslagen'); loadDocs(true);
+  }catch(e){ S.busy = false; renderEdit(); toast('Opslaan mislukt: ' + e.message.slice(0, 140), true); }
+}
+
+/* ---- Verwijderen / prullenbak ---- */
+function askSoftDelete(id){
+  const d = S.docs.find(x => x.id === id); if(!d) return;
+  S.modal = {type:'confirm'};
+  openModal(`<h2>Naar de prullenbak?</h2>
+    <p>“<b>${esc(d.titel)}</b>” verdwijnt voor iedereen uit de bibliotheek. Je kunt het nog ${PRULLENBAK_DAGEN} dagen terugzetten via de prullenbak.</p>
+    <div class="actions"><button class="btn" data-act="close">Annuleren</button><button class="btn primary" data-act="do-soft-delete" data-id="${d.id}">Verwijderen</button></div>`);
+}
+async function softDelete(id){
+  try{
+    await sb(TABLE + '?id=eq.' + id, {method:'PATCH', prefer:'return=minimal', body:{verwijderd_op: new Date().toISOString(), bijgewerkt_door: S.naam}});
+    closeModal(true); toast('Naar de prullenbak verplaatst'); await loadDocs(true);
+  }catch(e){ toast('Verwijderen mislukt: ' + e.message.slice(0, 120), true); }
+}
+async function restore(id){
+  try{ await sb(TABLE + '?id=eq.' + id, {method:'PATCH', prefer:'return=minimal', body:{verwijderd_op: null}}); toast('Teruggezet in de bibliotheek'); await loadDocs(true); }
+  catch(e){ toast('Terugzetten mislukt', true); }
+}
+function askPurge(id){
+  const d = S.docs.find(x => x.id === id); if(!d) return;
+  S.modal = {type:'confirm'};
+  openModal(`<h2>Definitief verwijderen?</h2><p>“<b>${esc(d.titel)}</b>” wordt voorgoed verwijderd, inclusief het bestand. Dit kan niet ongedaan worden gemaakt.</p>
+    <div class="actions"><button class="btn" data-act="close">Annuleren</button><button class="btn danger" data-act="do-purge" data-id="${d.id}">Definitief verwijderen</button></div>`);
+}
+async function purge(id){
+  const d = S.docs.find(x => x.id === id); if(!d) return;
+  try{ await sb(TABLE + '?id=eq.' + id, {method:'DELETE'}); await storageRemove([d.pad]); closeModal(true); toast('Definitief verwijderd'); await loadDocs(true); }
+  catch(e){ toast('Verwijderen mislukt', true); }
+}
+
+/* ---- Bekijken ---- */
+async function openViewer(id){
+  const d = S.docs.find(x => x.id === id); if(!d) return;
+  S.modal = {type:'viewer', id};
+  if(!d.verwijderd_op) history.replaceState(null, '', location.pathname + location.search + '#doc=' + d.id);
+  const k = kind(d), c = catOf(d.categorie), url = publicUrl(d);
+  let body = '';
+  if(k === 'pdf') body = `<iframe src="${esc(url)}#view=FitH" title="${esc(d.titel)}"></iframe>`;
+  else if(k === 'img') body = `<img src="${esc(url)}" alt="${esc(d.titel)}">`;
+  else if(k === 'docx') body = `<div id="docx-view" class="vinfo"><span class="spinner"></span> Document laden…</div>`;
+  else if(k === 'link') body = `<div class="vinfo"><div style="font-size:40px">🔗</div><p style="word-break:break-all">${esc(d.url)}</p><a class="btn primary" href="${esc(d.url)}" target="_blank" rel="noopener" data-act="openlink" data-id="${d.id}">Website openen ↗</a></div>`;
+  else body = `<div class="vinfo"><div style="font-size:40px">${KIND_UI[k].fi}</div><p>Van dit bestandstype kan de browser geen voorbeeld tonen.</p><a class="btn primary" href="${esc(downloadUrl(d))}" data-act="download" data-id="${d.id}">⬇ Downloaden</a></div>`;
+  openModal(`
+    <div class="vhead"><div class="ttl"><h2>${esc(d.titel)}</h2>
+      <div class="dtags"><span class="tag purple">${c.icon} ${esc(c.label)}</span>${(d.regio || []).map(r => `<span class="tag blue">${esc(r)}</span>`).join('')}${(d.tags || []).map(t => `<span class="tag grey">#${esc(t)}</span>`).join('')}</div>
+      ${d.omschrijving ? `<p style="margin:8px 0 0;font-size:13px">${esc(d.omschrijving)}</p>` : ''}</div></div>
+    <div class="vbar">
+      ${k !== 'link' ? `<a class="btn small primary" href="${esc(downloadUrl(d))}" data-act="download-quiet">⬇ Downloaden</a><a class="btn small" href="${esc(url)}" target="_blank" rel="noopener">↗ Openen in nieuw tabblad</a>` : ''}
+      ${k === 'docx' ? `<button class="btn small" data-act="copy-doctext" id="btn-doctext" disabled>📋 Tekst kopiëren</button>` : ''}
+      <button class="btn small" data-act="copy-applink" data-id="${d.id}" title="Link naar dit document in de bibliotheek, om naar een collega te sturen">🔗 Link voor collega</button>
+      ${k !== 'link' ? `<button class="btn small" data-act="copy-filelink" data-id="${d.id}" title="Directe link naar het bestand, bijv. om naar een patiënt te mailen">📎 Directe bestandslink</button>` : ''}
+      ${!d.verwijderd_op ? `<button class="btn small" data-act="star-viewer" data-id="${d.id}">${S.favs.has(d.id) ? '★ Favoriet' : '☆ Favoriet'}</button><button class="btn small" data-act="edit" data-id="${d.id}">✏️ Bewerken</button>` : ''}
+    </div>
+    <div class="vbody">${body}</div>
+    <div class="vmeta">
+      <div>Bestand: <b>${esc(d.soort === 'link' ? 'Link' : d.bestandsnaam)}</b>${d.grootte ? ' (' + fmtSize(d.grootte) + ')' : ''}</div>
+      <div>Toegevoegd: <b>${esc(d.toegevoegd_door || 'onbekend')}</b>, ${fmtDate(d.created_at)}</div>
+      ${d.updated_at && daysAgo(d.created_at) - daysAgo(d.updated_at) > 0.01 ? `<div>Bijgewerkt: <b>${esc(d.bijgewerkt_door || '')}</b>, ${fmtDate(d.updated_at)}</div>` : ''}
+      ${d.bron ? `<div>Bron / versie: <b>${esc(d.bron)}</b></div>` : ''}
+      ${d.controle_datum ? `<div>Controleren op: <b>${fmtDate(d.controle_datum)}</b>${needsCheck(d) ? ' <span class="badge warn">Controle nodig</span>' : ''}</div>` : ''}
+    </div>`, 'viewer');
+  if(!d.verwijderd_op && k !== 'link') bumpOpened(d);
+  if(k === 'docx'){
+    try{
+      await loadScript(MAMMOTH);
+      const buf = await (await fetch(url, {cache:'no-store'})).arrayBuffer();
+      const r = await window.mammoth.convertToHtml({arrayBuffer: buf});
+      const box = document.getElementById('docx-view'); if(!box || !S.modal || S.modal.id !== id) return;
+      box.className = 'docview'; box.innerHTML = r.value || '<p><i>Leeg document</i></p>';
+      box.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+      const b = document.getElementById('btn-doctext'); if(b) b.disabled = false;
+    }catch(e){
+      const box = document.getElementById('docx-view'); if(box) box.innerHTML = 'Voorbeeld laden lukte niet. Gebruik de knop Downloaden.';
+    }
+  }
+}
+
+/* =====================================================================
+   EVENTS
+   ===================================================================== */
+function setView(v){ S.view = v; S.cat = null; renderSide(); renderResults(); scrollToResults(); }
+function scrollToResults(){ if(window.innerWidth <= 900){ const r = $('#results'); if(r.getBoundingClientRect().top < 0) r.scrollIntoView({behavior:'smooth'}); } }
+function toggleFav(id){ S.favs.has(id) ? S.favs.delete(id) : S.favs.add(id); lsSet('ft_bieb_favs', [...S.favs]); renderSide(); renderResults(); }
+
+document.addEventListener('click', e => {
+  const bg = e.target.closest('[data-bg]');
+  if(bg && e.target === bg){ closeModal(); return; }
+  const el = e.target.closest('[data-act]'); if(!el) return;
+  const act = el.dataset.act, id = el.dataset.id, v = el.dataset.v;
+  switch(act){
+    case 'close': closeModal(); break;
+    case 'reload': location.replace(location.pathname + '?_v=' + Date.now() + location.hash); break;
+    case 'naam': openNaam(); break;
+    case 'pick-naam': saveNaam(v); break;
+    case 'save-naam': saveNaam($('#naam-anders').value || (document.querySelector('#naamchips .chip.active') || {}).dataset?.v); break;
+    case 'add': openAdd(); break;
+    case 'addmode': if(S.modal){ S.modal.mode = v; renderAdd(); } break;
+    case 'rm-item': if(S.modal){ S.modal.items = S.modal.items.filter(it => it.key !== el.dataset.k); renderAdd(); } break;
+    case 'save-add': saveAdd(); break;
+    case 'regio-toggle': {
+      const m = metaFor(el.dataset.k); if(!m) break;
+      m.regio = m.regio.includes(v) ? m.regio.filter(r => r !== v) : [...m.regio, v];
+      el.classList.toggle('active'); markTouched(el.dataset.k); break;
+    }
+    case 'edit': openEdit(id); break;
+    case 'save-edit': saveEdit(); break;
+    case 'soft-delete': askSoftDelete(id); break;
+    case 'do-soft-delete': softDelete(id); break;
+    case 'restore': restore(id); break;
+    case 'purge': askPurge(id); break;
+    case 'do-purge': purge(id); break;
+    case 'view-doc': openViewer(id); break;
+    case 'fav': toggleFav(id); break;
+    case 'star-viewer': toggleFav(id); el.textContent = S.favs.has(id) ? '★ Favoriet' : '☆ Favoriet'; break;
+    case 'download': case 'openlink': { const d = S.docs.find(x => x.id === id); if(d && !d.verwijderd_op) bumpOpened(d).then(() => renderResults()); break; }
+    case 'download-quiet': break;
+    case 'copy-applink': copyText(location.origin + location.pathname + '#doc=' + id, 'Link gekopieerd, plak hem in een bericht aan je collega'); break;
+    case 'copy-filelink': { const d = S.docs.find(x => x.id === id); if(d) copyText(publicUrl(d), 'Bestandslink gekopieerd'); break; }
+    case 'copy-doctext': { const box = document.getElementById('docx-view'); if(box) copyText(box.innerText, 'Tekst gekopieerd, je kunt hem in het EPD plakken'); break; }
+    case 'view': setView(v); break;
+    case 'cat': S.cat = S.cat === v && !el.classList.contains('tag') ? null : v; if(S.view === 'prullenbak') S.view = 'alle'; closeModalIfViewer(); renderSide(); renderResults(); scrollToResults(); break;
+    case 'regiofilter': S.regio = S.regio === v ? null : v; renderSide(); renderResults(); break;
+    case 'tagfilter': S.tag = S.tag === v ? null : v; renderResults(); break;
+    case 'clearq': $('#q').value = ''; onSearch(); $('#q').focus(); break;
+    case 'resetfilters': S.cat = null; S.regio = null; S.tag = null; S.view = 'alle'; renderSide(); renderResults(); break;
+    case 'retry': S.loaded = false; $('#results').innerHTML = '<div class="doclist"><div class="skel"></div><div class="skel"></div></div>'; loadDocs(); break;
+    case 'copysql': copyText(SETUP_SQL, 'SQL gekopieerd, plak het in de Supabase SQL Editor'); break;
+  }
+});
+function closeModalIfViewer(){ if(S.modal && S.modal.type === 'viewer') closeModal(true); }
+function metaFor(k){ const M = S.modal; if(!M) return null; if(k === 'edit') return M.meta; if(k === 'link') return M.link.meta; const it = (M.items || []).find(i => i.key === k); return it ? it.meta : null; }
+function markTouched(k){ const M = S.modal; if(!M) return; M.dirty = true; const it = (M.items || []).find(i => i.key === k); if(it) it.touched = true; }
+
+document.addEventListener('input', e => {
+  const el = e.target;
+  if(el.id === 'q'){ onSearch(); return; }
+  if(el.dataset && el.dataset.k && el.dataset.f){ const m = metaFor(el.dataset.k); if(m){ m[el.dataset.f] = el.value; markTouched(el.dataset.k); } }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if(el.id === 'sort'){ S.sort = el.value; lsSet('ft_bieb_sort', S.sort); renderResults(); return; }
+  if(el.id === 'fileinput' && el.files.length){ addFiles(el.files); el.value = ''; return; }
+  if(el.id === 'edit-file' && el.files[0]){
+    const f = el.files[0];
+    if(f.size > MAX_MB * 1024 * 1024){ toast('Bestand is groter dan ' + MAX_MB + ' MB', true); return; }
+    S.modal.newFile = f; S.modal.dirty = true; renderEdit(); return;
+  }
+  if(el.dataset && el.dataset.k && el.dataset.f){ const m = metaFor(el.dataset.k); if(m){ m[el.dataset.f] = el.value; markTouched(el.dataset.k); } }
+});
+let searchTimer = null;
+function onSearch(){
+  S.q = $('#q').value.trim();
+  $('#clearq').hidden = !S.q;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { renderResults(); scheduleContentSearch(); }, 120);
+}
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && S.modal){ closeModal(); return; }
+  if(e.key === '/' && !S.modal && !/input|textarea|select/i.test(document.activeElement.tagName)){ e.preventDefault(); $('#q').focus(); }
+  if(e.key === 'Enter' && S.modal && S.modal.type === 'naam' && e.target.id === 'naam-anders'){ saveNaam(e.target.value); }
+});
+
+/* Bestanden overal op de pagina kunnen neerzetten */
+let dragDepth = 0;
+const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+window.addEventListener('dragenter', e => { if(!hasFiles(e)) return; e.preventDefault(); dragDepth++; const dz = document.getElementById('dropzone'); if(dz) dz.classList.add('over'); else if(!S.modal) $('#dropall').hidden = false; });
+window.addEventListener('dragover', e => { if(hasFiles(e)) e.preventDefault(); });
+window.addEventListener('dragleave', e => { if(!hasFiles(e)) return; dragDepth = Math.max(0, dragDepth - 1); if(!dragDepth){ $('#dropall').hidden = true; const dz = document.getElementById('dropzone'); if(dz) dz.classList.remove('over'); } });
+window.addEventListener('drop', e => {
+  if(!hasFiles(e)) return; e.preventDefault(); dragDepth = 0; $('#dropall').hidden = true;
+  const files = e.dataTransfer.files; if(!files.length) return;
+  if(S.modal && S.modal.type === 'add'){ S.modal.mode = 'bestand'; addFiles(files); }
+  else if(!S.modal || S.modal.type === 'viewer'){ if(S.modal) closeModal(true); openAdd(files, 'bestand'); }
+});
+
+/* Altijd actueel: opnieuw laden zodra de tool weer in beeld komt, en elke 2 minuten */
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && S.loaded && !S.modal) loadDocs(true); });
+setInterval(() => { if(document.visibilityState === 'visible' && !S.modal && !S.busy) loadDocs(true); }, 120000);
+window.addEventListener('beforeunload', e => { if(S.busy){ e.preventDefault(); e.returnValue = ''; } });
+
+/* =====================================================================
+   START
+   ===================================================================== */
+$('#app-version').textContent = APP_VERSION;
+if(new URLSearchParams(location.search).has('_v') && history.replaceState) history.replaceState(null, '', location.pathname + location.hash);
+renderNaam();
+loadDocs().then(() => {
+  const m = location.hash.match(/^#doc=([0-9a-f-]{36})$/i);
+  if(m){
+    const d = S.docs.find(x => x.id === m[1]);
+    if(d) openViewer(d.id); else toast('Dit document staat niet (meer) in de bibliotheek', true);
+  }
+});
+</script>
+</body>
+</html>
