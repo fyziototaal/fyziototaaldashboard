@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-10-13.1 -->
+<!-- APP_VERSION: 2026-10-19.2 -->
 <!doctype html>
 <html lang="nl">
 <head>
 <script>
   // ===== Versiecheck — moet het allereerste script blijven =====
   // VERHOOG APP_VERSION BIJ ELKE WIJZIGING, op beide plekken: de comment op regel 1 én deze constante.
-  const APP_VERSION = "2026-10-13.1";
+  const APP_VERSION = "2026-10-19.2";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -219,6 +219,15 @@
   .fgrid .full{grid-column:1/-1}
   .rchips{display:flex;gap:5px;flex-wrap:wrap}
   .rchips .chip{font-size:12px;padding:4px 10px;min-height:30px}
+
+  /* Mail naar patiënt */
+  .mdocs{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+  .mdoc{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:12px;padding:7px 8px 7px 12px;font-weight:600;font-size:13px}
+  .mdoc span.t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mres{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+  .mres button{display:flex;gap:8px;align-items:center;text-align:left;border:1px dashed var(--border);background:var(--surface);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:12.5px;font-weight:500}
+  .mres button:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  textarea.mailbody{min-height:230px;font-size:13px;line-height:1.55}
 
   /* Viewer */
   .vhead{display:flex;align-items:flex-start;gap:12px;padding:18px 64px 14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
@@ -704,6 +713,7 @@ function docCard(d, words){
     ? `<button class="btn small" data-act="restore" data-id="${d.id}">↩ Terugzetten</button><button class="btn small danger" data-act="purge" data-id="${d.id}">Definitief verwijderen</button>`
     : `<button class="star ${S.favs.has(d.id) ? 'on' : ''}" data-act="fav" data-id="${d.id}" title="${S.favs.has(d.id) ? 'Uit favorieten halen' : 'Aan favorieten toevoegen'}" aria-label="Favoriet">${S.favs.has(d.id) ? '★' : '☆'}</button>
        ${k === 'link' ? `<a class="btn small" href="${esc(d.url)}" target="_blank" rel="noopener" data-act="openlink" data-id="${d.id}">Openen ↗</a>` : `<a class="btn small" href="${esc(downloadUrl(d))}" data-act="download" data-id="${d.id}" title="Downloaden">⬇<span class="only-mobile"> Download</span></a>`}
+       <button class="btn small" data-act="mail" data-id="${d.id}" title="Mailen naar een patiënt">✉️</button>
        <button class="btn small" data-act="edit" data-id="${d.id}" title="Bewerken">✏️</button>`;
   return `<article class="doc" id="doc-${d.id}">
     <div class="ftype ${ui.cls}"><span class="fi">${ui.fi}</span>${ui.lb}</div>
@@ -1079,6 +1089,7 @@ async function openViewer(id){
       ${k === 'docx' ? `<button class="btn small" data-act="copy-doctext" id="btn-doctext" disabled>📋 Tekst kopiëren</button>` : ''}
       <button class="btn small" data-act="copy-applink" data-id="${d.id}" title="Link naar dit document in de bibliotheek, om naar een collega te sturen">🔗 Link voor collega</button>
       ${k !== 'link' ? `<button class="btn small" data-act="copy-filelink" data-id="${d.id}" title="Directe link naar het bestand, bijv. om naar een patiënt te mailen">📎 Directe bestandslink</button>` : ''}
+      ${!d.verwijderd_op ? `<button class="btn small primary" data-act="mail" data-id="${d.id}">✉️ Mail naar patiënt</button>` : ''}
       ${!d.verwijderd_op ? `<button class="btn small" data-act="star-viewer" data-id="${d.id}">${S.favs.has(d.id) ? '★ Favoriet' : '☆ Favoriet'}</button><button class="btn small" data-act="edit" data-id="${d.id}">✏️ Bewerken</button>` : ''}
     </div>
     <div class="vbody">${body}</div>
@@ -1103,6 +1114,88 @@ async function openViewer(id){
       const box = document.getElementById('docx-view'); if(box) box.innerHTML = 'Voorbeeld laden lukte niet. Gebruik de knop Downloaden.';
     }
   }
+}
+
+/* ---- Mail naar patiënt (Gmail) ---- */
+function openMail(id){
+  if(!S.docs.find(x => x.id === id)) return;
+  needNaam(() => {
+    S.modal = {type:'mail', ids:[id], to:'', naam:'', zoek:'', body:'', bodyTouched:false, dirty:false};
+    S.modal.body = mailBody();
+    renderMail();
+  });
+}
+const mailDocs = () => S.modal.ids.map(i => S.docs.find(x => x.id === i)).filter(Boolean);
+function mailSubject(){
+  const ds = mailDocs();
+  return ds.length === 1 ? ds[0].titel + ' – Fyzio Totaal' : 'Informatie van Fyzio Totaal';
+}
+function mailBody(){
+  // Altijd 'je' (afspraak Fyzio Totaal)
+  const M = S.modal, ds = mailDocs(), meer = ds.length > 1;
+  const aanhef = M.naam.trim() ? 'Beste ' + M.naam.trim() + ',' : 'Goedendag,';
+  const lijst = ds.map(d => '• ' + d.titel + '\n' + publicUrl(d)).join('\n\n');
+  const intro = 'Zoals afgesproken stuur ik je hierbij ' + (meer ? 'de volgende documenten:' : 'het volgende document:');
+  const uitleg = 'Je opent ' + (meer ? 'een document' : 'het document') + ' door op de link te klikken. Heb je nog vragen? Neem dan gerust contact met ons op.';
+  return aanhef + '\n\n' + intro + '\n\n' + lijst + '\n\n' + uitleg + '\n\nMet vriendelijke groet,\n\n' + S.naam + '\nFyzio Totaal';
+}
+function renderMail(){
+  const M = S.modal;
+  openModal(`<h2>Mail naar patiënt</h2>
+    <p style="color:var(--muted);margin:0 0 12px;font-size:12.5px">De mail opent klaar in Gmail; jij controleert hem en klikt zelf op Verzenden. De patiënt krijgt een link waarmee het document geopend en gedownload kan worden.</p>
+    <div class="fgrid">
+      <label class="f">E-mailadres patiënt<input class="inp" type="email" data-mf="to" value="${esc(M.to)}" placeholder="naam@voorbeeld.nl" inputmode="email" autocomplete="off"></label>
+      <label class="f"><span>Naam in de aanhef <span class="opt">(optioneel)</span></span><input class="inp" data-mf="naam" value="${esc(M.naam)}" placeholder="Bijv. Anna of mevrouw Jansen" autocomplete="off"></label>
+      <div class="f full"><label class="f">Documenten</label>
+        <div class="mdocs" id="mail-docs">${mailDocsHtml()}</div>
+        <input class="inp" data-mf="zoek" value="${esc(M.zoek)}" placeholder="＋ Nog een document toevoegen (zoek op titel)…" autocomplete="off" style="margin-top:8px">
+        <div class="mres" id="mail-res">${mailResHtml()}</div></div>
+      <label class="f full">Bericht<textarea class="inp mailbody" data-mf="body" id="mail-body">${esc(M.body)}</textarea></label>
+    </div>
+    <div class="notice" style="background:var(--cyan-soft);color:var(--cyan-strong)">Het e-mailadres wordt nergens opgeslagen. Stuur alleen patiëntinformatie, oefenprogramma's en protocollen mee, geen interne formats.</div>
+    <div class="actions">
+      <button class="btn" data-act="mail-copy" style="margin-right:auto">📋 Tekst kopiëren</button>
+      <button class="btn" data-act="mail-mailto" title="Opent je standaard mailprogramma, bijv. Outlook">Ander mailprogramma</button>
+      <button class="btn primary" data-act="mail-gmail">✉️ Openen in Gmail</button>
+    </div>`, 'wide');
+}
+function mailDocsHtml(){
+  return mailDocs().map(d => `<div class="mdoc"><span>${KIND_UI[kind(d)].fi}</span><span class="t">${esc(d.titel)}</span>${S.modal.ids.length > 1 ? `<button class="rm" style="margin-left:0" data-act="mail-rm" data-id="${d.id}" title="Weghalen">✕</button>` : ''}</div>`).join('');
+}
+function mailResHtml(){
+  const words = queryWords(S.modal.zoek); if(!words.length) return '';
+  return active().filter(d => !S.modal.ids.includes(d.id)).map(d => ({d, s: scoreDoc(d, words)})).filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s).slice(0, 6)
+    .map(({d}) => `<button data-act="mail-add" data-id="${d.id}">＋ ${esc(d.titel)} <span style="color:var(--muted);margin-left:auto">${catOf(d.categorie).icon}</span></button>`).join('')
+    || '<span style="font-size:12.5px;color:var(--muted)">Geen document gevonden</span>';
+}
+function mailRefresh(){
+  const M = S.modal;
+  $('#mail-docs').innerHTML = mailDocsHtml();
+  $('#mail-res').innerHTML = mailResHtml();
+  if(!M.bodyTouched){ M.body = mailBody(); $('#mail-body').value = M.body; }
+}
+function mailInput(el){
+  const M = S.modal, f = el.dataset.mf;
+  M[f] = el.value;
+  if(f === 'body'){ M.bodyTouched = true; M.dirty = true; return; }
+  if(f === 'naam' && !M.bodyTouched){ M.body = mailBody(); $('#mail-body').value = M.body; }
+  if(f === 'zoek') $('#mail-res').innerHTML = mailResHtml();
+}
+function mailAdd(id){ const M = S.modal; if(!M.ids.includes(id)) M.ids.push(id); M.zoek = ''; const z = document.querySelector('[data-mf="zoek"]'); if(z) z.value = ''; mailRefresh(); }
+function mailRm(id){ const M = S.modal; M.ids = M.ids.filter(i => i !== id); mailRefresh(); }
+function mailSend(how){
+  const M = S.modal, to = M.to.trim(), su = mailSubject(), body = M.body;
+  if(how === 'copy'){ copyText(body, 'Bericht gekopieerd'); return; }
+  if(to && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)){ toast('Dit e-mailadres klopt niet', true); document.querySelector('[data-mf="to"]').focus(); return; }
+  if(!to && !window.confirm('Je hebt nog geen e-mailadres ingevuld. Toch openen? Dan vul je het adres in de mail zelf in.')) return;
+  const url = how === 'gmail'
+    ? 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(to) + '&su=' + encodeURIComponent(su) + '&body=' + encodeURIComponent(body)
+    : 'mailto:' + encodeURIComponent(to).replace(/%40/g, '@') + '?subject=' + encodeURIComponent(su) + '&body=' + encodeURIComponent(body);
+  if(how === 'gmail') window.open(url, '_blank', 'noopener'); else location.href = url;
+  mailDocs().forEach(d => bumpOpened(d));
+  closeModal(true);
+  toast(how === 'gmail' ? 'Gmail is geopend in een nieuw tabblad, controleer de mail en klik op Verzenden' : 'Je mailprogramma wordt geopend');
 }
 
 /* =====================================================================
@@ -1146,6 +1239,12 @@ document.addEventListener('click', e => {
     case 'download-quiet': break;
     case 'copy-applink': copyText(location.origin + location.pathname + '#doc=' + id, 'Link gekopieerd, plak hem in een bericht aan je collega'); break;
     case 'copy-filelink': { const d = S.docs.find(x => x.id === id); if(d) copyText(publicUrl(d), 'Bestandslink gekopieerd'); break; }
+    case 'mail': openMail(id); break;
+    case 'mail-add': mailAdd(id); break;
+    case 'mail-rm': mailRm(id); break;
+    case 'mail-gmail': mailSend('gmail'); break;
+    case 'mail-mailto': mailSend('mailto'); break;
+    case 'mail-copy': mailSend('copy'); break;
     case 'copy-doctext': { const box = document.getElementById('docx-view'); if(box) copyText(box.innerText, 'Tekst gekopieerd, je kunt hem in het EPD plakken'); break; }
     case 'view': setView(v); break;
     case 'cat': S.cat = S.cat === v && !el.classList.contains('tag') ? null : v; if(S.view === 'prullenbak') S.view = 'alle'; closeModalIfViewer(); renderSide(); renderResults(); scrollToResults(); break;
@@ -1164,6 +1263,7 @@ function markTouched(k){ const M = S.modal; if(!M) return; M.dirty = true; const
 document.addEventListener('input', e => {
   const el = e.target;
   if(el.id === 'q'){ onSearch(); return; }
+  if(S.modal && S.modal.type === 'mail' && el.dataset.mf){ mailInput(el); return; }
   if(el.dataset && el.dataset.k && el.dataset.f){ const m = metaFor(el.dataset.k); if(m){ m[el.dataset.f] = el.value; markTouched(el.dataset.k); } }
 });
 document.addEventListener('change', e => {
