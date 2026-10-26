@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-23.1 -->
+<!-- APP_VERSION: 2026-10-26.2 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -10,7 +10,7 @@
 <script>
 // ── VERSIECHECK ── moet altijd het allereerste script blijven.
 // Verhoog APP_VERSION bij ELKE wijziging, hier én in de HTML-comment op regel 1.
-const APP_VERSION = '2026-10-23.1';
+const APP_VERSION = '2026-10-26.2';
 (function () {
   if (location.protocol === 'file:') return;
   fetch(location.pathname, { cache: 'no-store' })
@@ -726,7 +726,9 @@ Het vervolgadvies (1-op-1 begeleiding, matgroep of reformergroep) is bepaald doo
 
 TAAL EN STIJL:
 - Schrijf in correct Nederlands, informeel, jij-vorm ("je/jij"), nooit "u".
-- Warm maar nuchter en compact. Geen zweverige of omslachtige zinnen. Geen medische diagnoses. Geen nocebo-taal.
+- Kort, concreet, vriendelijk en motiverend, maar niet klef of overdreven enthousiast. Schrijf zoals een fysiotherapeut het in twee zinnen aan iemand uitlegt. Elke zin moet informatie bevatten: score, wat dat betekent, of wat je ermee doet. Geen inleidende, herhalende of afsluitende zinnen.
+- Geen wollige of vage bijvoeglijke naamwoorden en geen beeldspraak. Verboden zijn onder meer: "prettig beweeglijk", "mooi", "fijn", "heerlijk", "soepel bewegend lichaam", "stevige basis", "sterk fundament", "een mooie uitgangspositie", "je lichaam", "geweldig", "knap". Een nuchtere motiverende opmerking zoals "je bent goed op weg" of "hier valt nog winst te behalen" mag wel, met mate (maximaal een of twee keer in het hele verslag). Benoem verder gewoon de score en de normcategorie (bijv. "Wall Angels: goed, je schouders en bovenrug hebben voldoende beweeglijkheid.").
+- Geen medische diagnoses. Geen nocebo-taal.
 - Gebruik alleen bestaande, gewone woorden die een fysiotherapeut hardop zo zou zeggen. Geen verzonnen of ongebruikelijke samenstellingen. Gebruik nooit "benedenlichaam" (gebruik "onderlichaam" of benoem het concrete lichaamsdeel).
 - Gebruik altijd de vaste testnamen, nooit vertaald of omschreven: "Wall Angels", "vinger-bodemafstand", "happy baby pose", "bruggetje op 1 been", "plank", "half roll back" (of "half roll back met rotatie"), "legraise".
 - Geen Engelse woorden waar een goed Nederlands alternatief bestaat (behalve de testnamen en gangbare pilatestermen zoals "reformer").
@@ -735,7 +737,7 @@ TAAL EN STIJL:
 - Let op grammatica, ook bij meervoud.
 
 ADVIESTOON:
-- Een goede score benoem je positief zonder vervolgadvies. Goed is goed.
+- Een goede score benoem je kort en feitelijk, zonder vervolgadvies. Motiverend mag, overdreven lof niet. Goed is goed.
 - Aandachtspunten formuleer je als kansen met een concrete richting, nooit als tekortkomingen.
 
 DEELNEMER:
@@ -754,21 +756,21 @@ STRUCTUUR - volg dit patroon exact, zonder extra kopjes:
 Testverslag Pilates [Naam] — [datum]
 
 Mobiliteit
-[Beschrijf Wall Angels, vinger-bodemafstand en happy baby pose kort met score. Overkoepelende conclusie in dezelfde alinea.]
+[Per test één korte zin: testnaam, score of categorie, en wat dat betekent. Sluit af met één conclusiezin. Maximaal 4 zinnen in totaal.]
 
 Kracht en rompcontrole
-[Beschrijf bruggetje op 1 been, plank, half roll back en legraise met score. Conclusie in dezelfde alinea.]
+[Per test één korte zin: testnaam, score of categorie, en wat dat betekent. Noem bij het bruggetje een verschil tussen links en rechts alleen als dat er is. Sluit af met één conclusiezin. Maximaal 5 zinnen in totaal.]
 
 Advies voor je pilatestraining
-[Het vervolgadvies van de tester, met een korte toelichting die aansluit op de testresultaten.]
+[Het vervolgadvies van de tester in één zin, plus maximaal twee zinnen waarom dit past bij de testresultaten.]
 
 Belangrijkste punten
-Opsomming waarbij elke regel begint met een asterisk en een spatie (* ). 3 tot 5 volledige zinnen, een mix van sterke punten en aandachtspunten als kansen.
+Opsomming waarbij elke regel begint met een asterisk en een spatie (* ). 3 tot 4 korte zinnen, een mix van sterke punten en aandachtspunten. Geen herhaling van letterlijk dezelfde zinnen uit de secties hierboven.
 
 Aan de slag
-Concrete actielijst, elke actie begint met een asterisk en een spatie (* ). 3 tot 5 uitvoerbare acties gericht op de aandachtspunten, passend bij pilates en zonder fitnessapparatuur. Geen vage adviezen, geen verwijzingen naar collega's.
+Concrete actielijst, elke actie begint met een asterisk en een spatie (* ). 3 tot 4 korte, uitvoerbare acties (één zin per actie) gericht op de aandachtspunten, passend bij pilates en zonder fitnessapparatuur. Geen vage adviezen, geen verwijzingen naar collega's.
 
-Maximaal 550 woorden. Zorg dat elke sectie volledig is afgerond.`;
+Maximaal 300 woorden. Zorg dat elke sectie volledig is afgerond.`;
 
   try{
     const apiKey=await zorgVoorApiKey();
