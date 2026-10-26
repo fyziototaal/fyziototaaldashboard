@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-06.1 -->
+<!-- APP_VERSION: 2026-10-26.1 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-06.1";
+  const APP_VERSION = "2026-10-26.1";
   (function(){
     var params = new URLSearchParams(location.search);
     var alreadyReloaded = params.has("_v");
@@ -709,7 +709,8 @@
     { name: "Julia",      pin: "0000", admin: false }
   ];
   const EXTRA_MEMBERS = [
-    { name: "Ellen", pin: "0000", admin: true }
+    { name: "Ellen", pin: "0000", admin: true },
+    { name: "Matthijs", pin: "0000", admin: false }
   ];
   const CODE_OPTIONS = [
     { id: "003", label: "003 (personen -18 jaar)" },
@@ -1367,7 +1368,7 @@
         <div class="card" style="margin-bottom:12px; padding:14px 16px; box-shadow:none;${isEditing ? " border-color:var(--warning);" : ""}">
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; gap:8px;">
             <strong>${monthLabel(r.month)}</strong>
-            <span class="tag tag-blue mono">${fmtH(r.extraHours)} extra uur${r.extraHours===1?"":"en"}</span>
+            <span class="tag tag-blue mono">${fmtH(r.extraHours)} extra ${r.extraHours===1?"uur":"uren"}</span>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">${covPill}${editPill}</div>
           <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Codes gecheckt: ${codesHtml}</div>
