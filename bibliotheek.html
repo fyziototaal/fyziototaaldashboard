@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-10-19.2 -->
+<!-- APP_VERSION: 2026-10-27.1 -->
 <!doctype html>
 <html lang="nl">
 <head>
 <script>
   // ===== Versiecheck — moet het allereerste script blijven =====
   // VERHOOG APP_VERSION BIJ ELKE WIJZIGING, op beide plekken: de comment op regel 1 én deze constante.
-  const APP_VERSION = "2026-10-19.2";
+  const APP_VERSION = "2026-10-27.1";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -356,6 +356,7 @@ const CATS = [
   {id:'meet',       label:'Meetinstrumenten & vragenlijsten', icon:'📏'},
   {id:'patient',    label:'Patiëntinformatie',                icon:'💬'},
   {id:'oefen',      label:'Oefenprogramma\'s',                icon:'🏋️'},
+  {id:'groep',      label:'Fyziotraining / Balance / FyzioFit', icon:'👥'},
   {id:'praktijk',   label:'Werkafspraken & praktijk',         icon:'🏥'},
   {id:'scholing',   label:'Scholing & literatuur',            icon:'📚'},
   {id:'overig',     label:'Overig',                           icon:'📁'}
@@ -502,6 +503,7 @@ function suggestTitle(name){
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 const CAT_RULES = [
+  ['groep',      /fyziotraining|fyziofit|fyzio fit|\bbalance\b|balansgroep|groepstraining|groepsles/],
   ['rapportage', /terugkoppel|rapportage|verslag|\bbrief|verwijzer|terugrapport|aan de huisarts|aan de orthopeed|geachte collega/],
   ['formulier',  /invuldocument|invulformulier|formulier|checklist|screening|intakeformulier/],
   ['protocol',   /protocol|richtlijn|revalidatieschema|nabehandeling/],
