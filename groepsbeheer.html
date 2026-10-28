@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-10-13.2 -->
+<!-- APP_VERSION: 2026-10-28.1 -->
 <html lang="nl">
 <head>
   <script>
     /* ── VERSIECHECK: altijd de nieuwste versie laden ──
        Verhoog APP_VERSION bij élke wijziging, zowel hier als in de HTML-comment bovenaan. */
-    var APP_VERSION = "2026-10-13.2";
+    var APP_VERSION = "2026-10-28.1";
     (function () {
       try {
         if (location.protocol === "file:") return;
@@ -89,6 +89,14 @@
       display:flex;align-items:center;justify-content:center;
       font-weight:800;font-size:14px;flex-shrink:0;
     }
+    .hdr-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+    .btn-download{
+      background:#fff;color:#82176D;border:none;border-radius:12px;
+      padding:7px 14px;font-size:13px;font-weight:600;white-space:nowrap;
+      box-shadow:0 2px 8px rgba(0,0,0,0.12);transition:background .15s;
+    }
+    .btn-download:hover{background:#f3e3ef;}
+    .btn-download:disabled{opacity:.6;cursor:wait;}
     .hdr-badge{
       display:inline-block;background:rgba(255,255,255,0.14);
       border:1px solid rgba(255,255,255,0.35);border-radius:999px;
@@ -544,6 +552,67 @@ function calcNotifs(groups,waitlist,MAX){
   }
   return n;
 }
+/* ── EXPORT NAAR EXCEL ──
+   SheetJS wordt pas geladen op het moment dat iemand op "Download overzicht" klikt. */
+var XLSX_URL="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+function loadXlsx(){
+  return new Promise(function(res,rej){
+    if(window.XLSX)return res(window.XLSX);
+    var sc=document.createElement("script");sc.src=XLSX_URL;
+    sc.onload=function(){window.XLSX?res(window.XLSX):rej();};sc.onerror=rej;
+    document.head.appendChild(sc);
+  });
+}
+function memberStatus(m){
+  if(m.reserved)return "Gereserveerd";
+  if(m.stopped)return "Gepauzeerd";
+  return "Actief";
+}
+function buildExportSheets(){
+  var dateNow=new Date().toLocaleDateString("nl-NL");
+  var groepen=[["Onderdeel","Dag","Tijd","Fysiotherapeut","Niveau","Max.","Actief","Gepauzeerd","Gereserveerd","Vaste plekken vrij","Tijdelijke plekken vrij","Status"]];
+  var deeln=[["Onderdeel","Dag","Tijd","Fysiotherapeut","Naam","Status","Betaling","Reden pauze","Gepauzeerd t/m","Gereserveerd vanaf"]];
+  var wacht=[["Onderdeel","#","Naam","Aangemeld op","Via","Beschikbaarheid","Notitie"]];
+  [["ft","Fyziotraining"],["ba","Balance"]].forEach(function(x){
+    var mod=x[0],naam=x[1],S=STATE[mod],def=getMax(mod);
+    (S.groups||[]).forEach(function(g){
+      var ac=0,sc=0,rc=0;g.members.forEach(function(m){if(m.reserved)rc++;else if(m.stopped)sc++;else ac++;});
+      var GM=groupMax(g,def),pp=plekParts(ac,sc,rc,GM),st=gStatus(ac,sc,rc,GM);
+      groepen.push([naam,g.day,g.time,g.colleague||"",g.niveau||"",GM,ac,sc,rc,pp.perm,pp.tmp,st==="full"?"Vol":st==="temp"?"Alleen tijdelijk plek":"Plek vrij"]);
+      g.members.slice().sort(function(a,b){return (a.reserved-b.reserved)||(a.stopped-b.stopped);}).forEach(function(m){
+        deeln.push([naam,g.day,g.time,g.colleague||"",m.naam,memberStatus(m),
+          m.reserved?"":(BLAB[m.betaling||"incasso"]||"").replace(/^[^A-Za-z]+/,""),
+          m.stopped?(m.stopReason||""):"",
+          m.stopped?(m.stopUnknown?"Onbekend":(m.stopUntil?fmtDate(m.stopUntil):"")):"",
+          m.reserved&&m.reservedFrom?fmtDate(m.reservedFrom):""]);
+      });
+    });
+    (S.waitlist||[]).slice().sort(function(a,b){return a.date-b.date;}).forEach(function(w,i){
+      var ref=w.referrer==="anders"?(w.referrerOther||"anders"):(w.referrer||"");
+      wacht.push([naam,i+1,w.naam||"",w.date?dateStr(w.date):"",ref,availSummary(w.availability),w.note||""]);
+    });
+  });
+  return {dateNow:dateNow,sheets:[["Groepen",groepen,[14,11,7,20,28,6,7,11,12,17,20,20]],["Deelnemers",deeln,[14,11,7,20,22,14,12,26,15,18]],["Wachtlijst",wacht,[14,4,20,13,14,60,40]]]};
+}
+async function downloadOverview(btn){
+  if(STATE.ft.loading||STATE.ba.loading){alert("De gegevens worden nog geladen. Probeer het over een paar seconden opnieuw.");return;}
+  var old=btn.textContent;btn.disabled=true;btn.textContent="⏳ Bezig…";
+  try{
+    var X=await loadXlsx(),data=buildExportSheets(),wb=X.utils.book_new();
+    data.sheets.forEach(function(sh){
+      var ws=X.utils.aoa_to_sheet(sh[1]);
+      ws["!cols"]=sh[2].map(function(w){return{wch:w};});
+      if(sh[1].length>1)ws["!autofilter"]={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:sh[1].length-1,c:sh[1][0].length-1}})};
+      X.utils.book_append_sheet(wb,ws,sh[0]);
+    });
+    var d=new Date(),iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    X.writeFile(wb,"Groepsoverzicht Fyzio Totaal "+iso+".xlsx");
+  }catch(e){
+    alert("Het overzicht kon niet worden gemaakt. Controleer je internetverbinding en probeer het opnieuw.");
+  }
+  btn.disabled=false;btn.textContent=old;
+}
+
 function availSummary(av){if(!av)return"";var parts=[];for(var i=0;i<DAY_ORDER.length;i++){var day=DAY_ORDER[i];if(!av[day])continue;var times=Object.keys(av[day]).filter(function(t){return av[day][t];});if(times.length>0)parts.push(day.substring(0,2)+": "+times.join(", "));}return parts.join(" | ");}
 
 function buildModule(mod,MAX,accent,accentLight){
@@ -955,7 +1024,10 @@ function buildApp(){
   titles.appendChild(el("h1",{className:"hdr-title",style:{margin:"0",fontSize:"20px",fontWeight:"700",lineHeight:"1.2"}},"Groepsbeheer"));
   brand.appendChild(titles);
   hdrTop.appendChild(brand);
-  hdrTop.appendChild(el("span",{className:"hdr-badge"},"🔒 Alleen voor intern gebruik"));
+  var hdrAct=el("div",{className:"hdr-actions"});
+  hdrAct.appendChild(el("span",{className:"hdr-badge"},"🔒 Alleen voor intern gebruik"));
+  hdrAct.appendChild(el("button",{className:"btn-download",title:"Download een Excel-overzicht van alle groepen, deelnemers en de wachtlijst",onClick:function(e){downloadOverview(e.currentTarget);}},"⬇ Download overzicht"));
+  hdrTop.appendChild(hdrAct);
   hdr.appendChild(hdrTop);
 
   var tabRow=el("div",{className:"desktop-tabs"});
