@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-10-26.1 -->
+<!-- APP_VERSION: 2026-11-06.1 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-10-26.1";
+  const APP_VERSION = "2026-11-06.1";
   (function(){
     var params = new URLSearchParams(location.search);
     var alreadyReloaded = params.has("_v");
@@ -236,7 +236,8 @@
   .pill.neutral{ background:var(--surface-2); color:var(--text-muted); }
   button.pill{ border:none; cursor:pointer; font-family:inherit; }
 
-  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+  @media (max-width:1000px){ .kpis{ grid-template-columns:repeat(3,1fr); } }
   @media (max-width:800px){ .kpis{ grid-template-columns:repeat(2,1fr); } }
   .kpi{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--shadow); }
   .kpi .label{ font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); font-weight:700; margin-bottom:8px; }
@@ -395,6 +396,10 @@
   alter table afhandelformulier_submissions add column if not exists edits jsonb default '[]';
   alter table afhandelformulier_submissions add column if not exists edited_at bigint;
 
+  4. NIEUW in versie 2026-11-06.1 — eenmalig draaien (FyzioFit uren):
+
+  alter table afhandelformulier_submissions add column if not exists fyziofit_hours numeric;
+
   Let op: dit is géén echte beveiliging — de PIN-check gebeurt in de
   browser. PIN's zijn in beheer verborgen, maar staan nog wel in de
   database. Prima voor een klein intern team.
@@ -535,6 +540,12 @@
             <button type="button" class="btn ghost small" onclick="addBreakdownRow()">+ categorie toevoegen</button>
           </fieldset>
 
+          <div class="field">
+            <label for="f-fyziofit">Aantal FyzioFit uren *</label>
+            <input type="number" min="0" step="0.25" id="f-fyziofit" required>
+            <div class="hint">Telt níet mee als extra uren, wel voor de omzet. Geen FyzioFit gegeven? Vul 0 in.</div>
+          </div>
+
           <fieldset>
             <label>Code 10005 (decl. praktijkkosten) gebruikt in trajecten waar dit mogelijk is?</label>
             <div class="radio-row" id="f-10005"></div>
@@ -635,7 +646,7 @@
           <table id="admin-table">
             <thead><tr>
               <th>Maand</th><th>Naam</th><th>COV check</th><th>Codes</th><th>Intakes</th><th>Intakes +1000</th>
-              <th>Extra uren</th><th>Code 10005</th><th>ZorgTopics check</th><th>Dossiers/QDNA</th><th>Status</th><th></th>
+              <th>Extra uren</th><th>FyzioFit uren</th><th>Code 10005</th><th>ZorgTopics check</th><th>Dossiers/QDNA</th><th>Status</th><th></th>
             </tr></thead>
             <tbody id="admin-table-body"></tbody>
           </table>
@@ -758,6 +769,7 @@
       covCheck: row.cov_check, covCheckAnders: row.cov_check_anders,
       codes: row.codes || [], intakes: row.intakes, intakes1000: row.intakes_1000,
       extraHours: row.extra_hours, breakdown: row.breakdown || [],
+      fyziofitHours: row.fyziofit_hours,
       code10005: row.code_10005, zorgtopics: row.zorgtopics, dossiers: row.dossiers,
       submittedAt: row.submitted_at, editedAt: row.edited_at || null, edits: row.edits || []
     };
@@ -767,6 +779,7 @@
       id: s.id, name: s.name, month: s.month,
       cov_check: s.covCheck, cov_check_anders: s.covCheckAnders, codes: s.codes,
       intakes: s.intakes, intakes_1000: s.intakes1000, extra_hours: s.extraHours,
+      fyziofit_hours: s.fyziofitHours,
       breakdown: s.breakdown, code_10005: s.code10005, zorgtopics: s.zorgtopics,
       dossiers: s.dossiers, submitted_at: s.submittedAt, edited_at: s.editedAt, edits: s.edits
     };
@@ -783,6 +796,7 @@
     { key:"intakes",        label:"Aantal intakes",          fmt: num },
     { key:"intakes1000",    label:"Intakes +1000",           fmt: num },
     { key:"extraHours",     label:"Extra uren",              fmt: num },
+    { key:"fyziofitHours",  label:"FyzioFit uren",           fmt: num },
     { key:"breakdown",      label:"Uitsplitsing extra uren", fmt: v => (v && v.length) ? v.map(b => `${b.category || "?"}: ${fmtH(b.hours)}u`).join(", ") : "geen" },
     { key:"code10005",      label:"Code 10005",              fmt: yn },
     { key:"zorgtopics",     label:"ZorgTopics check",        fmt: yn },
@@ -1050,6 +1064,7 @@
     document.getElementById("f-intakes").value = "";
     document.getElementById("f-intakes1000").value = "";
     document.getElementById("f-extrahours").value = "";
+    document.getElementById("f-fyziofit").value = "";
     document.getElementById("f-cov-anders").value = "";
     document.getElementById("f-dossiers").value = "";
     setEditUI(false);
@@ -1075,6 +1090,7 @@
     document.getElementById("f-intakes").value = s.intakes ?? "";
     document.getElementById("f-intakes1000").value = s.intakes1000 ?? "";
     document.getElementById("f-extrahours").value = s.extraHours ?? "";
+    document.getElementById("f-fyziofit").value = s.fyziofitHours ?? "";
 
     document.getElementById("f-breakdown").innerHTML = "";
     if(s.breakdown && s.breakdown.length){
@@ -1114,6 +1130,7 @@
       intakes: document.getElementById("f-intakes").value,
       intakes1000: document.getElementById("f-intakes1000").value,
       extraHours: document.getElementById("f-extrahours").value,
+      fyziofitHours: document.getElementById("f-fyziofit").value,
       breakdown: Array.from(document.querySelectorAll("#f-breakdown .breakdown-row")).map(r => ({
         category: r.querySelector(".bd-cat").value.trim(),
         hours: parseFloat(r.querySelector(".bd-hours").value) || 0
@@ -1129,7 +1146,7 @@
       document.getElementById("f-month").focus();
       return;
     }
-    if(!name || !data.covCheck || data.intakes==="" || data.intakes1000==="" || data.extraHours==="" || !data.zorgtopics || !data.dossiers){
+    if(!name || !data.covCheck || data.intakes==="" || data.intakes1000==="" || data.extraHours==="" || data.fyziofitHours==="" || !data.zorgtopics || !data.dossiers){
       statusEl.textContent = "Vul de verplichte velden in.";
       statusEl.style.color = "var(--critical)";
       return;
@@ -1137,6 +1154,7 @@
     data.intakes = parseFloat(data.intakes);
     data.intakes1000 = parseFloat(data.intakes1000);
     data.extraHours = parseFloat(data.extraHours);
+    data.fyziofitHours = parseFloat(data.fyziofitHours);
 
     if(!supabaseClient){
       statusEl.textContent = "Niet verbonden met de database — controleer de Supabase-instellingen bovenin het bestand.";
@@ -1185,8 +1203,10 @@
     btn.disabled = false;
 
     if(error){
-      const missingCols = /edits|edited_at/.test(error.message || "");
-      statusEl.textContent = missingCols
+      const msg = error.message || "";
+      statusEl.textContent = /fyziofit_hours/.test(msg)
+        ? "Database mist de kolom voor FyzioFit uren — draai de SQL-update van versie 2026-11-06.1 (zie bovenin het bestand)."
+        : /edits|edited_at/.test(msg)
         ? "Database mist de kolommen voor aanpassingen — draai de SQL-update voor aanpassingen (zie bovenin het bestand)."
         : "Opslaan mislukt, probeer het nog eens.";
       statusEl.style.color = "var(--critical)";
@@ -1218,7 +1238,12 @@
   function showPostSubmitActions(name, month, changes){
     const { subject, body } = secretariaatMessage(name, month, changes);
     const link = document.getElementById("mail-secretariaat-link");
-    link.href = `mailto:${SECRETARIAAT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // Gmail web-compose (zelfde als verlof-app). mailto: opende een leeg tabblad
+    // omdat er op de praktijk-pc's geen mailprogramma aan gekoppeld is.
+    link.href = "https://mail.google.com/mail/?view=cm&fs=1"
+      + "&to=" + encodeURIComponent(SECRETARIAAT_EMAIL)
+      + "&su=" + encodeURIComponent(subject)
+      + "&body=" + encodeURIComponent(body);
     link.dataset.subject = subject;
     link.dataset.body = body;
     document.getElementById("notify-text").textContent = (changes && changes.length)
@@ -1300,6 +1325,7 @@
     row("Aantal extra uren", num(sub.extraHours));
     row("Extra uren gebruikt voor", (sub.breakdown && sub.breakdown.length)
       ? sub.breakdown.map(b => `${b.category || "?"}: ${fmtH(b.hours)} u`).join("\n") : "geen uitsplitsing");
+    row("Aantal FyzioFit uren (geen extra uren)", num(sub.fyziofitHours));
     row("Code 10005 gebruikt", yn(sub.code10005));
     row("ZorgTopics trajecten gecontroleerd", sub.zorgtopics === "nvt" ? "NVT, geen ZorgTopics trajecten" : yn(sub.zorgtopics));
     row("Dossiers afgesloten / QDNA verzonden", sub.dossiers);
@@ -1372,7 +1398,7 @@
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">${covPill}${editPill}</div>
           <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Codes gecheckt: ${codesHtml}</div>
-          <div style="font-size:12px; color:var(--text-muted);">Intakes: <span class="mono">${fmtH(r.intakes)}</span> &middot; Intakes +1000: <span class="mono">${fmtH(r.intakes1000)}</span></div>
+          <div style="font-size:12px; color:var(--text-muted);">Intakes: <span class="mono">${fmtH(r.intakes)}</span> &middot; Intakes +1000: <span class="mono">${fmtH(r.intakes1000)}</span>${r.fyziofitHours != null ? ` &middot; FyzioFit: <span class="mono">${fmtH(r.fyziofitHours)}u</span>` : ""}</div>
           ${(r.breakdown && r.breakdown.length) ? `<div style="margin-top:8px; font-size:12px;">${r.breakdown.map(b=>`&bull; ${esc(b.category)}: <span class="mono">${fmtH(b.hours)}u</span>`).join("<br>")}</div>` : ""}
           ${(r.edits && r.edits.length) ? `<details class="inline-details"><summary>Bekijk aanpassingen</summary>${renderChangeList(r.edits)}</details>` : ""}
           <div class="history-actions">
@@ -1417,6 +1443,7 @@
     const submittedNames = new Set(rows.map(r=>r.name));
     const missing = teamNames().filter(n => !submittedNames.has(n));
     const totalIntakes = rows.reduce((sum,r) => sum + (r.intakes||0), 0);
+    const totalFyziofit = rows.reduce((sum,r) => sum + (r.fyziofitHours||0), 0);
     const covIssues = rows.filter(r => r.covCheck !== "ja").length;
 
     document.getElementById("admin-kpis").innerHTML = `
@@ -1424,6 +1451,11 @@
         <div class="label">Totaal extra uren</div>
         <div class="value mono">${fmtH(totalHours)}</div>
         <div class="sub">${monthSel==="alle"?"alle maanden":monthLabel(monthSel)}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">FyzioFit uren</div>
+        <div class="value mono">${fmtH(totalFyziofit)}</div>
+        <div class="sub">voor omzet, geen extra uren</div>
       </div>
       <div class="kpi">
         <div class="label">Ingediend</div>
@@ -1491,7 +1523,8 @@
     const names = Array.from(new Set(teamNames().concat(rows.map(r => r.name))));
     const data = names.map(n => {
       const rs = rows.filter(r => r.name === n);
-      return { name: n, rows: rs, total: rs.reduce((s,r) => s + (r.extraHours||0), 0) };
+      return { name: n, rows: rs, total: rs.reduce((s,r) => s + (r.extraHours||0), 0),
+        fyziofit: rs.reduce((s,r) => s + (r.fyziofitHours||0), 0) };
     }).sort((a,b) => b.total - a.total || a.name.localeCompare(b.name));
 
     if(data.length === 0){
@@ -1527,6 +1560,9 @@
             body += `<div class="hint">Let op: uitsplitsing telt op tot ${fmtH(catSum)}u, opgegeven totaal is ${fmtH(d.total)}u.</div>`;
           }
         }
+        if(d.fyziofit > 0){
+          body += `<div class="mini-sub">Los van extra uren</div><div style="font-size:12px; display:flex; justify-content:space-between;"><span>FyzioFit uren</span><span class="mono">${fmtH(d.fyziofit)}u</span></div>`;
+        }
         if(monthSel === "alle" && d.rows.length > 1){
           const perMonth = d.rows.slice().sort((a,b) => b.month.localeCompare(a.month));
           body += `<div class="mini-sub">Per maand</div>` +
@@ -1556,7 +1592,7 @@
     const tbody = document.getElementById("admin-table-body");
     const sortedRows = rows.slice().sort((a,b) => b.month.localeCompare(a.month) || a.name.localeCompare(b.name));
     if(sortedRows.length === 0){
-      tbody.innerHTML = `<tr><td colspan="12" class="empty">Geen inzendingen voor deze selectie.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="13" class="empty">Geen inzendingen voor deze selectie.</td></tr>`;
       return;
     }
     tbody.innerHTML = sortedRows.map(r => {
@@ -1574,6 +1610,7 @@
           <td class="mono">${fmtH(r.intakes)}</td>
           <td class="mono">${fmtH(r.intakes1000)}</td>
           <td class="mono">${fmtH(r.extraHours)}</td>
+          <td class="mono">${r.fyziofitHours != null ? fmtH(r.fyziofitHours) : "-"}</td>
           <td>${r.code10005 ? esc(r.code10005.toUpperCase()) : "-"}</td>
           <td>${r.zorgtopics==="ja" ? '<span class="pill good">Ja</span>' : r.zorgtopics==="nee" ? '<span class="pill warn">Nee</span>' : r.zorgtopics ? esc(r.zorgtopics.toUpperCase()) : "-"}</td>
           <td>${esc(r.dossiers || "-")}</td>
@@ -1581,7 +1618,7 @@
           <td><div class="row-actions"><button class="btn ${confirming ? "danger" : "ghost"} small" onclick="deleteSubmission('${r.id}')">${confirming ? "Zeker weten?" : "Verwijderen"}</button></div></td>
         </tr>`;
       const detail = (n && expandedEditRows.has(r.id))
-        ? `<tr class="edit-detail-row"><td colspan="12">${renderChangeList(r.edits)}</td></tr>`
+        ? `<tr class="edit-detail-row"><td colspan="13">${renderChangeList(r.edits)}</td></tr>`
         : "";
       return row + detail;
     }).join("");
@@ -1666,13 +1703,13 @@
   }
 
   function exportCsv(){
-    const header = ["Maand","Naam","COV check","COV toelichting","Codes","Intakes","Intakes +1000","Extra uren","Uren uitsplitsing","Code 10005","ZorgTopics check","Dossiers/QDNA","Aantal aanpassingen","Laatst aangepast"];
+    const header = ["Maand","Naam","COV check","COV toelichting","Codes","Intakes","Intakes +1000","Extra uren","Uren uitsplitsing","FyzioFit uren","Code 10005","ZorgTopics check","Dossiers/QDNA","Aantal aanpassingen","Laatst aangepast"];
     const lines = [header.join(";")];
     submissions.slice().sort((a,b)=>a.month.localeCompare(b.month)||a.name.localeCompare(b.name)).forEach(r => {
       const bd = (r.breakdown||[]).map(b=>`${b.category}: ${b.hours}u`).join(" | ");
       lines.push([
         r.month, r.name, r.covCheck, r.covCheckAnders||"", (r.codes||[]).join(","),
-        r.intakes, r.intakes1000, r.extraHours, bd, r.code10005||"", r.zorgtopics||"", r.dossiers||"",
+        r.intakes, r.intakes1000, r.extraHours, bd, r.fyziofitHours ?? "", r.code10005||"", r.zorgtopics||"", r.dossiers||"",
         (r.edits||[]).length, r.editedAt ? new Date(r.editedAt).toLocaleString("nl-NL") : ""
       ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(";"));
     });
