@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-23.18 -->
+<!-- APP_VERSION: 2026-11-23.20 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-23.18";
+  var APP_VERSION = "2026-11-23.20";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -30,6 +30,16 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartGym">
+<link rel="manifest" href="smartgym.webmanifest">
+<link rel="apple-touch-icon" href="smartgym-icon-180.png">
+<link rel="icon" type="image/png" href="smartgym-icon-192.png">
+<script>
+/* Op beginscherm zetten: installatie-melding van Android/Chrome opvangen en de service worker aanmelden */
+window.__installEvt = null;
+window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__installEvt = e; window.dispatchEvent(new Event("ftsg-install")); });
+window.addEventListener("appinstalled", function () { window.__installEvt = null; window.dispatchEvent(new Event("ftsg-install")); });
+if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("smartgym-sw.js").catch(function () {}); }); }
+</script>
 <meta name="robots" content="noindex, nofollow">
 <title>SmartGym · Fyzio Totaal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -154,6 +164,9 @@ table.t tr.klik:hover td{background:#faf6f9}
 .fasegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .faseblok{border:1px solid var(--rand);border-top:5px solid;border-radius:16px;padding:14px}
 .knoprij{display:flex;gap:8px;flex-wrap:wrap}
+.beginbanner{border:2px solid var(--tag-p)}
+.stappen{margin:12px 0 0;padding-left:22px;font-size:14.5px}
+.stappen li{margin-bottom:6px}
 .groei{background:var(--groen-l);color:#14643a;border-radius:12px;padding:9px 12px;font-size:14px;margin-bottom:12px}
 .groei.neutraal{background:var(--bg);color:var(--tekst)}
 .staven{display:flex;align-items:flex-end;gap:6px;height:190px;padding-top:20px}
@@ -793,6 +806,58 @@ function PatientOmgeving({ sessie, setSessie, uitloggen }) {
   );
 }
 
+/* ---------- Op beginscherm zetten ---------- */
+const isStandalone = () => { try { return window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches; } catch { return false; } };
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function useInstall() {
+  const [evt, setEvt] = useState(() => window.__installEvt);
+  const [klaar, setKlaar] = useState(isStandalone());
+  useEffect(() => { const h = () => { setEvt(window.__installEvt); if (!window.__installEvt && isStandalone()) setKlaar(true); }; window.addEventListener("ftsg-install", h); return () => window.removeEventListener("ftsg-install", h); }, []);
+  const installeer = async () => { if (!evt) return false; evt.prompt(); const r = await evt.userChoice.catch(() => null); if (r && r.outcome === "accepted") setKlaar(true); window.__installEvt = null; setEvt(null); return true; };
+  return { kan: !!evt, klaar, installeer, ios: isIOS() };
+}
+const DeelIcoon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: "-3px" }}><path d="M12 3v12M7 8l5-5 5 5" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg>;
+
+function BannerBeginscherm() {
+  const [weg, setWeg] = useState(() => veilig.lees("ftsg_banner_weg", false));
+  if (weg) return null;
+  return <Beginscherm compact sluit={() => { veilig.schrijf("ftsg_banner_weg", true); setWeg(true); }} />;
+}
+
+function Beginscherm({ compact, sluit }) {
+  const { kan, klaar, installeer, ios } = useInstall();
+  const [stappen, setStappen] = useState(false);
+  if (klaar) return compact ? null : <div className="kaart"><h2>Op je beginscherm</h2><p className="klein" style={{ margin: 0 }}>✓ De SmartGym staat op je beginscherm. Je opent hem voortaan met het icoontje.</p></div>;
+  const klik = async () => { if (kan) await installeer(); else setStappen(true); };
+  return (
+    <div className={`kaart ${compact ? "beginbanner" : ""}`}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <img src="smartgym-icon-192.png" alt="" width="44" height="44" style={{ borderRadius: 12, flex: "none" }} onError={(e) => { e.target.style.display = "none"; }} />
+        <div style={{ flex: 1 }}>
+          <b>Zet de SmartGym op je beginscherm</b>
+          <div className="klein">Dan open je hem net als een gewone app.</div>
+        </div>
+        {compact && sluit && <button className="link" aria-label="Sluiten" onClick={sluit} style={{ fontSize: 20, color: "var(--grijs)" }}>×</button>}
+      </div>
+      {!stappen && <button className="knop vol" style={{ marginTop: 12 }} onClick={klik}>Zet op mijn beginscherm</button>}
+      {stappen && (
+        <ol className="stappen">
+          {ios ? (<>
+            <li>Tik onderin (of bovenin) je scherm op het deel-icoon <DeelIcoon />.</li>
+            <li>Scroll een stukje naar beneden en tik op <b>Zet op beginscherm</b>.</li>
+            <li>Tik rechtsboven op <b>Voeg toe</b>. Klaar!</li>
+          </>) : (<>
+            <li>Tik rechtsboven in je browser op de <b>drie puntjes ⋮</b>.</li>
+            <li>Tik op <b>Toevoegen aan startscherm</b> of <b>App installeren</b>.</li>
+            <li>Tik op <b>Toevoegen</b> of <b>Installeren</b>. Klaar!</li>
+          </>)}
+        </ol>
+      )}
+      {stappen && ios && <p className="klein" style={{ margin: "6px 0 0" }}>Een iPhone laat dit niet automatisch doen; dit zijn de drie tikken die je zelf doet. Log daarna in vanuit het nieuwe icoontje.</p>}
+    </div>
+  );
+}
+
 function Vandaag({ sessie, zetPatient, uitloggen }) {
   const p = sessie.patient;
   const [scherm, setScherm] = useState("overzicht");
@@ -852,6 +917,7 @@ function Vandaag({ sessie, zetPatient, uitloggen }) {
   const week = sessieInfo(p, p.session).week;
   return (
     <div className="fade">
+      <BannerBeginscherm />
       <p className="groet">Je training van vandaag</p>
       <div className="titel">Training {p.session} van {totaal(p)}</div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}><Fase f={p.phase} /><span className="klein">Week {week} van {p.weken}{p.freq > 1 ? ` · training ${sessieInfo(p, p.session).slot} van de week` : ""}</span></div>
@@ -1100,10 +1166,7 @@ function Uitleg() {
           </div>
         ))}
       </div>
-      <div className="kaart">
-        <h2>Op je beginscherm zetten</h2>
-        <p className="klein" style={{ margin: 0 }}>iPhone: tik in Safari op het deel-icoon en kies 'Zet op beginscherm'. Android: tik in Chrome op de drie puntjes en kies 'Toevoegen aan startscherm'. Dan open je de SmartGym net als een app.</p>
-      </div>
+      <Beginscherm />
       <div className="notitie">Twijfel je of iets goed gaat, of heb je pijn die blijft? Vraag het je fysiotherapeut.</div>
     </div>
   );
@@ -1402,18 +1465,16 @@ function Inloggegevens({ p, bewaarPin }) {
   const [mailOpen, setMailOpen] = useState(false);
   const [mail, setMail] = useState("");
   const appUrl = location.origin + location.pathname;
-  const onderwerp = "Je inloggegevens voor de SmartGym van Fyzio Totaal";
+  const onderwerp = "Je inloggegevens voor de DKN-app van Fyzio Totaal";
   const tekst = () => `Hoi ${voornaam(p.name)},
 
-Hierbij je inloggegevens voor de SmartGym-app van Fyzio Totaal. In de app zie je welke oefeningen je bij elke training doet en hoe je vooruitgaat.
+Hierbij je inloggegevens voor de DKN-app van Fyzio Totaal. In de app zie je welke oefeningen je bij elke training doet en hoe je vooruitgaat.
 
 Ga naar: ${appUrl}
 Jouw code: ${p.code}
 Jouw pincode: ${pin}
 
-Tip: zet de app op het beginscherm van je telefoon, dan open je hem net als een gewone app.
-- iPhone: open de link in Safari, tik op het deel-icoon en kies 'Zet op beginscherm'.
-- Android: open de link in Chrome, tik op de drie puntjes en kies 'Toevoegen aan startscherm'.
+Tip: zet de app op het beginscherm van je telefoon, dan open je hem net als een gewone app. Open de link en tik op de knop 'Zet op mijn beginscherm'; de app legt je precies uit wat je moet doen.
 Vink bij het inloggen 'Ingelogd blijven op mijn eigen telefoon' aan, dan hoef je je code maar één keer in te voeren.
 
 Heb je vragen? Stel ze gerust aan je fysiotherapeut.

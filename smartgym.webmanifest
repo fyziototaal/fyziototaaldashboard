@@ -1,0 +1,15 @@
+{
+  "name": "SmartGym · Fyzio Totaal",
+  "short_name": "SmartGym",
+  "description": "Jouw trainingsschema voor de SmartGym van Fyzio Totaal",
+  "start_url": "./smartgym.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3eef2",
+  "theme_color": "#82176D",
+  "lang": "nl",
+  "icons": [
+    { "src": "smartgym-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "smartgym-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
