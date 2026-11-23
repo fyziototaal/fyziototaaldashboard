@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-23.7 -->
+<!-- APP_VERSION: 2026-11-23.9 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-23.7";
+  var APP_VERSION = "2026-11-23.9";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -153,6 +153,12 @@ table.t tr.klik:hover td{background:#faf6f9}
 .fasegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .faseblok{border:1px solid var(--rand);border-top:5px solid;border-radius:16px;padding:14px}
 .knoprij{display:flex;gap:8px;flex-wrap:wrap}
+.instelblok{background:var(--bg);border-radius:16px;padding:14px;margin:4px 0 2px}
+.instel{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px}
+.instel label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:600;color:var(--grijs)}
+.instel select,.instel input{font-size:15px;border:1px solid #d6ccd4;border-radius:10px;padding:7px 8px;background:#fff;color:var(--tekst);font-family:inherit}
+.instel input{width:84px;text-align:right;font-weight:600;color:var(--paars)}
+.instel .mis{border-color:var(--oranje)}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6ccd4;border-radius:999px;padding:6px 12px;font-size:13.5px;cursor:pointer;background:#fff;color:var(--grijs);text-decoration:line-through}
 .chip.aan{background:var(--tag-p);border-color:#d9b7cf;color:var(--paars);font-weight:600;text-decoration:none}
 .chip input{accent-color:#82176D;width:16px;height:16px;margin:0}
@@ -308,12 +314,30 @@ const PLAN = {
     Performance: ["Reverse fly snel", "I", "Snel", false, "Zo snel mogelijk openen."],
   },
 };
+/* Standen zoals ze op het scherm van het DKN-toestel staan */
+const MODES = ["Standard", "Eccentric", "Isokinetic", "Elastic"];
 const MODE_INFO = {
-  C: { name: "Concentrisch", plain: "Normaal duwen of trekken, gecontroleerd terug." },
-  "E+": { name: "Excentrisch", plain: "Terugkeren is zwaarder dan duwen. Rem langzaam af." },
-  I: { name: "Isokinetisch", plain: "Het toestel bepaalt de snelheid. Jij bepaalt de kracht." },
-  El: { name: "Elastisch", plain: "Snel en veerkrachtig, zonder pauze tussen de herhalingen." },
+  Standard: { name: "Standard", plain: "Normaal duwen of trekken, gecontroleerd terug." },
+  Eccentric: { name: "Eccentric", plain: "De terugweg is zwaarder dan het duwen of trekken. Rem langzaam af." },
+  Isokinetic: { name: "Isokinetic", plain: "Het toestel bepaalt de snelheid. Jij bepaalt de kracht." },
+  Elastic: { name: "Elastic", plain: "Snel en veerkrachtig, zonder pauze tussen de herhalingen." },
 };
+const CODE2MODE = { C: "Standard", "E+": "Eccentric", I: "Isokinetic", El: "Elastic" };
+const RATIOS = [0.5, 0.6, 0.7, 0.8, 0.9];
+const SPEEDS = [0.1, 0.2, 0.3, 0.4, 0.5];
+const LEVELS = Array.from({ length: 25 }, (_, i) => i + 1);
+const SPEED_STD = { Traag: 0.1, Middel: 0.3, Snel: 0.5 };
+const dichtstbij = (lijst, x) => lijst.reduce((a, b) => (Math.abs(b - x) < Math.abs(a - x) ? b : a));
+const nl = (x) => String(x).replace(".", ",");
+const round05 = (x) => Math.max(0.5, Math.round(x * 2) / 2);
+/* korte omschrijving van de instelling, voor overzichten en historie */
+function instLabel(ex) {
+  if (ex.ontbreekt) return null;
+  if (ex.mode === "Standard") return `${nl(ex.kg)} kg`;
+  if (ex.mode === "Eccentric") return `${nl(ex.kg)} kg · ratio ${nl(ex.ratio)}`;
+  if (ex.mode === "Isokinetic") return `${nl(ex.speed)} m/s`;
+  return `Level ${ex.level}`;
+}
 // Alle toestellen met een (optionele) testwaarde. Alleen invullen wat je getest hebt.
 const TESTS = [
   ["legpress", "Leg press"], ["legext", "Leg extension"], ["legcurl", "Leg curl"], ["squat", "Squat"],
@@ -377,9 +401,15 @@ function buildSession(p, sessieNr) {
   const [sets, reps, pct] = WEEKS[p.phase][wi];
   return ((p.trainingen || [])[slot - 1] || []).filter((m) => PLAN[m]).map((m) => {
     const key = oefKey(m, slot);
-    let [oef, mode, speed, ds, instr] = PLAN[m][p.phase];
+    let [oef, code, spd, ds, instr] = PLAN[m][p.phase];
     const eigen = (p.ftEigen || {})[key];
     if (eigen && eigen.naam) { oef = eigen.naam; instr = eigen.instr || "Voer de oefening uit zoals je fysiotherapeut heeft voorgedaan."; }
+    const inst = (p.instelling || {})[key] || {};
+    const mode = inst.mode || "Standard"; // standaard altijd Standard; fysio kiest zelf een andere stand
+    const eccStd = ECC[p.phase] ? ECC[p.phase][wi] : 0.15;
+    const ratio = inst.ratio ?? dichtstbij(RATIOS, 1 / (1 + eccStd));
+    const speed = mode === "Isokinetic" ? (inst.speed ?? SPEED_STD[spd] ?? 0.1) : null;
+    const level = mode === "Elastic" ? (inst.level ?? null) : null;
     let s = sets, r = reps, pc = pct;
     if (p.phase === "Performance" && m === "Leg press") { s = 3; r = 5; pc = 0.8; }
     if (p.phase === "Sport" && m === "Leg press") pc = pct * 0.45;
@@ -388,13 +418,20 @@ function buildSession(p, sessieNr) {
     const factor = corr.factor || 1;
     const handmatig = (p.refOverride || {})[key] != null;
     const ref = handmatig ? p.refOverride[key] : refFor(m, p.tests || {});
-    const weight = speed || !ref ? null : handmatig ? Math.max(0.5, Math.round(ref * usePct * factor * 2) / 2) : round25(ref * usePct * factor);
+    const metGewicht = mode === "Standard" || mode === "Eccentric";
+    let kgv = null;
+    if (metGewicht && ref) {
+      let ruw = ref * usePct * factor;
+      if (!handmatig && mode === "Eccentric") ruw = ruw / ratio; // voorstel: duwen op werkgewicht, terugweg zwaarder
+      kgv = handmatig ? round05(ruw) : round25(ruw);
+    }
     return {
-      machine: key, toestel: m, oef, mode, speed, sets: s, reps: r, pct: usePct, factor, weight, handmatig,
-      eigen: !!(eigen && eigen.naam), geenGewicht: !speed && !ref,
-      ecc: mode === "E+" ? (ECC[p.phase] ? ECC[p.phase][wi] : 0.15) : 0,
+      machine: key, toestel: m, oef, mode, sets: s, reps: r, pct: usePct, factor, handmatig,
+      kg: kgv, weight: kgv, conc: mode === "Eccentric" && kgv ? round05(kgv * ratio) : null, ratio, speed, level,
+      eigen: !!(eigen && eigen.naam), instGewijzigd: !!inst.mode,
+      ontbreekt: (metGewicht && !kgv) || (mode === "Elastic" && !level),
       dropset: ds && wi === 4 && p.phase === "Medium",
-      inzet: speed || p.phase === "Performance" ? INZET[p.phase] : null,
+      inzet: mode === "Isokinetic" || mode === "Elastic" || p.phase === "Performance" ? INZET[p.phase] : null,
       tempo: TEMPO[p.phase], rest: REST[p.phase], instr,
     };
   });
@@ -430,9 +467,9 @@ function verwerkTraining(p, session, results) {
     const r = results[ex.machine];
     if (!r) return;
     const { c, alerts: al } = applyFeedback(corrections[ex.machine], ex, r.fb, r.pain);
-    corrections[ex.machine] = c;
+    if (ex.mode === "Standard" || ex.mode === "Eccentric") corrections[ex.machine] = c;
     al.forEach((t) => alerts.unshift({ id: nieuwId(), date: nu, text: `${machineLabel(ex.machine)}: ${t}`, ack: false }));
-    hist.unshift({ date: nu, session: p.session, phase: p.phase, machine: ex.machine, oef: ex.oef, weight: ex.weight, fb: r.fb, pain: r.pain });
+    hist.unshift({ date: nu, session: p.session, phase: p.phase, machine: ex.machine, oef: ex.oef, weight: ex.kg, inst: instLabel(ex), fb: r.fb, pain: r.pain });
   });
   const done = p.session >= totaal(p);
   return { ...p, corrections, alerts: alerts.slice(0, 50), history: hist.slice(0, 300), lastTraining: nu, session: done ? totaal(p) : p.session + 1, phaseDone: done };
@@ -747,7 +784,10 @@ function Vandaag({ sessie, zetPatient, uitloggen }) {
           <button key={ex.machine} onClick={() => { setIdx(i); setScherm("oefening"); window.scrollTo(0, 0); }}>
             <span className={`stap ${results[ex.machine] ? "klaar" : ""}`}>{results[ex.machine] ? "✓" : i + 1}</span>
             <span style={{ flex: 1 }}><b style={{ fontWeight: 600 }}>{ex.oef}</b>{ex.oef !== machineLabel(ex.machine) && <><br /><span className="klein">{machineLabel(ex.machine)}</span></>}</span>
-            <span style={{ fontWeight: 700, color: ex.geenGewicht ? "var(--grijs)" : "var(--paars)", whiteSpace: "nowrap", fontSize: ex.geenGewicht ? 13 : 15 }}>{ex.weight ? `${kg(ex.weight)} kg` : ex.geenGewicht ? "vraag je fysio" : MODE_INFO[ex.mode].name}</span>
+            <span style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+              <span style={{ display: "block", fontWeight: 700, color: ex.ontbreekt ? "var(--grijs)" : "var(--paars)", fontSize: ex.ontbreekt ? 13 : 15 }}>{ex.ontbreekt ? "vraag je fysio" : instLabel(ex)}</span>
+              <span className="klein" style={{ fontSize: 11.5 }}>{ex.mode}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -769,6 +809,7 @@ function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
   const [rust, setRust] = useState(0);
   useEffect(() => { if (rust <= 0) return; const t = setTimeout(() => setRust(rust - 1), 1000); return () => clearTimeout(t); }, [rust]);
   const mi = MODE_INFO[ex.mode];
+  const groot = { fontSize: "clamp(56px,16vw,96px)", lineHeight: 1, fontWeight: 800, color: "var(--paars)", letterSpacing: "-1px" };
   const tikSet = (i) => { const n = i + 1 === gedaan ? i : i + 1; setGedaan(n); if (n > gedaan && n < ex.sets) setRust(ex.rest); };
 
   return (
@@ -780,13 +821,20 @@ function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
       <div className="kaart" style={{ borderTop: `6px solid ${faseKleur(p.phase)}` }}>
         <span className="tag b">{machineLabel(ex.machine)}</span>
         <h2 style={{ fontSize: 24, color: "var(--tekst)", margin: "8px 0 10px", lineHeight: 1.2 }}>{ex.oef}</h2>
-        {ex.weight
-          ? <div className="gewicht">{kg(ex.weight)}<span style={{ fontSize: ".3em", marginLeft: 6, letterSpacing: 0 }}>kg</span></div>
-          : ex.speed ? <div style={{ fontSize: 34, fontWeight: 800, color: "var(--paars)" }}>Snelheid {ex.speed.toLowerCase()}</div>
-          : <div className="notitie oranje">Voor dit toestel is nog geen gewicht ingesteld. Vraag je fysiotherapeut welk gewicht je gebruikt.</div>}
-        <div style={{ marginTop: 10 }}>
-          <div style={{ fontWeight: 600 }}>Stand: {mi.name}{ex.ecc ? `, terugweg +${Math.round(ex.ecc * 100)}%` : ""}</div>
-          <div className="klein">{mi.plain}</div>
+        <div className="instelblok">
+          <div className="klein" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Stand op het toestel</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "var(--tekst)", marginBottom: 6 }}>{ex.mode}</div>
+          {ex.ontbreekt ? <div className="notitie oranje">Voor dit toestel is nog niet alles ingesteld. Vraag je fysiotherapeut wat je moet instellen.</div>
+            : ex.mode === "Standard" ? <div className="gewicht">{nl(ex.kg)}<span style={{ fontSize: ".3em", marginLeft: 6, letterSpacing: 0 }}>kg</span></div>
+            : ex.mode === "Eccentric" ? (<>
+                <div style={{ display: "flex", gap: 18, alignItems: "flex-end", flexWrap: "wrap" }}>
+                  <div><div className="klein">Gewicht</div><div style={groot}>{nl(ex.kg)}<span style={{ fontSize: ".35em", marginLeft: 4 }}>kg</span></div></div>
+                  <div><div className="klein">Ratio</div><div style={groot}>{nl(ex.ratio)}</div></div>
+                </div>
+              </>)
+            : ex.mode === "Isokinetic" ? <div style={groot}>{nl(ex.speed)}<span style={{ fontSize: ".35em", marginLeft: 6 }}>m/s</span></div>
+            : <div style={groot}><span style={{ fontSize: ".45em", marginRight: 8 }}>Level</span>{ex.level}</div>}
+          <div className="klein" style={{ marginTop: 8 }}>{mi.plain}</div>
         </div>
         <div className="cijfers">
           <div className="cijfer"><b>{ex.sets}</b><span>sets</span></div>
@@ -915,7 +963,9 @@ function Uitleg() {
       </div>
       <div className="kaart">
         <h2>Standen van het toestel</h2>
+        <p className="klein" style={{ marginTop: 0 }}>Deze namen zie je ook op het scherm van het toestel.</p>
         {Object.values(MODE_INFO).map((m) => <p key={m.name} style={{ margin: "0 0 8px" }}><b>{m.name}</b><br /><span className="klein">{m.plain}</span></p>)}
+        <p className="klein" style={{ margin: 0 }}><b>Ratio</b> (bij Eccentric): hoeveel lichter het duwen of trekken is dan de terugweg. Bij 40 kg en ratio 0,5 duw je 20 kg en rem je 40 kg af.</p>
       </div>
       <div className="kaart">
         <h2>Op je beginscherm zetten</h2>
@@ -1080,10 +1130,10 @@ function TestVelden({ tests, setTests }) {
 }
 
 const FASE_INFO = {
-  Basis: { doel: "Belastbaarheid opbouwen en techniek aanleren.", wie: "Start voor de meeste patiënten: na een operatie of blessure, bij (nog) pijn of een prikkelbare klacht, weinig ervaring met krachttraining, of bij verminderde conditie.", belasting: "40–60% van de testwaarde · 12–15 herhalingen · 2–3 sets · rust 75 s", nadruk: "Rustig tempo (2 tellen op, 3 neer). Concentrisch en isokinetisch traag." },
-  Medium: { doel: "Spiermassa en kracht opbouwen.", wie: "Geen pijnreactie meer, techniek op orde en de doorstroomcriteria van Basis gehaald.", belasting: "60–75% · 8–12 herhalingen · 2–3 sets · rust 90 s", nadruk: "Extra zware terugweg (excentrisch +15–30%). Drop sets in week 5." },
-  Sport: { doel: "Maximale kracht, voorbereiding op sport of zwaar fysiek werk.", wie: "Sporters en patiënten met een hoge fysieke belasting die de criteria van Medium halen.", belasting: "75–85% · 4–6 herhalingen · 3–4 sets · rust 150 s", nadruk: "Zwaar en krachtig. Eenbenige leg press, zware excentrische oefeningen." },
-  Performance: { doel: "Explosiviteit en snelheid, laatste stap richting volledige sporthervatting.", wie: "Alleen na het halen van de criteria van Sport.", belasting: "35–55% · 3–6 herhalingen · 3–5 sets · rust 150 s (leg press: krachtonderhoud op 80%)", nadruk: "Explosief en elastisch, isokinetisch snel. Maximale snelheid." },
+  Basis: { doel: "Belastbaarheid opbouwen en techniek aanleren.", wie: "Start voor de meeste patiënten: na een operatie of blessure, bij (nog) pijn of een prikkelbare klacht, weinig ervaring met krachttraining, of bij verminderde conditie.", belasting: "40–60% van de testwaarde · 12–15 herhalingen · 2–3 sets · rust 75 s", nadruk: "Rustig tempo (2 tellen op, 3 neer)." },
+  Medium: { doel: "Spiermassa en kracht opbouwen.", wie: "Geen pijnreactie meer, techniek op orde en de doorstroomcriteria van Basis gehaald.", belasting: "60–75% · 8–12 herhalingen · 2–3 sets · rust 90 s", nadruk: "Gecontroleerd terug. Drop sets in de voorlaatste week." },
+  Sport: { doel: "Maximale kracht, voorbereiding op sport of zwaar fysiek werk.", wie: "Sporters en patiënten met een hoge fysieke belasting die de criteria van Medium halen.", belasting: "75–85% · 4–6 herhalingen · 3–4 sets · rust 150 s", nadruk: "Zwaar en krachtig. Eenbenige leg press." },
+  Performance: { doel: "Explosiviteit en snelheid, laatste stap richting volledige sporthervatting.", wie: "Alleen na het halen van de criteria van Sport.", belasting: "35–55% · 3–6 herhalingen · 3–5 sets · rust 150 s (leg press: krachtonderhoud op 80%)", nadruk: "Explosief en snel." },
 };
 
 function FaseUitleg({ sluit }) {
@@ -1108,7 +1158,7 @@ function FaseUitleg({ sluit }) {
           </div>
         ))}
       </div>
-      <p className="klein" style={{ marginBottom: 0, marginTop: 12 }}>Belasting = percentage van de testwaarde (geschatte 1RM). De percentages komen uit het schema in deze app.</p>
+      <p className="klein" style={{ marginBottom: 0, marginTop: 12 }}>Belasting = percentage van de testwaarde (geschatte 1RM). De percentages komen uit het schema in deze app. Alle oefeningen staan standaard op Standard; per oefening kun je Eccentric, Isokinetic of Elastic kiezen.</p>
     </section>
   );
 }
@@ -1253,9 +1303,21 @@ function Trainingsgewichten({ p, bewaar }) {
     else { const kgW = Number(waarde); if (!(kgW > 0)) return; ro[ex.machine] = kgW / (ex.pct * ex.factor); }
     bewaar({ ...p, refOverride: ro });
   };
+  // stand en instelling per oefening (ratio, snelheid, level)
+  const zetInst = (ex, wijziging) => {
+    const alle = { ...(p.instelling || {}) };
+    const huidig = { mode: ex.mode, ratio: ex.ratio, speed: ex.speed, level: ex.level, ...(alle[ex.machine] || {}) };
+    alle[ex.machine] = { ...huidig, ...wijziging };
+    bewaar({ ...p, instelling: alle });
+  };
+  const herstel = (ex) => {
+    const alle = { ...(p.instelling || {}) }; delete alle[ex.machine];
+    const ro = { ...(p.refOverride || {}) }; delete ro[ex.machine];
+    bewaar({ ...p, instelling: alle, refOverride: ro });
+  };
   const zetFreq = (f) => bewaar({ ...p, freq: f, trainingen: resize(p.trainingen, f), session: Math.min(p.session, f * p.weken) });
   const bewaarWeken = (w) => { if (!w || w === p.weken) return; bewaar({ ...p, weken: w, session: Math.min(p.session, p.freq * w) }); };
-  const leeg = p.trainingen.some((t, i) => buildSession(p, sessieVoor(i + 1)).some((ex) => ex.geenGewicht));
+  const leeg = p.trainingen.some((t, i) => buildSession(p, sessieVoor(i + 1)).some((ex) => ex.ontbreekt));
   return (
     <section className="kaart">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -1271,8 +1333,8 @@ function Trainingsgewichten({ p, bewaar }) {
           <TrainingKiezer trainingen={p.trainingen} zet={(tr) => bewaar({ ...p, trainingen: tr })} />
         </div>
       )}
-      <p className="klein" style={{ marginTop: 0 }}>Gewichten zijn een voorstel op basis van de testwaarden. Pas een gewicht aan en druk op Enter of klik ernaast. Jouw gewicht wordt het uitgangspunt: de opbouw per week loopt daarna automatisch verder.</p>
-      {leeg && <div className="melding let">Bij toestellen zonder testwaarde staat nog geen gewicht. Vul die zelf in, anders ziet de patiënt "vraag je fysio".</div>}
+      <p className="klein" style={{ marginTop: 0 }}>Alle oefeningen staan standaard op Standard. Kies per oefening een andere stand als dat nodig is: Eccentric, Isokinetic of Elastic. Het gewicht is een voorstel op basis van fase en testwaarden. Pas een gewicht aan en druk op Enter of klik ernaast. Jouw gewicht wordt het uitgangspunt: de opbouw per week loopt daarna automatisch verder.</p>
+      {leeg && <div className="melding let">Bij sommige oefeningen ontbreekt nog een gewicht of level (oranje omrand). Vul die zelf in, anders ziet de patiënt "vraag je fysio".</div>}
       {p.phaseDone && <div className="melding">Alle trainingen van deze fase zijn gedaan. Voer de hertest in om verder te gaan.</div>}
       {p.trainingen.map((t, i) => {
         const nr = sessieVoor(i + 1); const sessie = buildSession(p, nr);
@@ -1285,39 +1347,43 @@ function Trainingsgewichten({ p, bewaar }) {
             </div>
             {sessie.length === 0 ? <p className="klein" style={{ margin: "4px 0" }}>Nog geen toestellen gekozen. <button className="link" onClick={() => setBewerk(true)}>Toestellen kiezen</button></p> : (
               <table className="t"><tbody>{sessie.map((ex) => (
-                <tr key={ex.machine}>
-                  <td>
-                    <b style={{ fontWeight: 600 }}>{ex.oef}</b>{ex.eigen && <span className="tag b" style={{ marginLeft: 6 }}>eigen oefening</span>}<br />
-                    <span className="klein">{ex.oef !== ex.toestel ? ex.toestel + " · " : ""}{ex.sets} × {ex.reps} · {MODE_INFO[ex.mode].name}{ex.ecc ? ` +${Math.round(ex.ecc * 100)}%` : ""}{ex.dropset ? ", drop set" : ""}</span>
-                    {ex.toestel === FT && <EigenOefening key={ex.machine} p={p} m={ex.machine} bewaar={bewaar} />}
-                  </td>
-                  <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
-                    {ex.speed ? <b style={{ color: "var(--paars)" }}>{ex.speed}</b> : (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        {ex.handmatig && <span className="tag b verberg-sm" title="Handmatig aangepast">aangepast</span>}
-                        <input type="number" step="2.5" min="0" inputMode="decimal" aria-label={`Gewicht ${ex.oef} training ${i + 1}`}
-                          value={concept[ex.machine] ?? (ex.weight ?? "")} placeholder="kg"
+                <tr key={ex.machine}><td>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                    <div>
+                      <b style={{ fontWeight: 600 }}>{ex.oef}</b>{ex.eigen && <span className="tag b" style={{ marginLeft: 6 }}>eigen oefening</span>}<br />
+                      <span className="klein">{ex.oef !== ex.toestel ? ex.toestel + " · " : ""}{ex.sets} × {ex.reps}{ex.dropset ? " · drop set" : ""}</span>
+                    </div>
+                    {(ex.handmatig || ex.instGewijzigd) && <button className="link" style={{ fontSize: 12.5 }} onClick={() => herstel(ex)}>↺ terug naar voorstel</button>}
+                  </div>
+                  <div className="instel">
+                    <label>Stand<select value={ex.mode} onChange={(e) => zetInst(ex, { mode: e.target.value })}>{MODES.map((m) => <option key={m}>{m}</option>)}</select></label>
+                    {(ex.mode === "Standard" || ex.mode === "Eccentric") && (
+                      <label>Gewicht (kg)
+                        <input type="number" step="0.5" min="0" inputMode="decimal" className={ex.kg ? "" : "mis"} aria-label={`Gewicht ${ex.oef} training ${i + 1}`}
+                          value={concept[ex.machine] ?? (ex.kg ?? "")} placeholder="kg"
                           onChange={(e) => setConcept({ ...concept, [ex.machine]: e.target.value })}
                           onBlur={() => {
                             const v = concept[ex.machine]; if (v == null) return;
                             setConcept((c) => { const n = { ...c }; delete n[ex.machine]; return n; });
                             if (v === "") { if (ex.handmatig) zet(ex, null); return; }
-                            if (Number(v) > 0 && Number(v) !== ex.weight) zet(ex, v);
+                            if (Number(v) > 0 && Number(v) !== ex.kg) zet(ex, v);
                           }}
-                          onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
-                          style={{ width: 82, border: `1px solid ${ex.geenGewicht ? "var(--oranje)" : "#d6ccd4"}`, borderRadius: 10, padding: "7px 8px", fontSize: 15, textAlign: "right", fontWeight: 600, color: "var(--paars)" }} />
-                        <span className="klein">kg</span>
-                        {ex.handmatig && <button className="link" title="Terug naar voorstel" onClick={() => zet(ex, null)}>↺</button>}
-                      </span>
+                          onKeyDown={(e) => e.key === "Enter" && e.target.blur()} />
+                      </label>
                     )}
-                  </td>
-                </tr>
+                    {ex.mode === "Eccentric" && <label>Ratio<select value={ex.ratio} onChange={(e) => zetInst(ex, { ratio: Number(e.target.value) })}>{RATIOS.map((r) => <option key={r} value={r}>{nl(r)}</option>)}</select></label>}
+                    {ex.mode === "Isokinetic" && <label>Snelheid<select value={ex.speed} onChange={(e) => zetInst(ex, { speed: Number(e.target.value) })}>{SPEEDS.map((v) => <option key={v} value={v}>{nl(v)} m/s</option>)}</select></label>}
+                    {ex.mode === "Elastic" && <label>Level<select className={ex.level ? "" : "mis"} value={ex.level ?? ""} onChange={(e) => zetInst(ex, { level: e.target.value === "" ? null : Number(e.target.value) })}><option value="">kies…</option>{LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}</select></label>}
+                  </div>
+                  {ex.mode === "Eccentric" && ex.kg && <div className="klein" style={{ marginTop: 4 }}>Concentrisch {nl(ex.conc)} kg, excentrisch {nl(ex.kg)} kg</div>}
+                  {ex.toestel === FT && <EigenOefening key={ex.machine} p={p} m={ex.machine} bewaar={bewaar} />}
+                </td></tr>
               ))}</tbody></table>
             )}
           </div>
         );
       })}
-      <p className="klein" style={{ marginBottom: 0 }}>Een toestel dat in meerdere trainingen staat, gebruikt overal hetzelfde gewicht. De functional trainer heeft per training een eigen oefening en gewicht.</p>
+      <p className="klein" style={{ marginBottom: 0 }}>Bij Eccentric vul je het excentrische gewicht in; het concentrische gewicht is dat gewicht × de ratio. Snelheid (Isokinetic) en level (Elastic) blijven staan tot je ze zelf aanpast. Een toestel dat in meerdere trainingen staat, gebruikt overal dezelfde instelling. De functional trainer heeft per training een eigen oefening en gewicht.</p>
     </section>
   );
 }
@@ -1382,9 +1448,9 @@ function PatientDetail({ p, terug, bewaar, verwijder, codes }) {
       <section className="kaart">
         <h2>Feedback-historie</h2>
         {(p.history || []).length === 0 ? <p className="klein">Nog geen trainingen gelogd.</p> : (
-          <div style={{ overflowX: "auto" }}><table className="t"><thead><tr><th>Wanneer</th><th>Training</th><th>Oefening</th><th>Gewicht</th><th>Feedback</th></tr></thead><tbody>
+          <div style={{ overflowX: "auto" }}><table className="t"><thead><tr><th>Wanneer</th><th>Training</th><th>Oefening</th><th>Instelling</th><th>Feedback</th></tr></thead><tbody>
             {p.history.slice(0, 18).map((h, i) => (
-              <tr key={i}><td className="klein" style={{ whiteSpace: "nowrap" }}>{relDag(h.date)}</td><td>{h.session}</td><td>{h.oef}</td><td>{h.weight ? `${kg(h.weight)} kg` : "isokinetisch"}</td>
+              <tr key={i}><td className="klein" style={{ whiteSpace: "nowrap" }}>{relDag(h.date)}</td><td>{h.session}</td><td>{h.oef}</td><td>{h.inst || (h.weight ? `${kg(h.weight)} kg` : "–")}</td>
                 <td style={{ fontWeight: 600, color: h.pain ? "var(--rood)" : h.fb === "licht" ? "var(--blauw)" : h.fb === "zwaar" ? "var(--oranje)" : "var(--groen)" }}>
                   {h.fb === "licht" ? "Te licht" : h.fb === "zwaar" ? "Te zwaar" : "Goed"}{h.pain ? ", pijn" : ""}</td></tr>
             ))}</tbody></table></div>
@@ -1401,7 +1467,7 @@ function Hertest({ p, annuleer, bewaar }) {
   const alles = crit.every((_, i) => checks[i]);
   const volgende = PHASES[Math.min(PHASES.indexOf(p.phase) + 1, 3)];
   const opslaan = (fase) => bewaar({
-    ...p, tests, phase: fase, session: 1, phaseDone: false, corrections: {}, refOverride: {},
+    ...p, tests, phase: fase, session: 1, phaseDone: false, corrections: {}, refOverride: {}, instelling: {},
     testHistory: [...(p.testHistory || []), { label: fase === p.phase ? `Herhaling ${fase}` : `Start ${fase}`, date: new Date().toISOString(), tests: { ...tests } }],
   });
   return (
