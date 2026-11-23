@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-23.14 -->
+<!-- APP_VERSION: 2026-11-23.16 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-23.14";
+  var APP_VERSION = "2026-11-23.16";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -154,6 +154,14 @@ table.t tr.klik:hover td{background:#faf6f9}
 .fasegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .faseblok{border:1px solid var(--rand);border-top:5px solid;border-radius:16px;padding:14px}
 .knoprij{display:flex;gap:8px;flex-wrap:wrap}
+.groei{background:var(--groen-l);color:#14643a;border-radius:12px;padding:9px 12px;font-size:14px;margin-bottom:12px}
+.groei.neutraal{background:var(--bg);color:var(--tekst)}
+.staven{display:flex;align-items:flex-end;gap:6px;height:190px;padding-top:20px}
+.staaf{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.staaf .waarde{font-size:11.5px;font-weight:700;color:var(--paars);white-space:nowrap}
+.staaf .balkje{width:100%;max-width:42px;border-radius:8px 8px 3px 3px;background:#dcc3d6}
+.staaf .balkje.laatste{background:linear-gradient(180deg,#a8368f,#82176D)}
+.staaf .label{font-size:10.5px;color:var(--grijs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .onthoud{display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--tag-p);border-radius:14px;padding:10px 12px;margin:4px 0 6px;font-size:14px;font-weight:600;color:var(--paars);cursor:pointer}
 .onthoud input{width:20px;height:20px;accent-color:#82176D;margin:2px 0 0;flex:none}
 .stdrij{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:14px}
@@ -538,7 +546,13 @@ const demoSeed = () => ([
     history: [
       { date: dagenTerug(1), session: 8, phase: "Medium", machine: "Leg extension", oef: "Leg extension", weight: 35, fb: "goed", pain: true },
       { date: dagenTerug(1), session: 8, phase: "Medium", machine: "Squat", oef: "Squat", weight: 57.5, fb: "goed", pain: false },
-      { date: dagenTerug(4), session: 7, phase: "Medium", machine: "Leg press", oef: "Leg press", weight: 105, fb: "licht", pain: false }],
+      { date: dagenTerug(4), session: 7, phase: "Medium", machine: "Leg press", oef: "Leg press", weight: 105, fb: "licht", pain: false },
+      { date: dagenTerug(8), session: 5, phase: "Medium", machine: "Leg press", oef: "Leg press", weight: 102.5, fb: "licht", pain: false },
+      { date: dagenTerug(11), session: 3, phase: "Medium", machine: "Leg press", oef: "Leg press", weight: 97.5, fb: "goed", pain: false },
+      { date: dagenTerug(15), session: 1, phase: "Medium", machine: "Leg press", oef: "Leg press", weight: 90, fb: "goed", pain: false },
+      { date: dagenTerug(5), session: 6, phase: "Medium", machine: "Squat", oef: "Squat", weight: 55, fb: "goed", pain: false },
+      { date: dagenTerug(9), session: 4, phase: "Medium", machine: "Squat", oef: "Squat", weight: 52.5, fb: "goed", pain: false },
+      { date: dagenTerug(13), session: 2, phase: "Medium", machine: "Squat", oef: "Squat", weight: 50, fb: "goed", pain: false }],
     alerts: [{ id: "a1", date: dagenTerug(1), text: "Leg extension: pijn gemeld, gewicht niet verhoogd", ack: false }] },
   { id: "p3", code: "SANN07", pin: "3307", patnr: "10552", name: "Sanne", phase: "Sport", session: 5, phaseDone: false, lastTraining: dagenTerug(3),
     tests: { legpress: 160, legext: 55, legcurl: 38, squat: 95, bench: 55, lat: 60, abd: 45, add: 45, buik: 40, rug: 40, ft: 20 },
@@ -953,11 +967,60 @@ function TestBalken({ p }) {
   );
 }
 
+/* Gewichtsverloop per oefening, voor de patiënt */
+function GewichtVerloop({ p }) {
+  const reeksen = useMemo(() => {
+    const per = {};
+    [...(p.history || [])].filter((h) => h.weight > 0).sort((a, b) => new Date(a.date) - new Date(b.date)).forEach((h) => {
+      (per[h.machine] = per[h.machine] || { key: h.machine, naam: h.oef || machineLabel(h.machine), punten: [] }).punten.push(h);
+    });
+    const lijst = Object.values(per);
+    // zelfde naam in meerdere trainingen? dan "(training n)" erachter
+    lijst.forEach((r) => { if (lijst.filter((x) => x.naam === r.naam).length > 1) { const m = r.key.match(/ (\d+)$/); if (m) r.naam += ` (training ${m[1]})`; } });
+    return lijst.sort((a, b) => b.punten.length - a.punten.length);
+  }, [p.history]);
+  const [keuze, setKeuze] = useState(null);
+  if (!reeksen.length) return (
+    <div className="kaart"><h2>Jouw gewichten</h2><p className="klein" style={{ margin: 0 }}>Na je eerste trainingen zie je hier per oefening hoe je gewicht verandert.</p></div>
+  );
+  const r = reeksen.find((x) => x.key === keuze) || reeksen[0];
+  const punten = r.punten.slice(-10);
+  const eerste = r.punten[0].weight, laatste = r.punten[r.punten.length - 1].weight;
+  const max = Math.max(...punten.map((x) => x.weight));
+  const verschil = laatste - eerste, pct = eerste ? Math.round((verschil / eerste) * 100) : 0;
+  const record = Math.max(...r.punten.map((x) => x.weight));
+  return (
+    <div className="kaart">
+      <h2>Jouw gewichten</h2>
+      <div className="knoprij" style={{ marginBottom: 12 }}>
+        {reeksen.map((x) => <button key={x.key} className={`chip ${x.key === r.key ? "aan" : ""}`} style={{ textDecoration: "none" }} onClick={() => setKeuze(x.key)}>{x.naam}</button>)}
+      </div>
+      {r.punten.length > 1 && (
+        <div className={`groei ${verschil > 0 ? "" : "neutraal"}`}>
+          {verschil > 0 ? <>Van <b>{nl(eerste)} kg</b> naar <b>{nl(laatste)} kg</b>: <b>{nl(Math.round(verschil * 10) / 10)} kg zwaarder</b> (+{pct}%)</>
+            : verschil < 0 ? <>Je traint nu op <b>{nl(laatste)} kg</b>. Je fysiotherapeut heeft het gewicht even aangepast.</>
+            : <>Je traint stabiel op <b>{nl(laatste)} kg</b>.</>}
+        </div>
+      )}
+      <div className="staven" role="img" aria-label={`Gewichten ${r.naam}: ${punten.map((x) => nl(x.weight) + " kg").join(", ")}`}>
+        {punten.map((x, i) => (
+          <div key={i} className="staaf">
+            <span className="waarde">{nl(x.weight)}</span>
+            <div className={`balkje ${i === punten.length - 1 ? "laatste" : ""}`} style={{ height: `${Math.max(8, (x.weight / max) * 100)}%` }} />
+            <span className="label">{datumNL(x.date)}</span>
+          </div>
+        ))}
+      </div>
+      <p className="klein" style={{ margin: "8px 0 0" }}>Gewicht in kg per training{r.punten.length > 10 ? " (laatste 10)" : ""}. Je zwaarste gewicht tot nu toe: <b>{nl(record)} kg</b>.</p>
+    </div>
+  );
+}
+
 function Voortgang({ p }) {
   const T = totaal(p);
   const gedaan = p.phaseDone ? T : p.session - 1;
   const omtrek = 2 * Math.PI * 50;
-  const trainingen = Object.values((p.history || []).reduce((acc, h) => { const k = h.date.slice(0, 10) + h.session; (acc[k] = acc[k] || { date: h.date, session: h.session, items: [] }).items.push(h); return acc; }, {}));
+  const trainingen = Object.values((p.history || []).reduce((acc, h) => { const k = h.date.slice(0, 10) + h.session; (acc[k] = acc[k] || { date: h.date, session: h.session, items: [] }).items.push(h); return acc; }, {})).sort((x, y) => new Date(y.date) - new Date(x.date));
   return (
     <div className="fade">
       <div className="titel">Jouw voortgang</div>
@@ -974,6 +1037,7 @@ function Voortgang({ p }) {
           <p className="klein" style={{ margin: 0 }}>Laatste training: {relDag(p.lastTraining)}</p>
         </div>
       </div>
+      <GewichtVerloop p={p} />
       <div className="kaart">
         <h2>Fases</h2>
         <div style={{ display: "flex", gap: 6 }}>
@@ -991,7 +1055,7 @@ function Voortgang({ p }) {
           const tel = (f) => t.items.filter((x) => x.fb === f).length; const pijn = t.items.some((x) => x.pain);
           return (
             <div className="item" key={i}>
-              <div><b style={{ fontWeight: 600 }}>Training {t.session}</b><div className="klein">{datumNL(t.date)} · {t.items.length} oefeningen</div></div>
+              <div><b style={{ fontWeight: 600 }}>Training {t.session}</b><div className="klein">{datumNL(t.date)} · {t.items.length} {t.items.length === 1 ? "oefening" : "oefeningen"}</div></div>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {tel("goed") > 0 && <span className="tag" style={{ background: "var(--groen-l)", color: "var(--groen)" }}>{tel("goed")}× goed</span>}
                 {tel("licht") > 0 && <span className="tag b">{tel("licht")}× licht</span>}
@@ -1018,8 +1082,12 @@ function Uitleg() {
       <div className="kaart">
         <h2>Standen van het toestel</h2>
         <p className="klein" style={{ marginTop: 0 }}>Deze namen zie je ook op het scherm van het toestel.</p>
-        {Object.values(MODE_INFO).map((m) => <p key={m.name} style={{ margin: "0 0 8px" }}><b>{m.name}</b><br /><span className="klein">{m.plain}</span></p>)}
-        <p className="klein" style={{ margin: 0 }}><b>Ratio</b> (bij Eccentric): hoeveel lichter het duwen of trekken is dan de terugweg. Bij 40 kg en ratio 0,5 duw je 20 kg en rem je 40 kg af.</p>
+        {Object.values(MODE_INFO).map((m) => (
+          <div key={m.name} style={{ margin: "0 0 10px" }}>
+            <b>{m.name}</b><br /><span className="klein">{m.plain}</span>
+            {m.name === "Eccentric" && <div className="klein" style={{ marginTop: 4, paddingLeft: 10, borderLeft: "3px solid var(--tag-p)" }}><b>Ratio</b>: hoeveel lichter het duwen of trekken is dan de terugweg. Bij 40 kg en ratio 0,5 duw je 20 kg en rem je 40 kg af.</div>}
+          </div>
+        ))}
       </div>
       <div className="kaart">
         <h2>Op je beginscherm zetten</h2>
