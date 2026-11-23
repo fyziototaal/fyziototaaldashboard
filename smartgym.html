@@ -1,0 +1,1162 @@
+<!-- APP_VERSION: 2026-11-23.3 -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<script>
+/* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
+(function () {
+  var APP_VERSION = "2026-11-23.3";
+  window.APP_VERSION = APP_VERSION;
+  try {
+    var al = new URLSearchParams(location.search).has("_v");
+    fetch(location.pathname, { cache: "no-store" })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var m = t.match(/<!--\s*APP_VERSION:\s*([^\s]+)\s*-->/);
+        if (m && m[1] !== APP_VERSION && !al) {
+          location.replace(location.pathname + "?_v=" + Date.now() + location.hash);
+        }
+      }).catch(function () {});
+  } catch (e) {}
+})();
+</script>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#82176D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SmartGym">
+<meta name="robots" content="noindex, nofollow">
+<title>SmartGym · Fyzio Totaal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --paars:#82176D; --paars-d:#4a0f42; --paars-l:#a8368f; --paars-h:#6b1259;
+  --cyaan:#00B6E8; --blauw:#00728e; --tag-p:#f3e3ef; --tag-b:#dcf4fb;
+  --rand:#e2d5df; --bg:#f3eef2; --wit:#fff; --tekst:#2a1726; --grijs:#6f6270;
+  --groen:#1f9d55; --groen-l:#e3f5ea; --oranje:#d97706; --oranje-l:#fff2dc; --rood:#d0342c; --rood-l:#fde7e5;
+  --schaduw:0 2px 14px rgba(130,23,109,0.08);
+  --basis:#1f9d55; --medium:#00728e; --sport:#d97706; --performance:#82176D;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font-family:'Poppins','Segoe UI',sans-serif;color:var(--tekst);background:var(--bg);font-size:15px;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+#root{min-height:100vh;display:flex;flex-direction:column}
+.inhoud{flex:1}
+
+/* header */
+.kop{background:linear-gradient(120deg,#4a0f42 0%,#82176D 45%,#a8368f 100%);color:#fff;border-bottom:4px solid var(--cyaan);padding:calc(14px + env(safe-area-inset-top)) 18px 16px}
+.kop-in{max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.kop.smal .kop-in{max-width:560px}
+.logo{width:42px;height:42px;border-radius:50%;background:#fff;border:2px solid var(--cyaan);display:grid;place-items:center;color:var(--paars);font-weight:800;font-size:14px;flex:none}
+.kop h1{margin:0;font-size:18px;font-weight:700;line-height:1.2}
+.kop .sub{font-size:12.5px;opacity:.8}
+.pil{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:3px 10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.kop .rechts{margin-left:auto;display:flex;gap:8px;align-items:center}
+.kopknop{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:7px 12px;font-size:13px;font-weight:500}
+
+.wrap{max-width:1060px;margin:0 auto;padding:18px 16px 28px}
+.wrap.smal{max-width:560px}
+.kaart{background:#fff;border-radius:20px;box-shadow:var(--schaduw);padding:18px;margin-bottom:14px}
+.kaart h2{margin:0 0 10px;font-size:17px;color:var(--paars)}
+.klein{font-size:13px;color:var(--grijs)}
+.knop{border:0;border-radius:14px;padding:14px 18px;font-weight:600;font-size:16px;color:#fff;background:linear-gradient(135deg,#82176D,#a8368f);box-shadow:0 2px 10px rgba(130,23,109,.2);transition:.15s}
+.knop:hover{background:linear-gradient(135deg,#6b1259,#8f2d78);box-shadow:0 4px 16px rgba(130,23,109,.28)}
+.knop:focus-visible,.knop2:focus-visible{outline:3px solid var(--tag-p);outline-offset:2px}
+.knop:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.knop.vol{width:100%}
+.knop.sm,.knop2.sm{padding:8px 12px;font-size:13.5px;border-radius:10px}
+.knop2{border:1px solid #d6ccd4;background:#fff;color:#4b3f49;border-radius:14px;padding:13px 18px;font-weight:500;font-size:15px}
+.knop2:hover{background:#faf7f9}
+.link{background:none;border:0;color:var(--paars);font-weight:600;padding:4px 0;font-size:14px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--tag-p);color:var(--paars)}
+.tag.b{background:var(--tag-b);color:var(--blauw)}
+.fase{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;color:#fff}
+.veld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--grijs)}
+.veld input,.veld select{font-size:16px;color:var(--tekst);background:#fff;border:1px solid #d6ccd4;border-radius:12px;padding:11px 12px;font-weight:400}
+.veld input:focus,.veld select:focus{outline:none;border-color:var(--paars);box-shadow:0 0 0 3px var(--tag-p)}
+.melding{border-radius:14px;padding:12px 14px;font-size:14px;margin-bottom:12px;background:var(--tag-b);color:#0b4b5c}
+.melding.let{background:var(--oranje-l);color:#7a4300}
+.melding.fout{background:var(--rood-l);color:#8a1f19}
+.rij{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.fade{animation:fd .22s ease}
+@keyframes fd{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fade{animation:none}}
+
+/* login */
+.pinvak{display:flex;gap:10px;justify-content:center;margin:14px 0 18px}
+.pinvak span{width:52px;height:60px;border-radius:14px;border:2px solid var(--rand);display:grid;place-items:center;font-size:30px;font-weight:700;background:#fff;color:var(--paars)}
+.pinvak span.v{border-color:var(--paars)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:0 auto}
+.key{height:64px;font-size:26px;font-weight:600;border-radius:16px;border:0;background:#fff;color:var(--tekst);box-shadow:var(--schaduw)}
+.key:active{background:var(--tag-p)}
+.codeinvoer{text-align:center;letter-spacing:6px;font-size:24px!important;font-weight:700!important;text-transform:uppercase}
+
+/* patiënt */
+.groet{font-size:14px;color:var(--grijs);margin:0}
+.titel{font-size:26px;font-weight:700;margin:2px 0 8px;line-height:1.2}
+.oeflijst button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 4px;border:0;border-top:1px solid #f0e8ee;background:transparent;color:var(--tekst);font-size:15.5px}
+.oeflijst button:first-child{border-top:0}
+.stap{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--tag-p);color:var(--paars);flex:none}
+.stap.klaar{background:var(--groen);color:#fff}
+.gewicht{font-size:clamp(70px,22vw,120px);line-height:.95;font-weight:800;color:var(--paars);letter-spacing:-2px}
+.cijfers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.cijfer{background:var(--bg);border-radius:14px;padding:10px;text-align:center}
+.cijfer b{display:block;font-size:24px;color:var(--paars);line-height:1.2}
+.cijfer span{font-size:12px;color:var(--grijs)}
+.sets{display:flex;gap:10px;flex-wrap:wrap}
+.set{flex:1;min-width:64px;height:56px;border-radius:14px;border:2px solid var(--rand);background:#fff;color:var(--grijs);font-weight:700;font-size:16px}
+.set.aan{background:var(--groen);border-color:var(--groen);color:#fff}
+.fb{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fb button{height:70px;border-radius:16px;border:2px solid var(--rand);background:#fff;color:var(--tekst);font-size:16px;font-weight:600}
+.fb button.licht.aan{background:var(--tag-b);border-color:var(--blauw);color:var(--blauw)}
+.fb button.goed.aan{background:var(--groen-l);border-color:var(--groen);color:var(--groen)}
+.fb button.zwaar.aan{background:var(--oranje-l);border-color:var(--oranje);color:var(--oranje)}
+.pijn{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.pijn button{flex:1;padding:12px;border-radius:14px;border:2px solid var(--rand);background:#fff;font-weight:600;font-size:15px;color:var(--tekst)}
+.pijn button.ja.aan{background:var(--rood-l);border-color:var(--rood);color:var(--rood)}
+.pijn button.nee.aan{background:var(--bg);border-color:var(--tekst)}
+.rust{font-size:22px;font-weight:700;color:var(--blauw)}
+.notitie{border-left:4px solid var(--cyaan);background:var(--tag-b);color:#0b4b5c;padding:11px 14px;border-radius:0 12px 12px 0;font-size:14px}
+.notitie.oranje{border-color:var(--oranje);background:var(--oranje-l);color:#7a4300}
+.tabbar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--rand);display:flex;justify-content:space-around;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:5}
+.tabbar button{flex:1;background:none;border:0;padding:6px 4px;font-size:11.5px;font-weight:600;color:var(--grijs);display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:12px}
+.tabbar button .ic{font-size:20px;line-height:1}
+.tabbar button.aan{color:var(--paars);background:var(--tag-p)}
+.ring{width:120px;height:120px;flex:none}
+.balk{height:10px;background:#efe6ed;border-radius:99px;overflow:hidden}
+.balk i{display:block;height:100%;background:linear-gradient(90deg,#82176D,#a8368f);border-radius:99px}
+.lijst .item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #f0e8ee;font-size:14px}
+.lijst .item:first-child{border-top:0}
+
+/* fysio */
+table.t{width:100%;border-collapse:collapse;font-size:14.5px}
+table.t th{text-align:left;font-weight:600;color:var(--grijs);padding:9px 10px;border-bottom:1px solid var(--rand);font-size:12.5px}
+table.t td{padding:11px 10px;border-bottom:1px solid #f0e8ee;vertical-align:middle}
+table.t tr.klik{cursor:pointer}
+table.t tr.klik:hover td{background:#faf6f9}
+.twee{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.alert{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border-radius:12px;background:var(--rood-l);margin-bottom:8px}
+.codekaart{border:2px dashed var(--rand);border-radius:16px;padding:14px;text-align:center}
+.codekaart b{font-size:28px;letter-spacing:4px;color:var(--paars)}
+@media (max-width:760px){.twee{grid-template-columns:1fr}.verberg-sm{display:none}}
+
+.voet{background:var(--paars-d);color:rgba(255,255,255,.5);font-size:12px;text-align:center;padding:12px 16px}
+.voet b{color:rgba(255,255,255,.85)}
+@media print{.kop,.tabbar,.voet,.geenprint{display:none!important}body{background:#fff}.kaart{box-shadow:none;border:1px solid #ddd}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+/* =====================================================================
+   CONFIGURATIE
+   Leeg laten = demomodus (alles alleen in deze browser, voor uitproberen).
+   Invullen = echte modus via Supabase (zie smartgym-supabase-setup.sql).
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: "https://szunargvsmtzbbnmnghc.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6dW5hcmd2c210emJibm1uZ2hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0Mzc5ODAsImV4cCI6MjA5NjAxMzk4MH0.LkGK2QmvcDdYgT5vRU9hPvn-sBUPVyNqH86v3R6PJ-U",
+};
+const DEMO = !CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY;
+
+/* ============================ Programma-logica ============================ */
+const PHASES = ["Basis", "Medium", "Sport", "Performance"];
+const WEEKS = {
+  Basis: [[2, 15, 0.4], [3, 15, 0.45], [3, 12, 0.5], [3, 12, 0.55], [3, 12, 0.6], [2, 12, 0.45]],
+  Medium: [[2, 12, 0.6], [3, 12, 0.62], [3, 10, 0.67], [3, 10, 0.7], [3, 8, 0.75], [2, 10, 0.6]],
+  Sport: [[3, 6, 0.75], [4, 6, 0.77], [4, 5, 0.8], [4, 5, 0.82], [4, 4, 0.85], [3, 5, 0.7]],
+  Performance: [[3, 6, 0.35], [4, 5, 0.4], [4, 5, 0.45], [5, 4, 0.5], [5, 3, 0.55], [3, 4, 0.35]],
+};
+const TEMPO = { Basis: "2 tellen op, 3 tellen neer", Medium: "2 tellen op, 3 tellen neer", Sport: "Krachtig op, 3 tellen neer", Performance: "Explosief op, 2 tellen neer" };
+const REST = { Basis: 75, Medium: 90, Sport: 150, Performance: 150 };
+const ECC = { Medium: [0.15, 0.2, 0.2, 0.3, 0.3, 0.2], Sport: [0.3, 0.3, 0.35, 0.4, 0.4, 0.3] };
+const INZET = { Basis: "6 à 7 van 10 inzet", Medium: "8 van 10 inzet", Sport: "Maximale inzet", Performance: "Maximaal snel" };
+const SESSION_A = ["Leg press", "Leg curl", "Abductie-adductie", "Lat pulldown", "Abd-back", "Functional trainer A"];
+const SESSION_B = ["Squat", "Leg extension", "Bench press", "Shoulder press", "Pec dec retro", "Functional trainer B"];
+
+// [oefening, modus, isokinetische snelheid, drop set week 5, instructie]
+const PLAN = {
+  "Leg press": {
+    Basis: ["Leg press", "C", null, false, "Voeten heupbreed, knieën in lijn met je tenen. Rustig duwen, gecontroleerd terug."],
+    Medium: ["Leg press", "E+", null, true, "Normaal duwen. Het zakken extra langzaam afremmen."],
+    Sport: ["Leg press eenbenig", "C", null, false, "Per been. Krachtig duwen, rustig terug. Bekken stil."],
+    Performance: ["Leg press krachtonderhoud", "C", null, false, "Zwaar en krachtig duwen. Kwaliteit gaat voor snelheid."],
+  },
+  "Leg curl": {
+    Basis: ["Leg curl", "C", null, false, "Hielen naar je billen, rustig terug. Bekken op de bank."],
+    Medium: ["Leg curl", "E+", null, false, "Buigen gaat normaal, terugstrekken zo langzaam mogelijk."],
+    Sport: ["Leg curl zwaar afremmen", "E+", null, false, "Zwaar afremmen over het hele bereik."],
+    Performance: ["Leg curl snel", "I", "Snel", false, "Zo snel en krachtig mogelijk buigen."],
+  },
+  "Abductie-adductie": {
+    Basis: ["Benen naar buiten en binnen", "C", null, false, "Sets afwisselend naar buiten en naar binnen. Rustig."],
+    Medium: ["Benen naar buiten en binnen", "E+", null, false, "Afwisselend; het terugkeren langzaam afremmen."],
+    Sport: ["Benen naar binnen, zwaar afremmen", "E+", null, false, "Nadruk op naar binnen: langzaam afremmen."],
+    Performance: ["Benen naar buiten en binnen, snel", "El", null, false, "Snel en veerkrachtig wisselen, zonder pauze."],
+  },
+  "Lat pulldown": {
+    Basis: ["Lat pulldown", "C", null, false, "Schouderbladen eerst omlaag, stang naar de bovenkant van je borst."],
+    Medium: ["Lat pulldown", "C", null, true, "Gecontroleerd trekken, 2 tellen terug."],
+    Sport: ["Lat pulldown zwaar", "C", null, false, "Zwaar en krachtig trekken, gecontroleerd terug."],
+    Performance: ["Lat pulldown explosief", "El", null, false, "Explosief trekken, terug laten veren."],
+  },
+  "Abd-back": {
+    Basis: ["Buik en rug", "I", "Traag", false, "Afwisselend een set buik en een set rug. Rustig."],
+    Medium: ["Buik en rug", "C", null, false, "Afwisselend buik en rug, over het hele bereik."],
+    Sport: ["Buik en rug, langzaam terug", "E+", null, false, "Afwisselend buik en rug; terugbeweging afremmen."],
+    Performance: ["Buik en rug, snel", "El", null, false, "Licht gewicht, snel. Romp stevig aangespannen."],
+  },
+  "Functional trainer A": {
+    Basis: ["Wegdrukken zonder te draaien", "C", null, false, "Zijwaarts naast het toestel. Armen recht vooruit drukken, romp draait niet mee."],
+    Medium: ["Eenarmig roeien", "C", null, false, "Elleboog langs je lichaam naar achter. Romp stil."],
+    Sport: ["Roeien met draai", "C", null, false, "Trekken en je romp licht meedraaien. Voeten stevig."],
+    Performance: ["Houthakker explosief", "El", null, false, "Diagonaal van hoog naar laag, explosief vanuit heup en romp."],
+  },
+  Squat: {
+    Basis: ["Squat", "I", "Traag", false, "Rustig zakken en omhoog. Knieën in lijn met je tenen."],
+    Medium: ["Squat", "E+", null, false, "Zakken extra langzaam afremmen, krachtig omhoog."],
+    Sport: ["Squat zwaar", "C", null, false, "Zwaar en krachtig omhoog, gecontroleerd zakken."],
+    Performance: ["Squat explosief", "El", null, false, "Snel zakken en explosief omhoog, geen pauze onderin."],
+  },
+  "Leg extension": {
+    Basis: ["Leg extension, beperkt bereik", "I", "Traag", false, "Bereik zoals je fysio het heeft ingesteld. Rustig."],
+    Medium: ["Leg extension", "C", null, true, "Volledig strekken, 2 tellen terug."],
+    Sport: ["Leg extension", "I", "Middel", false, "Maximale kracht. De snelheid wisselt per set."],
+    Performance: ["Leg extension snel", "I", "Snel", false, "Zo snel en krachtig mogelijk strekken."],
+  },
+  "Bench press": {
+    Basis: ["Bench press", "I", "Traag", false, "Schouderbladen in de bank, rustig duwen."],
+    Medium: ["Bench press", "C", null, true, "Gecontroleerd duwen, 2 à 3 tellen terug."],
+    Sport: ["Bench press zwaar", "C", null, false, "Zwaar en krachtig duwen, schouderbladen stabiel."],
+    Performance: ["Bench press explosief", "El", null, false, "Explosief duwen, terug laten veren."],
+  },
+  "Shoulder press": {
+    Basis: ["Shoulder press", "C", null, false, "Rug tegen de leuning, rustig omhoog zonder hol te trekken."],
+    Medium: ["Shoulder press", "C", null, false, "Gecontroleerd omhoog en terug, romp aangespannen."],
+    Sport: ["Shoulder press zwaar", "C", null, false, "Zwaar en krachtig omhoog, gecontroleerd terug."],
+    Performance: ["Shoulder press explosief", "El", null, false, "Explosief omhoog, terug laten veren."],
+  },
+  "Pec dec retro": {
+    Basis: ["Reverse fly", "C", null, false, "Armen naar achter openen, schouderbladen naar elkaar. Licht en rustig."],
+    Medium: ["Reverse fly", "E+", null, false, "Openen normaal, terugkeren langzaam afremmen."],
+    Sport: ["Reverse fly zwaar", "C", null, false, "Krachtig openen, schouders laag."],
+    Performance: ["Reverse fly snel", "I", "Snel", false, "Zo snel mogelijk openen."],
+  },
+  "Functional trainer B": {
+    Basis: ["Schouder naar buiten draaien", "C", null, false, "Elleboog tegen je zij, onderarm naar buiten draaien. Licht."],
+    Medium: ["Face pull", "C", null, false, "Touw naar je gezicht trekken, handen naar buiten draaien."],
+    Sport: ["Eenbenige deadlift met kabel", "C", null, false, "Op één been, heup naar achter, rug recht."],
+    Performance: ["Explosieve draai", "El", null, false, "Draai explosief vanuit heup en romp, armen volgen."],
+  },
+};
+const MODE_INFO = {
+  C: { name: "Concentrisch", plain: "Normaal duwen of trekken, gecontroleerd terug." },
+  "E+": { name: "Excentrisch", plain: "Terugkeren is zwaarder dan duwen. Rem langzaam af." },
+  I: { name: "Isokinetisch", plain: "Het toestel bepaalt de snelheid. Jij bepaalt de kracht." },
+  El: { name: "Elastisch", plain: "Snel en veerkrachtig, zonder pauze tussen de herhalingen." },
+};
+const TESTED = [["legpress", "Leg press"], ["legext", "Leg extension"], ["legcurl", "Leg curl"], ["squat", "Squat"], ["bench", "Bench press"], ["lat", "Lat pulldown"]];
+const MANUAL = [["abdadd", "Abductie-adductie"], ["abdback", "Abd-back"], ["ft", "Functional trainer"]];
+const CRITERIA = {
+  Basis: ["Geen pijnreactie langer dan 24 uur in laatste 2 weken", "Links-rechtsverschil leg extension/curl kleiner dan 20%", "Techniek op alle toestellen goedgekeurd", "Minimaal 10 van 12 trainingen gedaan"],
+  Medium: ["Links-rechtsverschil kleiner dan 15%", "Leg press minimaal 1,5x lichaamsgewicht", "Squat minimaal 1,0x lichaamsgewicht", "Geen pijnreactie"],
+  Sport: ["Links-rechtsverschil kleiner dan 10%", "Leg press minimaal 2,0x lichaamsgewicht", "Squat minimaal 1,25x lichaamsgewicht", "Hamstring/quadriceps-ratio minimaal 0,6"],
+  Performance: ["Krachtverlies kleiner dan 10% ten opzichte van vorige test"],
+};
+
+function refFor(m, t) {
+  const map = {
+    "Leg press": t.legpress, "Leg extension": t.legext, "Leg curl": t.legcurl, Squat: t.squat,
+    "Bench press": t.bench, "Lat pulldown": t.lat, "Shoulder press": t.bench * 0.6, "Pec dec retro": t.lat * 0.3,
+    "Abductie-adductie": t.abdadd, "Abd-back": t.abdback, "Functional trainer A": t.ft, "Functional trainer B": t.ft,
+  };
+  return Number(map[m]) || 0;
+}
+const round25 = (x) => Math.max(2.5, Math.round(x / 2.5) * 2.5);
+const machineLabel = (m) => m.replace(/ [AB]$/, "");
+const kg = (w) => String(w).replace(".", ",");
+
+function buildSession(p) {
+  const week = Math.ceil(p.session / 2);
+  const type = p.session % 2 === 1 ? "A" : "B";
+  const [sets, reps, pct] = WEEKS[p.phase][week - 1];
+  return (type === "A" ? SESSION_A : SESSION_B).map((m) => {
+    const [oef, mode, speed, ds, instr] = PLAN[m][p.phase];
+    let s = sets, r = reps, pc = pct;
+    if (p.phase === "Performance" && m === "Leg press") { s = 3; r = 5; pc = 0.8; }
+    if (p.phase === "Sport" && m === "Leg press") pc = pct * 0.45;
+    const corr = (p.corrections || {})[m] || {};
+    const usePct = corr.holdPct ?? pc;
+    const weight = speed ? null : round25(refFor(m, p.tests || {}) * usePct * (corr.factor || 1));
+    return {
+      machine: m, oef, mode, speed, sets: s, reps: r, pct: usePct, weight,
+      ecc: mode === "E+" ? (ECC[p.phase] ? ECC[p.phase][week - 1] : 0.15) : 0,
+      dropset: ds && week === 5 && p.phase === "Medium",
+      inzet: speed || p.phase === "Performance" ? INZET[p.phase] : null,
+      tempo: TEMPO[p.phase], rest: REST[p.phase], instr,
+    };
+  });
+}
+
+function applyFeedback(corr, ex, fb, pain) {
+  const c = { factor: 1, light: 0, heavy: 0, pain: 0, holdPct: null, ...(corr || {}) };
+  const alerts = [];
+  if (pain) {
+    c.pain += 1; c.holdPct = ex.pct;
+    if (c.pain >= 2) { c.factor *= 0.9; c.pain = 0; alerts.push("Pijn bij 2 opeenvolgende trainingen, gewicht 10% omlaag"); }
+    else alerts.push("Pijn gemeld, gewicht niet verhoogd");
+    c.light = 0; c.heavy = 0;
+    return { c, alerts };
+  }
+  c.pain = 0;
+  if (fb === "licht") { c.light += 1; c.heavy = 0; c.holdPct = null; if (c.light >= 2) { c.factor *= 1.05; c.light = 0; } }
+  else if (fb === "zwaar") {
+    c.heavy += 1; c.light = 0;
+    if (c.heavy >= 2) { c.factor *= 0.9; c.heavy = 0; c.holdPct = null; alerts.push("2x te zwaar, gewicht 10% omlaag"); }
+    else c.holdPct = ex.pct;
+  } else { c.light = 0; c.heavy = 0; c.holdPct = null; }
+  return { c, alerts };
+}
+
+/* training afronden: berekent nieuwe patiëntstatus */
+function verwerkTraining(p, session, results) {
+  const corrections = { ...(p.corrections || {}) };
+  const alerts = [...(p.alerts || [])];
+  const hist = [...(p.history || [])];
+  const nu = new Date().toISOString();
+  session.forEach((ex) => {
+    const r = results[ex.machine];
+    if (!r) return;
+    const { c, alerts: al } = applyFeedback(corrections[ex.machine], ex, r.fb, r.pain);
+    corrections[ex.machine] = c;
+    al.forEach((t) => alerts.unshift({ id: nieuwId(), date: nu, text: `${machineLabel(ex.machine)}: ${t}`, ack: false }));
+    hist.unshift({ date: nu, session: p.session, phase: p.phase, machine: ex.machine, oef: ex.oef, weight: ex.weight, fb: r.fb, pain: r.pain });
+  });
+  const done = p.session >= 12;
+  return { ...p, corrections, alerts: alerts.slice(0, 50), history: hist.slice(0, 300), lastTraining: nu, session: done ? 12 : p.session + 1, phaseDone: done };
+}
+
+/* ============================ Hulpjes ============================ */
+const nieuwId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const CODE_TEKENS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const maakCode = (bestaand) => { let c; do { c = Array.from({ length: 6 }, () => CODE_TEKENS[Math.floor(Math.random() * CODE_TEKENS.length)]).join(""); } while (bestaand.includes(c)); return c; };
+const maakPin = () => String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+const relDag = (iso) => {
+  if (!iso) return "nog niet";
+  const d = Math.floor((Date.now() - new Date(iso)) / 864e5);
+  return d <= 0 ? "vandaag" : d === 1 ? "gisteren" : `${d} dagen geleden`;
+};
+const datumNL = (iso) => new Date(iso).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+const voornaam = (n) => (n || "").split(" ")[0];
+const faseKleur = (f) => `var(--${(f || "basis").toLowerCase()})`;
+const Fase = ({ f }) => <span className="fase" style={{ background: faseKleur(f) }}>{f}</span>;
+const veilig = { lees(k, s) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : s; } catch { return s; } }, schrijf(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }, weg(k) { try { localStorage.removeItem(k); } catch {} } };
+
+/* ============================ Demodata ============================ */
+const dagenTerug = (d) => new Date(Date.now() - d * 864e5).toISOString();
+const demoSeed = () => ([
+  { id: "p1", code: "ANNA21", pin: "4821", name: "Anna de Vries", phase: "Basis", session: 3, phaseDone: false, lastTraining: dagenTerug(2),
+    tests: { legpress: 90, legext: 28, legcurl: 22, squat: 45, bench: 30, lat: 35, abdadd: 25, abdback: 20, ft: 10 },
+    testHistory: [{ label: "Start Basis", date: dagenTerug(9), tests: { legpress: 90, legext: 28, legcurl: 22, squat: 45, bench: 30, lat: 35 } }],
+    corrections: {}, history: [], alerts: [] },
+  { id: "p2", code: "MARK75", pin: "1975", name: "Mark Jansen", phase: "Medium", session: 9, phaseDone: false, lastTraining: dagenTerug(1),
+    tests: { legpress: 150, legext: 50, legcurl: 34, squat: 85, bench: 70, lat: 65, abdadd: 40, abdback: 35, ft: 20 },
+    testHistory: [
+      { label: "Start Basis", date: dagenTerug(60), tests: { legpress: 120, legext: 40, legcurl: 26, squat: 65, bench: 55, lat: 50 } },
+      { label: "Start Medium", date: dagenTerug(30), tests: { legpress: 150, legext: 50, legcurl: 34, squat: 85, bench: 70, lat: 65 } }],
+    corrections: { "Leg extension": { factor: 1, light: 0, heavy: 0, pain: 1, holdPct: 0.7 } },
+    history: [
+      { date: dagenTerug(1), session: 8, phase: "Medium", machine: "Leg extension", oef: "Leg extension", weight: 35, fb: "goed", pain: true },
+      { date: dagenTerug(1), session: 8, phase: "Medium", machine: "Squat", oef: "Squat", weight: 57.5, fb: "goed", pain: false },
+      { date: dagenTerug(4), session: 7, phase: "Medium", machine: "Leg press", oef: "Leg press", weight: 105, fb: "licht", pain: false }],
+    alerts: [{ id: "a1", date: dagenTerug(1), text: "Leg extension: pijn gemeld, gewicht niet verhoogd", ack: false }] },
+  { id: "p3", code: "SANN07", pin: "3307", name: "Sanne Kok", phase: "Sport", session: 5, phaseDone: false, lastTraining: dagenTerug(3),
+    tests: { legpress: 160, legext: 55, legcurl: 38, squat: 95, bench: 55, lat: 60, abdadd: 45, abdback: 40, ft: 20 },
+    testHistory: [{ label: "Start Sport", date: dagenTerug(14), tests: { legpress: 160, legext: 55, legcurl: 38, squat: 95, bench: 55, lat: 60 } }],
+    corrections: {}, history: [], alerts: [] },
+  { id: "p4", code: "PIET10", pin: "6610", name: "Pieter Smit", phase: "Medium", session: 12, phaseDone: true, lastTraining: dagenTerug(2),
+    tests: { legpress: 140, legext: 45, legcurl: 30, squat: 80, bench: 75, lat: 70, abdadd: 40, abdback: 35, ft: 20 },
+    testHistory: [{ label: "Start Medium", date: dagenTerug(44), tests: { legpress: 140, legext: 45, legcurl: 30, squat: 80, bench: 75, lat: 70 } }],
+    corrections: {}, history: [], alerts: [] },
+]);
+
+/* ============================ Opslaglaag ============================
+   Demo: localStorage. Echt: Supabase, waarbij patiënten NIET direct
+   bij de tabel kunnen, alleen via beveiligde functies met code + pincode. */
+const DEMO_KEY = "ftsg_demo_v1";
+// Uitnodigings- en wachtwoordlinks van Supabase komen binnen met #...type=invite / type=recovery
+const START_HASH = location.hash;
+const AUTH_TYPE = (START_HASH.match(/type=(invite|recovery)/) || [])[1] || null;
+const AUTH_FOUT = /error_code=/.test(START_HASH);
+const sb = DEMO ? null : window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+const PATIENT_VELDEN = ["corrections", "alerts", "history", "session", "phaseDone", "lastTraining"];
+const splits = (p) => { const { id, code, pin, ...data } = p; return { id, code, data }; };
+
+const store = {
+  demoLijst() { let l = veilig.lees(DEMO_KEY, null); if (!l) { l = demoSeed(); veilig.schrijf(DEMO_KEY, l); } return l; },
+  demoSchrijf(l) { veilig.schrijf(DEMO_KEY, l); },
+
+  async patientLogin(code, pin) {
+    code = code.trim().toUpperCase();
+    if (DEMO) { const p = store.demoLijst().find((x) => x.code === code && x.pin === pin); if (!p) throw new Error("onbekend"); return p; }
+    const { data, error } = await sb.rpc("sg_patient_login", { p_code: code, p_pin: pin });
+    if (error) throw new Error(/geblokkeerd/.test(error.message) ? "geblokkeerd" : "verbinding");
+    if (!data) throw new Error("onbekend");
+    return data;
+  },
+  async patientOpslaan(p, code, pin) {
+    if (DEMO) { store.demoSchrijf(store.demoLijst().map((x) => (x.id === p.id ? { ...x, ...Object.fromEntries(PATIENT_VELDEN.map((k) => [k, p[k]])) } : x))); return; }
+    const sub = Object.fromEntries(PATIENT_VELDEN.map((k) => [k, p[k]]));
+    const { error } = await sb.rpc("sg_patient_opslaan", { p_code: code, p_pin: pin, p_data: sub });
+    if (error) throw error;
+  },
+
+  async fysioSessie() { if (DEMO) return { email: "demo" }; const { data } = await sb.auth.getSession(); return data.session ? data.session.user : null; },
+  async fysioLogin(email, pw) { if (DEMO) return; const { error } = await sb.auth.signInWithPassword({ email, password: pw }); if (error) throw error; },
+  async fysioUit() { if (!DEMO) await sb.auth.signOut(); },
+  async wachtwoordZetten(pw) { const { error } = await sb.auth.updateUser({ password: pw }); if (error) throw error; },
+  async wachtwoordVergeten(email) { const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname }); if (error) throw error; },
+  async lijst() {
+    if (DEMO) return store.demoLijst();
+    const { data, error } = await sb.from("sg_patienten").select("id, code, data").order("bijgewerkt", { ascending: false });
+    if (error) throw error;
+    return data.map((r) => ({ id: r.id, code: r.code, ...r.data }));
+  },
+  async bewaar(p) {
+    if (DEMO) { const l = store.demoLijst(); const i = l.findIndex((x) => x.id === p.id); if (i >= 0) l[i] = p; else l.unshift(p); store.demoSchrijf(l); return p; }
+    const { id, code, data } = splits(p);
+    const rij = { code, data, bijgewerkt: new Date().toISOString() };
+    if (id) rij.id = id;
+    const { data: res, error } = await sb.from("sg_patienten").upsert(rij).select("id").single();
+    if (error) throw error;
+    return { ...p, id: res.id };
+  },
+  async zetPin(p, pin) {
+    if (DEMO) { store.demoSchrijf(store.demoLijst().map((x) => (x.id === p.id ? { ...x, pin } : x))); return; }
+    const { error } = await sb.rpc("sg_pin_zetten", { p_id: p.id, p_pin: pin });
+    if (error) throw error;
+  },
+  async verwijder(p) {
+    if (DEMO) { store.demoSchrijf(store.demoLijst().filter((x) => x.id !== p.id)); return; }
+    const { error } = await sb.from("sg_patienten").delete().eq("id", p.id);
+    if (error) throw error;
+  },
+};
+
+/* ============================ Algemene onderdelen ============================ */
+function Kop({ titel, sub, smal, rechts }) {
+  return (
+    <header className={`kop ${smal ? "smal" : ""}`}>
+      <div className="kop-in">
+        <div className="logo">FT</div>
+        <div><h1>{titel}</h1>{sub && <div className="sub">{sub}</div>}</div>
+        {rechts && <div className="rechts">{rechts}</div>}
+      </div>
+    </header>
+  );
+}
+const Voet = () => <footer className="voet"><b>Fyzio Totaal</b> · SmartGym · versie {window.APP_VERSION}{DEMO ? " · demomodus" : ""}</footer>;
+
+/* ============================ App ============================ */
+function App() {
+  const [rol, setRol] = useState(() => (location.hash === "#fysio" || AUTH_TYPE || AUTH_FOUT ? "fysio" : "patient"));
+  useEffect(() => { const h = () => { if (location.hash === "#fysio") setRol("fysio"); else if (location.hash === "" || location.hash === "#") setRol("patient"); }; window.addEventListener("hashchange", h); return () => window.removeEventListener("hashchange", h); }, []);
+  return rol === "fysio" ? <FysioApp /> : <PatientApp />;
+}
+
+/* ============================ PATIËNT ============================ */
+const ONTHOUD_KEY = "ftsg_onthoud";
+
+function PatientApp() {
+  const [sessie, setSessie] = useState(null); // {patient, code, pin}
+  const [bezig, setBezig] = useState(true);
+
+  useEffect(() => {
+    const o = veilig.lees(ONTHOUD_KEY, null);
+    if (!o) { setBezig(false); return; }
+    store.patientLogin(o.code, o.pin).then((p) => setSessie({ patient: p, code: o.code, pin: o.pin })).catch(() => veilig.weg(ONTHOUD_KEY)).finally(() => setBezig(false));
+  }, []);
+
+  const uitloggen = () => { veilig.weg(ONTHOUD_KEY); setSessie(null); };
+
+  if (bezig) return <><Kop titel="SmartGym" sub="Fyzio Totaal" smal /><div className="inhoud wrap smal klein">Laden…</div><Voet /></>;
+  if (!sessie) return <PatientLogin onLogin={(s, onthoud) => { if (onthoud) veilig.schrijf(ONTHOUD_KEY, { code: s.code, pin: s.pin }); setSessie(s); }} />;
+  return <PatientOmgeving sessie={sessie} setSessie={setSessie} uitloggen={uitloggen} />;
+}
+
+function PatientLogin({ onLogin }) {
+  const [code, setCode] = useState("");
+  const [pin, setPin] = useState("");
+  const [stap, setStap] = useState("code");
+  const [fout, setFout] = useState("");
+  const [onthoud, setOnthoud] = useState(false);
+  const [bezig, setBezig] = useState(false);
+
+  const probeer = async (p) => {
+    setBezig(true); setFout("");
+    try { const pat = await store.patientLogin(code, p); onLogin({ patient: pat, code: code.trim().toUpperCase(), pin: p }, onthoud); }
+    catch (e) {
+      setFout(e.message === "geblokkeerd" ? "Te vaak een verkeerde pincode. Probeer het over 15 minuten opnieuw of meld je bij de balie."
+        : e.message === "verbinding" ? "Er is geen verbinding. Controleer je internet en probeer het opnieuw."
+        : "Deze code of pincode klopt niet. Controleer je kaartje of vraag je fysiotherapeut.");
+      setPin("");
+    }
+    setBezig(false);
+  };
+  const druk = (k) => {
+    setFout("");
+    if (k === "wis") return setPin(pin.slice(0, -1));
+    if (pin.length >= 4 || bezig) return;
+    const n = pin + k; setPin(n);
+    if (n.length === 4) setTimeout(() => probeer(n), 120);
+  };
+
+  return (
+    <>
+      <Kop titel="SmartGym" sub="Fyzio Totaal" smal />
+      <main className="inhoud wrap smal fade">
+        <div className="kaart" style={{ textAlign: "center", paddingTop: 24 }}>
+          {stap === "code" ? (
+            <>
+              <h2 style={{ fontSize: 22, color: "var(--tekst)" }}>Welkom</h2>
+              <p className="klein" style={{ marginTop: 0 }}>Vul de code in die op je SmartGym-kaartje staat.</p>
+              <label className="veld" style={{ textAlign: "left", margin: "16px 0" }}>Jouw code
+                <input className="codeinvoer" value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  onKeyDown={(e) => e.key === "Enter" && code.length === 6 && setStap("pin")} placeholder="ABC123" />
+              </label>
+              <button className="knop vol" disabled={code.length !== 6} onClick={() => setStap("pin")}>Verder</button>
+            </>
+          ) : (
+            <>
+              <h2 style={{ fontSize: 22, color: "var(--tekst)" }}>Je pincode</h2>
+              <p className="klein" style={{ marginTop: 0 }}>Code <b style={{ letterSpacing: 2 }}>{code}</b> · <button className="link" onClick={() => { setStap("code"); setPin(""); setFout(""); }}>wijzigen</button></p>
+              <div className="pinvak" aria-live="polite">{[0, 1, 2, 3].map((i) => <span key={i} className={pin[i] ? "v" : ""}>{pin[i] ? "•" : ""}</span>)}</div>
+              {fout && <div className="melding fout">{fout}</div>}
+              <div className="keypad">
+                {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((k) => <button key={k} className="key" onClick={() => druk(k)}>{k}</button>)}
+                <span />
+                <button className="key" onClick={() => druk("0")}>0</button>
+                <button className="key" style={{ fontSize: 15 }} onClick={() => druk("wis")}>Wissen</button>
+              </div>
+              <label style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 18, fontSize: 14 }}>
+                <input type="checkbox" checked={onthoud} onChange={(e) => setOnthoud(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#82176D" }} />
+                Ingelogd blijven op mijn eigen telefoon
+              </label>
+              <p className="klein" style={{ marginTop: 4 }}>Niet aanvinken op de tablet in de praktijk.</p>
+            </>
+          )}
+        </div>
+        {DEMO && <div className="melding">Demomodus. Probeer: <b>ANNA21</b> / 4821 (Basis), <b>MARK75</b> / 1975 (Medium), <b>SANN07</b> / 3307 (Sport), <b>PIET10</b> / 6610 (fase klaar).</div>}
+        <p style={{ textAlign: "center" }}><a className="link" href="#fysio" style={{ fontSize: 13, color: "var(--grijs)" }}>Inloggen als fysiotherapeut</a></p>
+      </main>
+      <Voet />
+    </>
+  );
+}
+
+function PatientOmgeving({ sessie, setSessie, uitloggen }) {
+  const p = sessie.patient;
+  const [tab, setTab] = useState("vandaag");
+  const zetPatient = (np) => setSessie({ ...sessie, patient: np });
+  return (
+    <>
+      <Kop titel={`Hoi ${voornaam(p.name)}`} sub={<>Fase {p.phase}</>} smal rechts={<button className="kopknop" onClick={uitloggen}>Afmelden</button>} />
+      <main className="inhoud wrap smal">
+        {tab === "vandaag" && <Vandaag sessie={sessie} zetPatient={zetPatient} uitloggen={uitloggen} />}
+        {tab === "voortgang" && <Voortgang p={p} />}
+        {tab === "uitleg" && <Uitleg />}
+      </main>
+      <Voet />
+      <nav className="tabbar geenprint">
+        {[["vandaag", "🏋️", "Vandaag"], ["voortgang", "📈", "Voortgang"], ["uitleg", "💡", "Uitleg"]].map(([k, ic, l]) => (
+          <button key={k} className={tab === k ? "aan" : ""} onClick={() => { setTab(k); window.scrollTo(0, 0); }}><span className="ic">{ic}</span>{l}</button>
+        ))}
+      </nav>
+    </>
+  );
+}
+
+function Vandaag({ sessie, zetPatient, uitloggen }) {
+  const p = sessie.patient;
+  const [scherm, setScherm] = useState("overzicht");
+  const [idx, setIdx] = useState(0);
+  const [results, setResults] = useState({});
+  const [fout, setFout] = useState("");
+  const [opslaan, setOpslaan] = useState(false);
+  const session = useMemo(() => buildSession(p), [p.id, p.phase, p.session]);
+  const aantal = Object.keys(results).length;
+
+  const afronden = async () => {
+    setOpslaan(true); setFout("");
+    const np = verwerkTraining(p, session, results);
+    try { await store.patientOpslaan(np, sessie.code, sessie.pin); zetPatient(np); setScherm("klaar"); setResults({}); }
+    catch { setFout("Opslaan lukte niet. Controleer je internet en probeer het nog een keer."); }
+    setOpslaan(false);
+  };
+
+  if (scherm === "klaar") return (
+    <div className="kaart fade" style={{ textAlign: "center", padding: 28 }}>
+      <div style={{ fontSize: 52 }}>🎉</div>
+      <h2 style={{ fontSize: 24, color: "var(--tekst)" }}>Training opgeslagen</h2>
+      <p className="klein">Goed gedaan, {voornaam(p.name)}. Je feedback past je volgende training automatisch aan.</p>
+      {p.phaseDone && <p className="notitie oranje" style={{ textAlign: "left" }}>Je hebt alle 12 trainingen van deze fase gedaan. Je fysiotherapeut plant de hertest met je in.</p>}
+      <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+        <button className="knop" onClick={() => setScherm("overzicht")}>Terug naar overzicht</button>
+        <button className="knop2" onClick={uitloggen}>Afmelden</button>
+      </div>
+    </div>
+  );
+
+  if (p.phaseDone) return (
+    <div className="kaart fade">
+      <h2 style={{ color: "var(--tekst)", fontSize: 22 }}>Fase {p.phase} afgerond</h2>
+      <p className="notitie oranje">Voordat je verder traint, doet je fysiotherapeut eerst de hertest met je. Meld je even bij de balie.</p>
+    </div>
+  );
+
+  if (scherm === "oefening") return (
+    <Oefening key={idx} p={p} ex={session[idx]} nr={idx + 1} totaal={session.length} start={results[session[idx].machine]}
+      terug={() => setScherm("overzicht")}
+      bewaar={(r) => {
+        const n = { ...results, [session[idx].machine]: r }; setResults(n);
+        const v = session.findIndex((e) => !n[e.machine]);
+        if (v === -1) setScherm("overzicht"); else setIdx(v);
+        window.scrollTo(0, 0);
+      }} />
+  );
+
+  const week = Math.ceil(p.session / 2);
+  return (
+    <div className="fade">
+      <p className="groet">Je training van vandaag</p>
+      <div className="titel">Training {p.session} van 12</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}><Fase f={p.phase} /><span className="klein">Week {week} · training {p.session % 2 === 1 ? "A" : "B"}</span></div>
+      {p.session === 1 && <p className="notitie" style={{ marginBottom: 14 }}>Vandaag start je met de test. Je fysiotherapeut begeleidt je hierbij.</p>}
+      <div className="kaart oeflijst" style={{ padding: "6px 14px" }}>
+        {session.map((ex, i) => (
+          <button key={ex.machine} onClick={() => { setIdx(i); setScherm("oefening"); window.scrollTo(0, 0); }}>
+            <span className={`stap ${results[ex.machine] ? "klaar" : ""}`}>{results[ex.machine] ? "✓" : i + 1}</span>
+            <span style={{ flex: 1 }}><b style={{ fontWeight: 600 }}>{ex.oef}</b><br /><span className="klein">{machineLabel(ex.machine)}</span></span>
+            <span style={{ fontWeight: 700, color: "var(--paars)", whiteSpace: "nowrap" }}>{ex.weight ? `${kg(ex.weight)} kg` : MODE_INFO[ex.mode].name}</span>
+          </button>
+        ))}
+      </div>
+      {fout && <div className="melding fout">{fout}</div>}
+      <div style={{ display: "grid", gap: 10 }}>
+        {aantal < session.length
+          ? <button className="knop vol" onClick={() => { setIdx(session.findIndex((e) => !results[e.machine])); setScherm("oefening"); window.scrollTo(0, 0); }}>{aantal ? "Verder met training" : "Start training"}</button>
+          : <button className="knop vol" disabled={opslaan} onClick={afronden}>{opslaan ? "Bezig met opslaan…" : "Training afronden"}</button>}
+        {aantal > 0 && aantal < session.length && <button className="knop2" disabled={opslaan} onClick={afronden}>Stoppen en opslaan</button>}
+      </div>
+    </div>
+  );
+}
+
+function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
+  const [gedaan, setGedaan] = useState(start ? ex.sets : 0);
+  const [fb, setFb] = useState(start?.fb || null);
+  const [pijn, setPijn] = useState(start ? start.pain : null);
+  const [rust, setRust] = useState(0);
+  useEffect(() => { if (rust <= 0) return; const t = setTimeout(() => setRust(rust - 1), 1000); return () => clearTimeout(t); }, [rust]);
+  const mi = MODE_INFO[ex.mode];
+  const tikSet = (i) => { const n = i + 1 === gedaan ? i : i + 1; setGedaan(n); if (n > gedaan && n < ex.sets) setRust(ex.rest); };
+
+  return (
+    <div className="fade">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <button className="knop2 sm" onClick={terug}>← Overzicht</button>
+        <span className="klein">Oefening {nr} van {totaal}</span>
+      </div>
+      <div className="kaart" style={{ borderTop: `6px solid ${faseKleur(p.phase)}` }}>
+        <span className="tag b">{machineLabel(ex.machine)}</span>
+        <h2 style={{ fontSize: 24, color: "var(--tekst)", margin: "8px 0 10px", lineHeight: 1.2 }}>{ex.oef}</h2>
+        {ex.weight
+          ? <div className="gewicht">{kg(ex.weight)}<span style={{ fontSize: ".3em", marginLeft: 6, letterSpacing: 0 }}>kg</span></div>
+          : <div style={{ fontSize: 34, fontWeight: 800, color: "var(--paars)" }}>Snelheid {ex.speed.toLowerCase()}</div>}
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontWeight: 600 }}>Stand: {mi.name}{ex.ecc ? `, terugweg +${Math.round(ex.ecc * 100)}%` : ""}</div>
+          <div className="klein">{mi.plain}</div>
+        </div>
+        <div className="cijfers">
+          <div className="cijfer"><b>{ex.sets}</b><span>sets</span></div>
+          <div className="cijfer"><b>{ex.reps}</b><span>{ex.machine === "Leg press" && p.phase === "Sport" ? "herh. per been" : "herhalingen"}</span></div>
+          <div className="cijfer"><b>{ex.rest}</b><span>sec rust</span></div>
+        </div>
+        <p style={{ margin: "14px 0 4px" }}>{ex.instr}</p>
+        <p className="klein" style={{ margin: 0 }}>Tempo: {ex.tempo}.{ex.inzet ? ` ${ex.inzet}.` : ""}</p>
+        {ex.dropset && <p className="notitie oranje" style={{ marginTop: 12 }}>Laatste set is een drop set: na je laatste herhaling direct 20% lichter en doorgaan tot het niet meer lukt. Twee keer.</p>}
+      </div>
+
+      <div className="kaart">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 8 }}>
+          <b>Tik een set aan als je klaar bent</b>
+          {rust > 0 && <span className="rust" aria-live="polite">Rust {rust} s</span>}
+        </div>
+        <div className="sets">{Array.from({ length: ex.sets }).map((_, i) => (
+          <button key={i} className={`set ${i < gedaan ? "aan" : ""}`} onClick={() => tikSet(i)} aria-label={`Set ${i + 1}`}>{i < gedaan ? "✓" : `Set ${i + 1}`}</button>
+        ))}</div>
+      </div>
+
+      <div className="kaart" style={{ opacity: gedaan > 0 ? 1 : 0.55 }}>
+        <b style={{ display: "block", marginBottom: 10 }}>Hoe voelde deze oefening?</b>
+        <div className="fb">
+          {[["licht", "Te licht"], ["goed", "Goed"], ["zwaar", "Te zwaar"]].map(([k, l]) =>
+            <button key={k} className={`${k} ${fb === k ? "aan" : ""}`} onClick={() => setFb(k)}>{l}</button>)}
+        </div>
+        <b style={{ display: "block", marginTop: 16 }}>Pijn tijdens de oefening?</b>
+        <div className="pijn" style={{ marginTop: 8 }}>
+          <button className={`nee ${pijn === false ? "aan" : ""}`} onClick={() => setPijn(false)}>Nee</button>
+          <button className={`ja ${pijn === true ? "aan" : ""}`} onClick={() => setPijn(true)}>Ja</button>
+        </div>
+        <button className="knop vol" style={{ marginTop: 16 }} disabled={!fb || pijn === null} onClick={() => bewaar({ fb, pain: pijn })}>
+          {nr < totaal ? "Opslaan en volgende oefening" : "Opslaan"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TestBalken({ p }) {
+  const th = (p.testHistory || []).slice(-2);
+  if (!th.length) return <p className="klein">Nog geen testgegevens.</p>;
+  const max = Math.max(1, ...TESTED.flatMap(([k]) => th.map((t) => Number(t.tests[k]) || 0)));
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 14, fontSize: 12, marginBottom: 10, flexWrap: "wrap" }}>
+        {th.map((t, i) => <span key={i}><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, marginRight: 5, background: i === th.length - 1 ? "#82176D" : "#cdbcc9" }} />{t.label}</span>)}
+      </div>
+      {TESTED.map(([k, l]) => (
+        <div key={k} style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span>{l}</span><b>{th.map((t) => t.tests[k] ?? "–").join(" → ")} kg</b></div>
+          {th.map((t, i) => (
+            <div key={i} style={{ height: 8, borderRadius: 99, background: "#f1e9ef", marginTop: 3 }}>
+              <div style={{ height: "100%", borderRadius: 99, width: `${((Number(t.tests[k]) || 0) / max) * 100}%`, background: i === th.length - 1 ? "linear-gradient(90deg,#82176D,#a8368f)" : "#cdbcc9" }} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Voortgang({ p }) {
+  const gedaan = p.phaseDone ? 12 : p.session - 1;
+  const omtrek = 2 * Math.PI * 50;
+  const trainingen = Object.values((p.history || []).reduce((acc, h) => { const k = h.date.slice(0, 10) + h.session; (acc[k] = acc[k] || { date: h.date, session: h.session, items: [] }).items.push(h); return acc; }, {}));
+  return (
+    <div className="fade">
+      <div className="titel">Jouw voortgang</div>
+      <div className="kaart" style={{ display: "flex", gap: 18, alignItems: "center" }}>
+        <svg className="ring" viewBox="0 0 120 120" role="img" aria-label={`${gedaan} van 12 trainingen gedaan`}>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#f1e9ef" strokeWidth="12" />
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#82176D" strokeWidth="12" strokeLinecap="round" strokeDasharray={omtrek} strokeDashoffset={omtrek * (1 - gedaan / 12)} transform="rotate(-90 60 60)" />
+          <text x="60" y="58" textAnchor="middle" fontSize="28" fontWeight="700" fill="#82176D" fontFamily="Poppins">{gedaan}</text>
+          <text x="60" y="78" textAnchor="middle" fontSize="12" fill="#6f6270" fontFamily="Poppins">van 12</text>
+        </svg>
+        <div>
+          <Fase f={p.phase} />
+          <p style={{ margin: "8px 0 2px", fontWeight: 600 }}>{gedaan} trainingen gedaan in deze fase</p>
+          <p className="klein" style={{ margin: 0 }}>Laatste training: {relDag(p.lastTraining)}</p>
+        </div>
+      </div>
+      <div className="kaart">
+        <h2>Fases</h2>
+        <div style={{ display: "flex", gap: 6 }}>
+          {PHASES.map((f) => { const i = PHASES.indexOf(f), nu = PHASES.indexOf(p.phase); return (
+            <div key={f} style={{ flex: 1, textAlign: "center" }}>
+              <div style={{ height: 8, borderRadius: 99, background: i <= nu ? faseKleur(f) : "#f1e9ef" }} />
+              <div style={{ fontSize: 11.5, marginTop: 4, fontWeight: i === nu ? 700 : 400, color: i === nu ? "var(--tekst)" : "var(--grijs)" }}>{f}</div>
+            </div>); })}
+        </div>
+      </div>
+      <div className="kaart"><h2>Testresultaten</h2><TestBalken p={p} /></div>
+      <div className="kaart lijst">
+        <h2>Laatste trainingen</h2>
+        {trainingen.length === 0 ? <p className="klein">Nog geen trainingen gedaan.</p> : trainingen.slice(0, 6).map((t, i) => {
+          const tel = (f) => t.items.filter((x) => x.fb === f).length; const pijn = t.items.some((x) => x.pain);
+          return (
+            <div className="item" key={i}>
+              <div><b style={{ fontWeight: 600 }}>Training {t.session}</b><div className="klein">{datumNL(t.date)} · {t.items.length} oefeningen</div></div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                {tel("goed") > 0 && <span className="tag" style={{ background: "var(--groen-l)", color: "var(--groen)" }}>{tel("goed")}× goed</span>}
+                {tel("licht") > 0 && <span className="tag b">{tel("licht")}× licht</span>}
+                {tel("zwaar") > 0 && <span className="tag" style={{ background: "var(--oranje-l)", color: "var(--oranje)" }}>{tel("zwaar")}× zwaar</span>}
+                {pijn && <span className="tag" style={{ background: "var(--rood-l)", color: "var(--rood)" }}>pijn</span>}
+              </div>
+            </div>);
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Uitleg() {
+  return (
+    <div className="fade">
+      <div className="titel">Uitleg</div>
+      <div className="kaart">
+        <h2>Zo werkt je training</h2>
+        <p style={{ marginTop: 0 }}>Je traint in fases van 12 trainingen. Na elke fase doe je met je fysiotherapeut een hertest. Daarna ga je door naar de volgende fase of herhaal je de fase.</p>
+        <p style={{ margin: 0 }}>Na elke oefening geef je aan hoe het voelde. Twee keer achter elkaar te licht? Dan gaat het gewicht automatisch omhoog. Te zwaar of pijn? Dan gaat het niet omhoog en kijkt je fysiotherapeut mee.</p>
+      </div>
+      <div className="kaart">
+        <h2>Standen van het toestel</h2>
+        {Object.values(MODE_INFO).map((m) => <p key={m.name} style={{ margin: "0 0 8px" }}><b>{m.name}</b><br /><span className="klein">{m.plain}</span></p>)}
+      </div>
+      <div className="kaart">
+        <h2>Op je beginscherm zetten</h2>
+        <p className="klein" style={{ margin: 0 }}>iPhone: tik in Safari op het deel-icoon en kies 'Zet op beginscherm'. Android: tik in Chrome op de drie puntjes en kies 'Toevoegen aan startscherm'. Dan open je de SmartGym net als een app.</p>
+      </div>
+      <div className="notitie">Twijfel je of iets goed gaat, of heb je pijn die blijft? Vraag het je fysiotherapeut.</div>
+    </div>
+  );
+}
+
+/* ============================ FYSIO ============================ */
+function FysioApp() {
+  const [user, setUser] = useState(undefined);
+  const [moetWachtwoord, setMoetWachtwoord] = useState(!DEMO && !!AUTH_TYPE);
+  useEffect(() => {
+    if (DEMO) { store.fysioSessie().then(setUser); return; }
+    // wacht tot Supabase een eventuele uitnodigingslink heeft verwerkt
+    const { data } = sb.auth.onAuthStateChange((ev, s) => {
+      if (ev === "PASSWORD_RECOVERY") setMoetWachtwoord(true);
+      setUser(s ? s.user : null);
+    });
+    store.fysioSessie().then((u) => setUser((x) => (x === undefined ? u : x)));
+    return () => data.subscription.unsubscribe();
+  }, []);
+  if (user === undefined) return <><Kop titel="SmartGym" sub="Fysio" /><div className="inhoud wrap klein">Laden…</div><Voet /></>;
+  if (user && moetWachtwoord) return <WachtwoordKiezen nieuw={AUTH_TYPE === "invite"} klaar={() => { history.replaceState(null, "", location.pathname + "#fysio"); setMoetWachtwoord(false); }} />;
+  if (!user) return <FysioLogin linkVerlopen={AUTH_FOUT} onLogin={() => store.fysioSessie().then(setUser)} />;
+  return <Dashboard uit={async () => { await store.fysioUit(); if (DEMO) location.hash = ""; else setUser(null); }} />;
+}
+
+function WachtwoordKiezen({ nieuw, klaar }) {
+  const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [fout, setFout] = useState(""); const [bezig, setBezig] = useState(false);
+  const ok = pw.length >= 8 && pw === pw2;
+  const zet = async () => { setBezig(true); setFout(""); try { await store.wachtwoordZetten(pw); klaar(); } catch (e) { setFout("Opslaan mislukt: " + (e.message || "probeer het opnieuw")); } setBezig(false); };
+  return (
+    <>
+      <Kop titel="SmartGym · Fysio" sub="Alleen voor medewerkers van Fyzio Totaal" smal />
+      <main className="inhoud wrap smal fade">
+        <div className="kaart">
+          <h2>{nieuw ? "Welkom! Kies je wachtwoord" : "Nieuw wachtwoord kiezen"}</h2>
+          <p className="klein" style={{ marginTop: 0 }}>Minimaal 8 tekens. Hiermee log je voortaan in met je e-mailadres.</p>
+          <div style={{ display: "grid", gap: 12 }}>
+            <label className="veld">Wachtwoord<input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} /></label>
+            <label className="veld">Herhaal wachtwoord<input type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ok && zet()} /></label>
+            {pw2 && pw !== pw2 && <div className="klein" style={{ color: "var(--rood)" }}>De wachtwoorden zijn niet gelijk.</div>}
+            {fout && <div className="melding fout" style={{ margin: 0 }}>{fout}</div>}
+            <button className="knop" disabled={!ok || bezig} onClick={zet}>Opslaan en verder</button>
+          </div>
+        </div>
+      </main>
+      <Voet />
+    </>
+  );
+}
+
+function FysioLogin({ onLogin, linkVerlopen }) {
+  const [email, setEmail] = useState(""); const [pw, setPw] = useState("");
+  const [fout, setFout] = useState(linkVerlopen ? "Deze link is verlopen of al gebruikt. Vraag een nieuwe uitnodiging aan of gebruik 'Wachtwoord vergeten'." : "");
+  const [info, setInfo] = useState("");
+  const log = async () => { setFout(""); setInfo(""); try { await store.fysioLogin(email, pw); onLogin(); } catch { setFout("Inloggen mislukt. Controleer e-mail en wachtwoord."); } };
+  const vergeten = async () => {
+    setFout(""); setInfo("");
+    if (!email.includes("@")) { setFout("Vul eerst je e-mailadres in."); return; }
+    try { await store.wachtwoordVergeten(email); setInfo("Als dit adres bekend is, krijg je een mail met een link om een nieuw wachtwoord te kiezen."); }
+    catch { setFout("Versturen lukte niet. Probeer het over een paar minuten opnieuw."); }
+  };
+  return (
+    <>
+      <Kop titel="SmartGym · Fysio" sub="Alleen voor medewerkers van Fyzio Totaal" smal />
+      <main className="inhoud wrap smal fade">
+        <div className="kaart">
+          <h2>Inloggen</h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            <label className="veld">E-mailadres<input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+            <label className="veld">Wachtwoord<input type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && log()} /></label>
+            {fout && <div className="melding fout" style={{ margin: 0 }}>{fout}</div>}
+            {info && <div className="melding" style={{ margin: 0 }}>{info}</div>}
+            <button className="knop" onClick={log}>Inloggen</button>
+            {!DEMO && <button className="link" onClick={vergeten} style={{ justifySelf: "center" }}>Wachtwoord vergeten?</button>}
+          </div>
+        </div>
+        <p style={{ textAlign: "center" }}><a className="link" href="#">← Naar patiëntlogin</a></p>
+      </main>
+      <Voet />
+    </>
+  );
+}
+
+function Dashboard({ uit }) {
+  const [lijst, setLijst] = useState(null);
+  const [sel, setSel] = useState(null);
+  const [nieuw, setNieuw] = useState(false);
+  const [zoek, setZoek] = useState("");
+  const [fout, setFout] = useState("");
+  const laad = () => store.lijst().then(setLijst).catch(() => setFout("Laden mislukt. Controleer de verbinding."));
+  useEffect(() => { laad(); }, []);
+  const bewaar = async (p) => { try { const r = await store.bewaar(p); await laad(); return r; } catch (e) { setFout("Opslaan mislukt: " + (e.message || e)); throw e; } };
+  const patient = lijst && lijst.find((p) => p.id === sel);
+  const meldingen = lijst ? lijst.reduce((n, p) => n + (p.alerts || []).filter((a) => !a.ack).length, 0) : 0;
+
+  return (
+    <>
+      <Kop titel="SmartGym · Fysio-dashboard" sub={<span className="pil">🔒 Alleen voor intern gebruik</span>}
+        rechts={<><a className="kopknop" href="#" style={{ textDecoration: "none" }} onClick={(e) => { if (!DEMO) { e.preventDefault(); window.open(location.pathname, "_blank"); } }}>Patiëntweergave</a><button className="kopknop" onClick={uit}>{DEMO ? "Sluiten" : "Uitloggen"}</button></>} />
+      <main className="inhoud wrap fade">
+        {DEMO && <div className="melding let">Demomodus: alle gegevens staan alleen in deze browser. Vul de Supabase-gegevens in bovenin het bestand om echt te gaan werken.</div>}
+        {fout && <div className="melding fout">{fout}</div>}
+        {!lijst ? <p className="klein">Laden…</p> : patient ? (
+          <PatientDetail p={patient} terug={() => setSel(null)} bewaar={bewaar} codes={lijst.map((x) => x.code)}
+            verwijder={async () => { if (confirm(`${patient.name} definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) { await store.verwijder(patient); setSel(null); laad(); } }} />
+        ) : (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+              <div><div className="titel" style={{ margin: 0 }}>Patiënten</div><p className="klein" style={{ margin: 0 }}>{lijst.length} actief · {meldingen} open {meldingen === 1 ? "melding" : "meldingen"}</p></div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input placeholder="Zoeken…" value={zoek} onChange={(e) => setZoek(e.target.value)} style={{ border: "1px solid #d6ccd4", borderRadius: 12, padding: "9px 12px", fontSize: 14 }} />
+                {DEMO && <button className="knop2 sm" onClick={() => { if (confirm("Demodata terugzetten?")) { store.demoSchrijf(demoSeed()); laad(); } }}>Demodata herstellen</button>}
+                <button className="knop sm" onClick={() => setNieuw(true)}>+ Patiënt toevoegen</button>
+              </div>
+            </div>
+            {nieuw && <NieuwePatient codes={lijst.map((x) => x.code)} annuleer={() => setNieuw(false)} bewaar={async (p, pin) => { const r = await bewaar(p); await store.zetPin(r, pin); await laad(); setNieuw(false); setSel(r.id); }} />}
+            <div className="kaart" style={{ padding: 6, overflowX: "auto" }}>
+              <table className="t">
+                <thead><tr><th>Naam</th><th>Code</th><th>Fase</th><th>Voortgang</th><th className="verberg-sm">Laatste training</th><th>Status</th></tr></thead>
+                <tbody>
+                  {lijst.filter((p) => (p.name + p.code).toLowerCase().includes(zoek.toLowerCase())).map((p) => {
+                    const al = (p.alerts || []).filter((a) => !a.ack).length; const g = p.phaseDone ? 12 : p.session - 1;
+                    return (
+                      <tr key={p.id} className="klik" tabIndex={0} onClick={() => setSel(p.id)} onKeyDown={(e) => e.key === "Enter" && setSel(p.id)}>
+                        <td><b style={{ fontWeight: 600 }}>{p.name}</b></td>
+                        <td style={{ letterSpacing: 1.5, fontWeight: 600 }}>{p.code}</td>
+                        <td><Fase f={p.phase} /></td>
+                        <td><div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 110 }}><div className="balk" style={{ flex: 1 }}><i style={{ width: `${(g / 12) * 100}%` }} /></div><span className="klein">{g}/12</span></div></td>
+                        <td className="verberg-sm klein">{relDag(p.lastTraining)}</td>
+                        <td>{p.phaseDone ? <span className="tag" style={{ background: "var(--oranje-l)", color: "var(--oranje)" }}>Hertest nodig</span> : al ? <span className="tag" style={{ background: "var(--rood-l)", color: "var(--rood)" }}>{al} {al === 1 ? "melding" : "meldingen"}</span> : <span className="klein">Op schema</span>}</td>
+                      </tr>);
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </main>
+      <Voet />
+    </>
+  );
+}
+
+function TestVelden({ tests, setTests }) {
+  return (
+    <div className="rij">
+      {[...TESTED, ...MANUAL].map(([k, l]) => (
+        <label key={k} className="veld">{l} (kg)<input type="number" inputMode="decimal" value={tests[k] ?? ""} onChange={(e) => setTests({ ...tests, [k]: e.target.value === "" ? "" : Number(e.target.value) })} /></label>
+      ))}
+    </div>
+  );
+}
+
+function NieuwePatient({ codes, annuleer, bewaar }) {
+  const [naam, setNaam] = useState(""); const [fase, setFase] = useState("Basis"); const [bezig, setBezig] = useState(false);
+  const [tests, setTests] = useState({ legpress: 100, legext: 30, legcurl: 25, squat: 50, bench: 40, lat: 40, abdadd: 30, abdback: 25, ft: 10 });
+  const opslaan = async () => {
+    setBezig(true);
+    const pin = maakPin();
+    const p = { code: maakCode(codes), name: naam.trim(), phase: fase, session: 1, phaseDone: false, lastTraining: null, tests,
+      testHistory: [{ label: `Start ${fase}`, date: new Date().toISOString(), tests: { ...tests } }], corrections: {}, history: [], alerts: [] };
+    if (DEMO) p.id = nieuwId();
+    try { sessionStorage.setItem("ftsg_laatste_pin", JSON.stringify({ code: p.code, pin })); } catch {}
+    try { await bewaar(p, pin); } catch {}
+    setBezig(false);
+  };
+  return (
+    <div className="kaart fade">
+      <h2>Nieuwe patiënt</h2>
+      <div className="rij" style={{ marginBottom: 12 }}>
+        <label className="veld">Naam (of voornaam + initiaal)<input value={naam} onChange={(e) => setNaam(e.target.value)} /></label>
+        <label className="veld">Startfase<select value={fase} onChange={(e) => setFase(e.target.value)}>{PHASES.map((f) => <option key={f}>{f}</option>)}</select></label>
+      </div>
+      <p className="klein" style={{ margin: "0 0 8px" }}>Testwaarden uit de DKN-test (geschatte 1RM). De laatste drie schat je zelf in.</p>
+      <TestVelden tests={tests} setTests={setTests} />
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <button className="knop sm" disabled={!naam.trim() || bezig} onClick={opslaan}>Patiënt aanmaken</button>
+        <button className="knop2 sm" onClick={annuleer}>Annuleren</button>
+      </div>
+    </div>
+  );
+}
+
+function Inloggegevens({ p, bewaarPin }) {
+  const [pin, setPin] = useState(() => { try { const l = JSON.parse(sessionStorage.getItem("ftsg_laatste_pin") || "null"); return l && l.code === p.code ? l.pin : null; } catch { return null; } });
+  const nieuw = async () => {
+    if (!confirm("Nieuwe pincode maken? De oude pincode werkt daarna niet meer.")) return;
+    const n = maakPin(); await bewaarPin(n); setPin(n);
+  };
+  const print = () => {
+    const w = window.open("", "_blank", "width=420,height=320"); if (!w) return;
+    w.document.write(`<html><head><title>SmartGym-kaartje</title><style>body{font-family:Poppins,Arial,sans-serif;padding:20px}.k{border:2px solid #82176D;border-radius:14px;padding:18px;width:320px}h1{color:#82176D;font-size:18px;margin:0 0 8px}b{font-size:22px;letter-spacing:3px}</style></head><body><div class="k"><h1>Fyzio Totaal · SmartGym</h1><p>Hoi ${voornaam(p.name)}, hiermee log je in:</p><p>Code: <b>${p.code}</b></p><p>Pincode: <b>${pin}</b></p><p style="font-size:12px">${location.origin + location.pathname}</p></div><script>print()<\/script></body></html>`);
+  };
+  return (
+    <section className="kaart">
+      <h2>Inloggegevens patiënt</h2>
+      <div className="codekaart">
+        <div className="klein">Code</div><b>{p.code}</b>
+        <div className="klein" style={{ marginTop: 8 }}>Pincode</div>
+        {pin ? <b>{pin}</b> : <div className="klein">Verborgen (alleen zichtbaar direct na aanmaken)</div>}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        {pin && <button className="knop sm" onClick={print}>Kaartje printen</button>}
+        <button className="knop2 sm" onClick={nieuw}>Nieuwe pincode</button>
+      </div>
+      <p className="klein" style={{ marginBottom: 0, marginTop: 10 }}>Geef de patiënt het kaartje mee. Pincode kwijt? Maak een nieuwe.</p>
+    </section>
+  );
+}
+
+function PatientDetail({ p, terug, bewaar, verwijder, codes }) {
+  const [hertest, setHertest] = useState(false);
+  const corrLijst = Object.entries(p.corrections || {}).filter(([, c]) => c.factor !== 1 || c.holdPct != null || c.light || c.heavy || c.pain);
+  const volgende = buildSession(p);
+  const open = (p.alerts || []).filter((a) => !a.ack);
+
+  return (
+    <div className="fade">
+      <button className="knop2 sm" onClick={terug} style={{ marginBottom: 12 }}>← Alle patiënten</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+        <div>
+          <div className="titel" style={{ margin: 0 }}>{p.name}</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><Fase f={p.phase} /><span className="klein">{p.phaseDone ? "12 van 12 gedaan" : `Training ${p.session} van 12 is de volgende`}</span></div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="knop sm" onClick={() => setHertest(!hertest)}>{p.phaseDone ? "Hertest invoeren" : "Testwaarden aanpassen"}</button>
+          <button className="knop2 sm" onClick={verwijder}>Verwijderen</button>
+        </div>
+      </div>
+
+      {hertest && <Hertest p={p} annuleer={() => setHertest(false)} bewaar={async (np) => { await bewaar(np); setHertest(false); }} />}
+
+      {open.length > 0 && (
+        <section className="kaart">
+          <h2>Meldingen</h2>
+          {open.map((a) => (
+            <div key={a.id} className="alert">
+              <div><b style={{ fontWeight: 600 }}>{a.text}</b><br /><span className="klein">{relDag(a.date)}</span></div>
+              <button className="knop2 sm" onClick={() => bewaar({ ...p, alerts: p.alerts.map((y) => (y.id === a.id ? { ...y, ack: true } : y)) })}>Gezien</button>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <div className="twee">
+        <section className="kaart">
+          <h2>{p.phaseDone ? "Fase afgerond" : `Volgende training (${p.session} van 12)`}</h2>
+          {p.phaseDone ? <p className="klein">Voer de hertest in om de volgende fase of een herhaling te starten.</p> : (
+            <table className="t"><tbody>{volgende.map((ex) => (
+              <tr key={ex.machine}><td><b style={{ fontWeight: 600 }}>{ex.oef}</b><br /><span className="klein">{MODE_INFO[ex.mode].name}{ex.ecc ? ` +${Math.round(ex.ecc * 100)}%` : ""}{ex.dropset ? ", drop set" : ""}</span></td>
+                <td style={{ whiteSpace: "nowrap" }}>{ex.sets} × {ex.reps}</td>
+                <td style={{ whiteSpace: "nowrap", textAlign: "right", fontWeight: 700, color: "var(--paars)" }}>{ex.weight ? `${kg(ex.weight)} kg` : ex.speed}</td></tr>
+            ))}</tbody></table>
+          )}
+        </section>
+        <Inloggegevens p={p} bewaarPin={(pin) => store.zetPin(p, pin)} />
+      </div>
+
+      <div className="twee">
+        <section className="kaart"><h2>Testverloop</h2><TestBalken p={p} /></section>
+        <section className="kaart">
+          <h2>Automatische aanpassingen</h2>
+          <p className="klein" style={{ marginTop: 0 }}>Wat de app op basis van feedback heeft veranderd.</p>
+          {corrLijst.length === 0 ? <p className="klein">Geen aanpassingen: alles volgt het schema.</p> : (
+            <table className="t"><tbody>{corrLijst.map(([m, c]) => (
+              <tr key={m}><td><b style={{ fontWeight: 600 }}>{machineLabel(m)}</b></td><td style={{ fontSize: 13.5 }}>
+                {c.factor !== 1 && <div>Gewicht {c.factor > 1 ? "+" : ""}{Math.round((c.factor - 1) * 100)}% t.o.v. schema</div>}
+                {c.holdPct != null && <div>Gewicht vastgehouden</div>}
+                {c.light > 0 && <div className="klein">1x te licht, nog 1x tot verhoging</div>}
+                {c.heavy > 0 && <div className="klein">1x te zwaar</div>}
+                {c.pain > 0 && <div style={{ color: "var(--rood)" }}>Pijn bij laatste training</div>}
+              </td><td><button className="knop2 sm" onClick={() => { const cc = { ...p.corrections }; delete cc[m]; bewaar({ ...p, corrections: cc }); }}>Terug naar schema</button></td></tr>
+            ))}</tbody></table>
+          )}
+        </section>
+      </div>
+
+      <section className="kaart">
+        <h2>Feedback-historie</h2>
+        {(p.history || []).length === 0 ? <p className="klein">Nog geen trainingen gelogd.</p> : (
+          <div style={{ overflowX: "auto" }}><table className="t"><thead><tr><th>Wanneer</th><th>Training</th><th>Oefening</th><th>Gewicht</th><th>Feedback</th></tr></thead><tbody>
+            {p.history.slice(0, 18).map((h, i) => (
+              <tr key={i}><td className="klein" style={{ whiteSpace: "nowrap" }}>{relDag(h.date)}</td><td>{h.session}</td><td>{h.oef}</td><td>{h.weight ? `${kg(h.weight)} kg` : "isokinetisch"}</td>
+                <td style={{ fontWeight: 600, color: h.pain ? "var(--rood)" : h.fb === "licht" ? "var(--blauw)" : h.fb === "zwaar" ? "var(--oranje)" : "var(--groen)" }}>
+                  {h.fb === "licht" ? "Te licht" : h.fb === "zwaar" ? "Te zwaar" : "Goed"}{h.pain ? ", pijn" : ""}</td></tr>
+            ))}</tbody></table></div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Hertest({ p, annuleer, bewaar }) {
+  const [tests, setTests] = useState({ ...p.tests });
+  const [checks, setChecks] = useState({});
+  const crit = CRITERIA[p.phase];
+  const alles = crit.every((_, i) => checks[i]);
+  const volgende = PHASES[Math.min(PHASES.indexOf(p.phase) + 1, 3)];
+  const opslaan = (fase) => bewaar({
+    ...p, tests, phase: fase, session: 1, phaseDone: false, corrections: {},
+    testHistory: [...(p.testHistory || []), { label: fase === p.phase ? `Herhaling ${fase}` : `Start ${fase}`, date: new Date().toISOString(), tests: { ...tests } }],
+  });
+  return (
+    <section className="kaart fade">
+      <h2>{p.phaseDone ? "Hertest en doorstroom" : "Testwaarden aanpassen"}</h2>
+      <TestVelden tests={tests} setTests={setTests} />
+      {p.phaseDone ? (
+        <>
+          <b style={{ display: "block", margin: "16px 0 8px" }}>Doorstroomcriteria {p.phase}</b>
+          <div style={{ display: "grid", gap: 6 }}>
+            {crit.map((c, i) => (
+              <label key={i} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14 }}>
+                <input type="checkbox" checked={!!checks[i]} onChange={(e) => setChecks({ ...checks, [i]: e.target.checked })} style={{ width: 18, height: 18, accentColor: "#82176D" }} />{c}
+              </label>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+            {p.phase !== "Performance" && <button className="knop sm" disabled={!alles} onClick={() => opslaan(volgende)}>Door naar {volgende}</button>}
+            <button className="knop2 sm" onClick={() => opslaan(p.phase)}>{p.phase} herhalen</button>
+            <button className="knop2 sm" onClick={annuleer}>Annuleren</button>
+          </div>
+          {!alles && p.phase !== "Performance" && <p className="klein" style={{ marginBottom: 0 }}>Doorstromen kan pas als alle criteria zijn aangevinkt.</p>}
+        </>
+      ) : (
+        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <button className="knop sm" onClick={() => bewaar({ ...p, tests })}>Testwaarden opslaan</button>
+          <button className="knop2 sm" onClick={annuleer}>Annuleren</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
