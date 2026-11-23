@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-23.13 -->
+<!-- APP_VERSION: 2026-11-23.14 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-23.13";
+  var APP_VERSION = "2026-11-23.14";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -154,6 +154,8 @@ table.t tr.klik:hover td{background:#faf6f9}
 .fasegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .faseblok{border:1px solid var(--rand);border-top:5px solid;border-radius:16px;padding:14px}
 .knoprij{display:flex;gap:8px;flex-wrap:wrap}
+.onthoud{display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--tag-p);border-radius:14px;padding:10px 12px;margin:4px 0 6px;font-size:14px;font-weight:600;color:var(--paars);cursor:pointer}
+.onthoud input{width:20px;height:20px;accent-color:#82176D;margin:2px 0 0;flex:none}
 .stdrij{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:14px}
 .stdrij label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:600;color:var(--grijs)}
 .stdrij select{font-size:15px;border:1px solid #d6ccd4;border-radius:10px;padding:7px 8px;background:#fff;font-family:inherit}
@@ -586,9 +588,10 @@ const store = {
   async wachtwoordVergeten(email) { const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname }); if (error) throw error; },
   async lijst() {
     if (DEMO) return store.demoLijst();
-    const { data, error } = await sb.from("sg_patienten").select("id, code, data").order("bijgewerkt", { ascending: false });
-    if (error) throw error;
-    return data.map((r) => normPatient({ id: r.id, code: r.code, ...r.data }));
+    let res = await sb.from("sg_patienten").select("id, code, data, pin_tekst").order("bijgewerkt", { ascending: false });
+    if (res.error) res = await sb.from("sg_patienten").select("id, code, data").order("bijgewerkt", { ascending: false }); // database nog niet bijgewerkt
+    if (res.error) throw res.error;
+    return res.data.map((r) => normPatient({ id: r.id, code: r.code, ...r.data, pin: r.pin_tekst || undefined }));
   },
   async bewaar(p) {
     if (DEMO) { const l = store.demoLijst(); const i = l.findIndex((x) => x.id === p.id); if (i >= 0) l[i] = p; else l.unshift(p); store.demoSchrijf(l); return p; }
@@ -638,16 +641,36 @@ const ONTHOUD_KEY = "ftsg_onthoud";
 function PatientApp() {
   const [sessie, setSessie] = useState(null); // {patient, code, pin}
   const [bezig, setBezig] = useState(true);
+  const [geenVerbinding, setGeenVerbinding] = useState(false);
 
-  useEffect(() => {
+  const autoLogin = async (pogingen = 3) => {
     const o = veilig.lees(ONTHOUD_KEY, null);
     if (!o) { setBezig(false); return; }
-    store.patientLogin(o.code, o.pin).then((p) => setSessie({ patient: p, code: o.code, pin: o.pin })).catch(() => veilig.weg(ONTHOUD_KEY)).finally(() => setBezig(false));
-  }, []);
+    setBezig(true); setGeenVerbinding(false);
+    for (let i = 0; i < pogingen; i++) {
+      try { const p = await store.patientLogin(o.code, o.pin); setSessie({ patient: p, code: o.code, pin: o.pin }); setBezig(false); return; }
+      catch (e) {
+        if (e.message === "onbekend") { veilig.weg(ONTHOUD_KEY); break; } // code of pincode klopt niet meer (bv. nieuwe pincode)
+        if (e.message === "geblokkeerd") break;
+        await new Promise((r) => setTimeout(r, 1500)); // bij opstarten vanaf het beginscherm is het netwerk soms nog niet klaar
+        if (i === pogingen - 1) setGeenVerbinding(true);
+      }
+    }
+    setBezig(false);
+  };
+  useEffect(() => { autoLogin(); }, []);
 
   const uitloggen = () => { veilig.weg(ONTHOUD_KEY); setSessie(null); };
 
   if (bezig) return <><Kop titel="SmartGym" sub="Fyzio Totaal" smal /><div className="inhoud wrap smal klein">Laden…</div><Voet /></>;
+  if (!sessie && geenVerbinding) return (
+    <><Kop titel="SmartGym" sub="Fyzio Totaal" smal />
+      <main className="inhoud wrap smal fade"><div className="kaart" style={{ textAlign: "center" }}>
+        <h2 style={{ color: "var(--tekst)" }}>Geen verbinding</h2>
+        <p className="klein">Je bent nog steeds ingelogd, maar we kunnen je schema nu niet ophalen. Controleer je internet.</p>
+        <button className="knop vol" onClick={() => autoLogin()}>Opnieuw proberen</button>
+      </div></main><Voet /></>
+  );
   if (!sessie) return <PatientLogin onLogin={(s, onthoud) => { if (onthoud) veilig.schrijf(ONTHOUD_KEY, { code: s.code, pin: s.pin }); setSessie(s); }} />;
   return <PatientOmgeving sessie={sessie} setSessie={setSessie} uitloggen={uitloggen} />;
 }
@@ -657,7 +680,8 @@ function PatientLogin({ onLogin }) {
   const [pin, setPin] = useState("");
   const [stap, setStap] = useState("code");
   const [fout, setFout] = useState("");
-  const [onthoud, setOnthoud] = useState(false);
+  const vanafBeginscherm = (() => { try { return window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches; } catch { return false; } })();
+  const [onthoud, setOnthoud] = useState(vanafBeginscherm);
   const [bezig, setBezig] = useState(false);
 
   const probeer = async (p) => {
@@ -699,6 +723,10 @@ function PatientLogin({ onLogin }) {
             <>
               <h2 style={{ fontSize: 22, color: "var(--tekst)" }}>Je pincode</h2>
               <p className="klein" style={{ marginTop: 0 }}>Code <b style={{ letterSpacing: 2 }}>{code}</b> · <button className="link" onClick={() => { setStap("code"); setPin(""); setFout(""); }}>wijzigen</button></p>
+<label className="onthoud">
+                <input type="checkbox" checked={onthoud} onChange={(e) => setOnthoud(e.target.checked)} />
+                <span>Ingelogd blijven op mijn eigen telefoon<span className="klein" style={{ display: "block", fontWeight: 400 }}>Niet aanvinken op de tablet in de praktijk.</span></span>
+              </label>
               <div className="pinvak" aria-live="polite">{[0, 1, 2, 3].map((i) => <span key={i} className={pin[i] ? "v" : ""}>{pin[i] ? "•" : ""}</span>)}</div>
               {fout && <div className="melding fout">{fout}</div>}
               <div className="keypad">
@@ -707,11 +735,7 @@ function PatientLogin({ onLogin }) {
                 <button className="key" onClick={() => druk("0")}>0</button>
                 <button className="key" style={{ fontSize: 15 }} onClick={() => druk("wis")}>Wissen</button>
               </div>
-              <label style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 18, fontSize: 14 }}>
-                <input type="checkbox" checked={onthoud} onChange={(e) => setOnthoud(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#82176D" }} />
-                Ingelogd blijven op mijn eigen telefoon
-              </label>
-              <p className="klein" style={{ marginTop: 4 }}>Niet aanvinken op de tablet in de praktijk.</p>
+
             </>
           )}
         </div>
@@ -1261,7 +1285,8 @@ function NieuwePatient({ codes, nummers, annuleer, bewaar, toonUitleg }) {
 }
 
 function Inloggegevens({ p, bewaarPin }) {
-  const [pin, setPin] = useState(() => { try { const l = JSON.parse(sessionStorage.getItem("ftsg_laatste_pin") || "null"); return l && l.code === p.code ? l.pin : null; } catch { return null; } });
+  const [pin, setPin] = useState(() => { if (p.pin) return p.pin; try { const l = JSON.parse(sessionStorage.getItem("ftsg_laatste_pin") || "null"); return l && l.code === p.code ? l.pin : null; } catch { return null; } });
+  useEffect(() => { if (p.pin) setPin(p.pin); }, [p.pin]);
   const nieuw = async () => {
     if (!confirm("Nieuwe pincode maken? De oude pincode werkt daarna niet meer.")) return;
     const n = maakPin(); await bewaarPin(n); setPin(n);
@@ -1279,7 +1304,7 @@ function Inloggegevens({ p, bewaarPin }) {
         {pin && <button className="knop sm" onClick={print}>Kaartje printen</button>}
         <button className="knop2 sm" onClick={nieuw}>Nieuwe pincode</button>
       </span>
-      {!pin && <span className="klein" style={{ flexBasis: "100%" }}>De pincode is alleen direct na het aanmaken zichtbaar. Kwijt? Maak een nieuwe.</span>}
+      {!pin && <span className="klein" style={{ flexBasis: "100%" }}>De pincode van deze patiënt is nog niet zichtbaar opgeslagen. Maak een nieuwe pincode, dan blijft die voortaan zichtbaar.</span>}
     </section>
   );
 }
