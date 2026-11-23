@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-23.3 -->
+<!-- APP_VERSION: 2026-11-23.5 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-23.3";
+  var APP_VERSION = "2026-11-23.5";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -57,7 +57,7 @@ input,select{font-family:inherit}
 
 /* header */
 .kop{background:linear-gradient(120deg,#4a0f42 0%,#82176D 45%,#a8368f 100%);color:#fff;border-bottom:4px solid var(--cyaan);padding:calc(14px + env(safe-area-inset-top)) 18px 16px}
-.kop-in{max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.kop-in{max-width:1060px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .kop.smal .kop-in{max-width:560px}
 .logo{width:42px;height:42px;border-radius:50%;background:#fff;border:2px solid var(--cyaan);display:grid;place-items:center;color:var(--paars);font-weight:800;font-size:14px;flex:none}
 .kop h1{margin:0;font-size:18px;font-weight:700;line-height:1.2}
@@ -150,7 +150,29 @@ table.t tr.klik:hover td{background:#faf6f9}
 .alert{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border-radius:12px;background:var(--rood-l);margin-bottom:8px}
 .codekaart{border:2px dashed var(--rand);border-radius:16px;padding:14px;text-align:center}
 .codekaart b{font-size:28px;letter-spacing:4px;color:var(--paars)}
-@media (max-width:760px){.twee{grid-template-columns:1fr}.verberg-sm{display:none}}
+.fasegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.faseblok{border:1px solid var(--rand);border-top:5px solid;border-radius:16px;padding:14px}
+.knoprij{display:flex;gap:8px;flex-wrap:wrap}
+input[type=number]{-moz-appearance:textfield}
+@media (max-width:1100px){.fasegrid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:900px){.twee{grid-template-columns:1fr}}
+@media (min-width:768px){.wrap.smal{max-width:640px}.gewicht{font-size:120px}}
+@media (max-width:760px){
+  .verberg-sm{display:none}
+  .fasegrid{grid-template-columns:1fr}
+  .kop .rechts{gap:6px}
+  .kopknop{padding:6px 10px;font-size:12px}
+  .kop h1{font-size:16px}
+  /* patiëntenlijst als kaartjes op telefoon */
+  table.lijsttabel thead{display:none}
+  table.lijsttabel,table.lijsttabel tbody{display:block}
+  table.lijsttabel tr{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"nr naam fase" "voortgang voortgang voortgang" "laatst laatst status";gap:6px 10px;padding:12px;border-bottom:1px solid #f0e8ee}
+  table.lijsttabel td{border:0;padding:0}
+  .c-nr{grid-area:nr;color:var(--grijs)}.c-naam{grid-area:naam}.c-fase{grid-area:fase}.c-voortgang{grid-area:voortgang}.c-laatst{grid-area:laatst}.c-status{grid-area:status;text-align:right}.c-code{display:none}
+  .wrap{padding:14px 12px 24px}
+  .kaart{padding:15px;border-radius:18px}
+}
+@media (max-width:420px){.kop .sub .pil{display:none}.titel{font-size:22px}}
 
 .voet{background:var(--paars-d);color:rgba(255,255,255,.5);font-size:12px;text-align:center;padding:12px 16px}
 .voet b{color:rgba(255,255,255,.85)}
@@ -186,7 +208,7 @@ const TEMPO = { Basis: "2 tellen op, 3 tellen neer", Medium: "2 tellen op, 3 tel
 const REST = { Basis: 75, Medium: 90, Sport: 150, Performance: 150 };
 const ECC = { Medium: [0.15, 0.2, 0.2, 0.3, 0.3, 0.2], Sport: [0.3, 0.3, 0.35, 0.4, 0.4, 0.3] };
 const INZET = { Basis: "6 à 7 van 10 inzet", Medium: "8 van 10 inzet", Sport: "Maximale inzet", Performance: "Maximaal snel" };
-const SESSION_A = ["Leg press", "Leg curl", "Abductie-adductie", "Lat pulldown", "Abd-back", "Functional trainer A"];
+const SESSION_A = ["Leg press", "Leg curl", "Abductor", "Adductor", "Lat pulldown", "Buik", "Rug", "Functional trainer A"];
 const SESSION_B = ["Squat", "Leg extension", "Bench press", "Shoulder press", "Pec dec retro", "Functional trainer B"];
 
 // [oefening, modus, isokinetische snelheid, drop set week 5, instructie]
@@ -203,11 +225,17 @@ const PLAN = {
     Sport: ["Leg curl zwaar afremmen", "E+", null, false, "Zwaar afremmen over het hele bereik."],
     Performance: ["Leg curl snel", "I", "Snel", false, "Zo snel en krachtig mogelijk buigen."],
   },
-  "Abductie-adductie": {
-    Basis: ["Benen naar buiten en binnen", "C", null, false, "Sets afwisselend naar buiten en naar binnen. Rustig."],
-    Medium: ["Benen naar buiten en binnen", "E+", null, false, "Afwisselend; het terugkeren langzaam afremmen."],
-    Sport: ["Benen naar binnen, zwaar afremmen", "E+", null, false, "Nadruk op naar binnen: langzaam afremmen."],
-    Performance: ["Benen naar buiten en binnen, snel", "El", null, false, "Snel en veerkrachtig wisselen, zonder pauze."],
+  Abductor: {
+    Basis: ["Abductor", "C", null, false, "Benen rustig naar buiten duwen, gecontroleerd terug. Bekken stil."],
+    Medium: ["Abductor", "E+", null, false, "Naar buiten duwen gaat normaal, het terugkeren langzaam afremmen."],
+    Sport: ["Abductor zwaar", "C", null, false, "Krachtig naar buiten duwen, gecontroleerd terug."],
+    Performance: ["Abductor snel", "El", null, false, "Snel en veerkrachtig naar buiten, zonder pauze."],
+  },
+  Adductor: {
+    Basis: ["Adductor", "C", null, false, "Benen rustig naar binnen drukken, gecontroleerd terug."],
+    Medium: ["Adductor", "E+", null, false, "Naar binnen drukken gaat normaal, het terugkeren langzaam afremmen."],
+    Sport: ["Adductor zwaar afremmen", "E+", null, false, "Nadruk op afremmen: laat je benen langzaam weer naar buiten gaan."],
+    Performance: ["Adductor snel", "El", null, false, "Snel en veerkrachtig naar binnen, zonder pauze."],
   },
   "Lat pulldown": {
     Basis: ["Lat pulldown", "C", null, false, "Schouderbladen eerst omlaag, stang naar de bovenkant van je borst."],
@@ -215,11 +243,17 @@ const PLAN = {
     Sport: ["Lat pulldown zwaar", "C", null, false, "Zwaar en krachtig trekken, gecontroleerd terug."],
     Performance: ["Lat pulldown explosief", "El", null, false, "Explosief trekken, terug laten veren."],
   },
-  "Abd-back": {
-    Basis: ["Buik en rug", "I", "Traag", false, "Afwisselend een set buik en een set rug. Rustig."],
-    Medium: ["Buik en rug", "C", null, false, "Afwisselend buik en rug, over het hele bereik."],
-    Sport: ["Buik en rug, langzaam terug", "E+", null, false, "Afwisselend buik en rug; terugbeweging afremmen."],
-    Performance: ["Buik en rug, snel", "El", null, false, "Licht gewicht, snel. Romp stevig aangespannen."],
+  Buik: {
+    Basis: ["Buik", "I", "Traag", false, "Rustig naar voren buigen vanuit je buik en gecontroleerd terug."],
+    Medium: ["Buik", "C", null, false, "Over het hele bereik naar voren buigen, gecontroleerd terug."],
+    Sport: ["Buik, langzaam terug", "E+", null, false, "Krachtig naar voren, de terugbeweging langzaam afremmen."],
+    Performance: ["Buik, snel", "El", null, false, "Licht gewicht, snel. Romp stevig aangespannen."],
+  },
+  Rug: {
+    Basis: ["Rug", "I", "Traag", false, "Rustig naar achteren strekken en gecontroleerd terug. Niet doorbuigen."],
+    Medium: ["Rug", "C", null, false, "Over het hele bereik strekken, gecontroleerd terug."],
+    Sport: ["Rug, langzaam terug", "E+", null, false, "Krachtig strekken, de terugbeweging langzaam afremmen."],
+    Performance: ["Rug, snel", "El", null, false, "Licht gewicht, snel. Romp stevig aangespannen."],
   },
   "Functional trainer A": {
     Basis: ["Wegdrukken zonder te draaien", "C", null, false, "Zijwaarts naast het toestel. Armen recht vooruit drukken, romp draait niet mee."],
@@ -270,8 +304,21 @@ const MODE_INFO = {
   I: { name: "Isokinetisch", plain: "Het toestel bepaalt de snelheid. Jij bepaalt de kracht." },
   El: { name: "Elastisch", plain: "Snel en veerkrachtig, zonder pauze tussen de herhalingen." },
 };
-const TESTED = [["legpress", "Leg press"], ["legext", "Leg extension"], ["legcurl", "Leg curl"], ["squat", "Squat"], ["bench", "Bench press"], ["lat", "Lat pulldown"]];
-const MANUAL = [["abdadd", "Abductie-adductie"], ["abdback", "Abd-back"], ["ft", "Functional trainer"]];
+// Alle toestellen met een (optionele) testwaarde. Alleen invullen wat je getest hebt.
+const TESTS = [
+  ["legpress", "Leg press"], ["legext", "Leg extension"], ["legcurl", "Leg curl"], ["squat", "Squat"],
+  ["abd", "Abductor"], ["add", "Adductor"], ["bench", "Bench press"], ["shoulder", "Shoulder press"],
+  ["lat", "Lat pulldown"], ["pecdec", "Pec dec retro"], ["buik", "Buik"], ["rug", "Rug"], ["ft", "Functional trainer"],
+];
+const getal = (v) => (v === "" || v == null || isNaN(Number(v)) ? null : Number(v));
+/* oude gegevens (abductie-adductie / abd-back als één toestel) omzetten */
+function normPatient(p) {
+  if (!p) return p;
+  const t = { ...(p.tests || {}) };
+  if (t.abdadd != null) { if (t.abd == null) t.abd = t.abdadd; if (t.add == null) t.add = t.abdadd; delete t.abdadd; }
+  if (t.abdback != null) { if (t.buik == null) t.buik = t.abdback; if (t.rug == null) t.rug = t.abdback; delete t.abdback; }
+  return { ...p, tests: t, refOverride: p.refOverride || {} };
+}
 const CRITERIA = {
   Basis: ["Geen pijnreactie langer dan 24 uur in laatste 2 weken", "Links-rechtsverschil leg extension/curl kleiner dan 20%", "Techniek op alle toestellen goedgekeurd", "Minimaal 10 van 12 trainingen gedaan"],
   Medium: ["Links-rechtsverschil kleiner dan 15%", "Leg press minimaal 1,5x lichaamsgewicht", "Squat minimaal 1,0x lichaamsgewicht", "Geen pijnreactie"],
@@ -279,21 +326,26 @@ const CRITERIA = {
   Performance: ["Krachtverlies kleiner dan 10% ten opzichte van vorige test"],
 };
 
+/* referentiewaarde (geschatte 1RM) per toestel; leeg = niet getest */
 function refFor(m, t) {
+  const g = (k) => getal(t[k]);
   const map = {
-    "Leg press": t.legpress, "Leg extension": t.legext, "Leg curl": t.legcurl, Squat: t.squat,
-    "Bench press": t.bench, "Lat pulldown": t.lat, "Shoulder press": t.bench * 0.6, "Pec dec retro": t.lat * 0.3,
-    "Abductie-adductie": t.abdadd, "Abd-back": t.abdback, "Functional trainer A": t.ft, "Functional trainer B": t.ft,
+    "Leg press": g("legpress"), "Leg extension": g("legext"), "Leg curl": g("legcurl"), Squat: g("squat"),
+    Abductor: g("abd"), Adductor: g("add"), "Bench press": g("bench"), "Lat pulldown": g("lat"),
+    "Shoulder press": g("shoulder") ?? (g("bench") != null ? g("bench") * 0.6 : null),
+    "Pec dec retro": g("pecdec") ?? (g("lat") != null ? g("lat") * 0.3 : null),
+    Buik: g("buik"), Rug: g("rug"), "Functional trainer A": g("ft"), "Functional trainer B": g("ft"),
   };
-  return Number(map[m]) || 0;
+  return map[m] ?? null;
 }
 const round25 = (x) => Math.max(2.5, Math.round(x / 2.5) * 2.5);
 const machineLabel = (m) => m.replace(/ [AB]$/, "");
 const kg = (w) => String(w).replace(".", ",");
 
-function buildSession(p) {
-  const week = Math.ceil(p.session / 2);
-  const type = p.session % 2 === 1 ? "A" : "B";
+function buildSession(p, sessieNr) {
+  const nr = sessieNr || p.session;
+  const week = Math.ceil(nr / 2);
+  const type = nr % 2 === 1 ? "A" : "B";
   const [sets, reps, pct] = WEEKS[p.phase][week - 1];
   return (type === "A" ? SESSION_A : SESSION_B).map((m) => {
     const [oef, mode, speed, ds, instr] = PLAN[m][p.phase];
@@ -302,9 +354,13 @@ function buildSession(p) {
     if (p.phase === "Sport" && m === "Leg press") pc = pct * 0.45;
     const corr = (p.corrections || {})[m] || {};
     const usePct = corr.holdPct ?? pc;
-    const weight = speed ? null : round25(refFor(m, p.tests || {}) * usePct * (corr.factor || 1));
+    const factor = corr.factor || 1;
+    const handmatig = (p.refOverride || {})[m] != null;
+    const ref = handmatig ? p.refOverride[m] : refFor(m, p.tests || {});
+    const weight = speed || !ref ? null : handmatig ? Math.max(0.5, Math.round(ref * usePct * factor * 2) / 2) : round25(ref * usePct * factor);
     return {
-      machine: m, oef, mode, speed, sets: s, reps: r, pct: usePct, weight,
+      machine: m, oef, mode, speed, sets: s, reps: r, pct: usePct, factor, weight, handmatig,
+      geenGewicht: !speed && !ref,
       ecc: mode === "E+" ? (ECC[p.phase] ? ECC[p.phase][week - 1] : 0.15) : 0,
       dropset: ds && week === 5 && p.phase === "Medium",
       inzet: speed || p.phase === "Performance" ? INZET[p.phase] : null,
@@ -370,12 +426,12 @@ const veilig = { lees(k, s) { try { const v = localStorage.getItem(k); return v 
 /* ============================ Demodata ============================ */
 const dagenTerug = (d) => new Date(Date.now() - d * 864e5).toISOString();
 const demoSeed = () => ([
-  { id: "p1", code: "ANNA21", pin: "4821", name: "Anna de Vries", phase: "Basis", session: 3, phaseDone: false, lastTraining: dagenTerug(2),
-    tests: { legpress: 90, legext: 28, legcurl: 22, squat: 45, bench: 30, lat: 35, abdadd: 25, abdback: 20, ft: 10 },
+  { id: "p1", code: "ANNA21", pin: "4821", patnr: "10231", name: "Anna", phase: "Basis", session: 3, phaseDone: false, lastTraining: dagenTerug(2),
+    tests: { legpress: 90, legext: 28, legcurl: 22, squat: 45, bench: 30, lat: 35, abd: 25, add: 25, buik: 20, rug: 20, ft: 10 },
     testHistory: [{ label: "Start Basis", date: dagenTerug(9), tests: { legpress: 90, legext: 28, legcurl: 22, squat: 45, bench: 30, lat: 35 } }],
     corrections: {}, history: [], alerts: [] },
-  { id: "p2", code: "MARK75", pin: "1975", name: "Mark Jansen", phase: "Medium", session: 9, phaseDone: false, lastTraining: dagenTerug(1),
-    tests: { legpress: 150, legext: 50, legcurl: 34, squat: 85, bench: 70, lat: 65, abdadd: 40, abdback: 35, ft: 20 },
+  { id: "p2", code: "MARK75", pin: "1975", patnr: "10487", name: "Mark", phase: "Medium", session: 9, phaseDone: false, lastTraining: dagenTerug(1),
+    tests: { legpress: 150, legext: 50, legcurl: 34, squat: 85, bench: 70, lat: 65, abd: 40, add: 40, buik: 35, rug: 35, ft: 20 },
     testHistory: [
       { label: "Start Basis", date: dagenTerug(60), tests: { legpress: 120, legext: 40, legcurl: 26, squat: 65, bench: 55, lat: 50 } },
       { label: "Start Medium", date: dagenTerug(30), tests: { legpress: 150, legext: 50, legcurl: 34, squat: 85, bench: 70, lat: 65 } }],
@@ -385,12 +441,12 @@ const demoSeed = () => ([
       { date: dagenTerug(1), session: 8, phase: "Medium", machine: "Squat", oef: "Squat", weight: 57.5, fb: "goed", pain: false },
       { date: dagenTerug(4), session: 7, phase: "Medium", machine: "Leg press", oef: "Leg press", weight: 105, fb: "licht", pain: false }],
     alerts: [{ id: "a1", date: dagenTerug(1), text: "Leg extension: pijn gemeld, gewicht niet verhoogd", ack: false }] },
-  { id: "p3", code: "SANN07", pin: "3307", name: "Sanne Kok", phase: "Sport", session: 5, phaseDone: false, lastTraining: dagenTerug(3),
-    tests: { legpress: 160, legext: 55, legcurl: 38, squat: 95, bench: 55, lat: 60, abdadd: 45, abdback: 40, ft: 20 },
+  { id: "p3", code: "SANN07", pin: "3307", patnr: "10552", name: "Sanne", phase: "Sport", session: 5, phaseDone: false, lastTraining: dagenTerug(3),
+    tests: { legpress: 160, legext: 55, legcurl: 38, squat: 95, bench: 55, lat: 60, abd: 45, add: 45, buik: 40, rug: 40, ft: 20 },
     testHistory: [{ label: "Start Sport", date: dagenTerug(14), tests: { legpress: 160, legext: 55, legcurl: 38, squat: 95, bench: 55, lat: 60 } }],
     corrections: {}, history: [], alerts: [] },
-  { id: "p4", code: "PIET10", pin: "6610", name: "Pieter Smit", phase: "Medium", session: 12, phaseDone: true, lastTraining: dagenTerug(2),
-    tests: { legpress: 140, legext: 45, legcurl: 30, squat: 80, bench: 75, lat: 70, abdadd: 40, abdback: 35, ft: 20 },
+  { id: "p4", code: "PIET10", pin: "6610", patnr: "10619", name: "Pieter", phase: "Medium", session: 12, phaseDone: true, lastTraining: dagenTerug(2),
+    tests: { legpress: 140, legext: 45, legcurl: 30, squat: 80, bench: 75, lat: 70, abd: 40, add: 40, buik: 35, rug: 35, ft: 20 },
     testHistory: [{ label: "Start Medium", date: dagenTerug(44), tests: { legpress: 140, legext: 45, legcurl: 30, squat: 80, bench: 75, lat: 70 } }],
     corrections: {}, history: [], alerts: [] },
 ]);
@@ -408,7 +464,7 @@ const PATIENT_VELDEN = ["corrections", "alerts", "history", "session", "phaseDon
 const splits = (p) => { const { id, code, pin, ...data } = p; return { id, code, data }; };
 
 const store = {
-  demoLijst() { let l = veilig.lees(DEMO_KEY, null); if (!l) { l = demoSeed(); veilig.schrijf(DEMO_KEY, l); } return l; },
+  demoLijst() { let l = veilig.lees(DEMO_KEY, null); if (!l) { l = demoSeed(); veilig.schrijf(DEMO_KEY, l); } return l.map(normPatient); },
   demoSchrijf(l) { veilig.schrijf(DEMO_KEY, l); },
 
   async patientLogin(code, pin) {
@@ -417,7 +473,7 @@ const store = {
     const { data, error } = await sb.rpc("sg_patient_login", { p_code: code, p_pin: pin });
     if (error) throw new Error(/geblokkeerd/.test(error.message) ? "geblokkeerd" : "verbinding");
     if (!data) throw new Error("onbekend");
-    return data;
+    return normPatient(data);
   },
   async patientOpslaan(p, code, pin) {
     if (DEMO) { store.demoSchrijf(store.demoLijst().map((x) => (x.id === p.id ? { ...x, ...Object.fromEntries(PATIENT_VELDEN.map((k) => [k, p[k]])) } : x))); return; }
@@ -435,7 +491,7 @@ const store = {
     if (DEMO) return store.demoLijst();
     const { data, error } = await sb.from("sg_patienten").select("id, code, data").order("bijgewerkt", { ascending: false });
     if (error) throw error;
-    return data.map((r) => ({ id: r.id, code: r.code, ...r.data }));
+    return data.map((r) => normPatient({ id: r.id, code: r.code, ...r.data }));
   },
   async bewaar(p) {
     if (DEMO) { const l = store.demoLijst(); const i = l.findIndex((x) => x.id === p.id); if (i >= 0) l[i] = p; else l.unshift(p); store.demoSchrijf(l); return p; }
@@ -652,8 +708,8 @@ function Vandaag({ sessie, zetPatient, uitloggen }) {
         {session.map((ex, i) => (
           <button key={ex.machine} onClick={() => { setIdx(i); setScherm("oefening"); window.scrollTo(0, 0); }}>
             <span className={`stap ${results[ex.machine] ? "klaar" : ""}`}>{results[ex.machine] ? "✓" : i + 1}</span>
-            <span style={{ flex: 1 }}><b style={{ fontWeight: 600 }}>{ex.oef}</b><br /><span className="klein">{machineLabel(ex.machine)}</span></span>
-            <span style={{ fontWeight: 700, color: "var(--paars)", whiteSpace: "nowrap" }}>{ex.weight ? `${kg(ex.weight)} kg` : MODE_INFO[ex.mode].name}</span>
+            <span style={{ flex: 1 }}><b style={{ fontWeight: 600 }}>{ex.oef}</b>{ex.oef !== machineLabel(ex.machine) && <><br /><span className="klein">{machineLabel(ex.machine)}</span></>}</span>
+            <span style={{ fontWeight: 700, color: ex.geenGewicht ? "var(--grijs)" : "var(--paars)", whiteSpace: "nowrap", fontSize: ex.geenGewicht ? 13 : 15 }}>{ex.weight ? `${kg(ex.weight)} kg` : ex.geenGewicht ? "vraag je fysio" : MODE_INFO[ex.mode].name}</span>
           </button>
         ))}
       </div>
@@ -688,7 +744,8 @@ function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
         <h2 style={{ fontSize: 24, color: "var(--tekst)", margin: "8px 0 10px", lineHeight: 1.2 }}>{ex.oef}</h2>
         {ex.weight
           ? <div className="gewicht">{kg(ex.weight)}<span style={{ fontSize: ".3em", marginLeft: 6, letterSpacing: 0 }}>kg</span></div>
-          : <div style={{ fontSize: 34, fontWeight: 800, color: "var(--paars)" }}>Snelheid {ex.speed.toLowerCase()}</div>}
+          : ex.speed ? <div style={{ fontSize: 34, fontWeight: 800, color: "var(--paars)" }}>Snelheid {ex.speed.toLowerCase()}</div>
+          : <div className="notitie oranje">Voor dit toestel is nog geen gewicht ingesteld. Vraag je fysiotherapeut welk gewicht je gebruikt.</div>}
         <div style={{ marginTop: 10 }}>
           <div style={{ fontWeight: 600 }}>Stand: {mi.name}{ex.ecc ? `, terugweg +${Math.round(ex.ecc * 100)}%` : ""}</div>
           <div className="klein">{mi.plain}</div>
@@ -734,19 +791,20 @@ function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
 
 function TestBalken({ p }) {
   const th = (p.testHistory || []).slice(-2);
-  if (!th.length) return <p className="klein">Nog geen testgegevens.</p>;
-  const max = Math.max(1, ...TESTED.flatMap(([k]) => th.map((t) => Number(t.tests[k]) || 0)));
+  const rijen = TESTS.filter(([k]) => th.some((t) => getal(t.tests[k]) != null));
+  if (!th.length || !rijen.length) return <p className="klein">Nog geen testgegevens.</p>;
+  const max = Math.max(1, ...rijen.flatMap(([k]) => th.map((t) => getal(t.tests[k]) || 0)));
   return (
     <div>
       <div style={{ display: "flex", gap: 14, fontSize: 12, marginBottom: 10, flexWrap: "wrap" }}>
         {th.map((t, i) => <span key={i}><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, marginRight: 5, background: i === th.length - 1 ? "#82176D" : "#cdbcc9" }} />{t.label}</span>)}
       </div>
-      {TESTED.map(([k, l]) => (
+      {rijen.map(([k, l]) => (
         <div key={k} style={{ marginBottom: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span>{l}</span><b>{th.map((t) => t.tests[k] ?? "–").join(" → ")} kg</b></div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span>{l}</span><b>{th.map((t) => getal(t.tests[k]) ?? "–").join(" → ")} kg</b></div>
           {th.map((t, i) => (
             <div key={i} style={{ height: 8, borderRadius: 99, background: "#f1e9ef", marginTop: 3 }}>
-              <div style={{ height: "100%", borderRadius: 99, width: `${((Number(t.tests[k]) || 0) / max) * 100}%`, background: i === th.length - 1 ? "linear-gradient(90deg,#82176D,#a8368f)" : "#cdbcc9" }} />
+              <div style={{ height: "100%", borderRadius: 99, width: `${((getal(t.tests[k]) || 0) / max) * 100}%`, background: i === th.length - 1 ? "linear-gradient(90deg,#82176D,#a8368f)" : "#cdbcc9" }} />
             </div>
           ))}
         </div>
@@ -813,6 +871,7 @@ function Uitleg() {
       <div className="kaart">
         <h2>Zo werkt je training</h2>
         <p style={{ marginTop: 0 }}>Je traint in fases van 12 trainingen. Na elke fase doe je met je fysiotherapeut een hertest. Daarna ga je door naar de volgende fase of herhaal je de fase.</p>
+        <p style={{ margin: "0 0 10px" }}><b>Basis</b>: rustig opbouwen en de oefeningen goed leren. <b>Medium</b>: sterker worden. <b>Sport</b>: zwaarder trainen voor sport of zwaar werk. <b>Performance</b>: snel en explosief.</p>
         <p style={{ margin: 0 }}>Na elke oefening geef je aan hoe het voelde. Twee keer achter elkaar te licht? Dan gaat het gewicht automatisch omhoog. Te zwaar of pijn? Dan gaat het niet omhoog en kijkt je fysiotherapeut mee.</p>
       </div>
       <div className="kaart">
@@ -911,6 +970,7 @@ function Dashboard({ uit }) {
   const [sel, setSel] = useState(null);
   const [nieuw, setNieuw] = useState(false);
   const [zoek, setZoek] = useState("");
+  const [uitleg, setUitleg] = useState(false);
   const [fout, setFout] = useState("");
   const laad = () => store.lijst().then(setLijst).catch(() => setFout("Laden mislukt. Controleer de verbinding."));
   useEffect(() => { laad(); }, []);
@@ -927,32 +987,35 @@ function Dashboard({ uit }) {
         {fout && <div className="melding fout">{fout}</div>}
         {!lijst ? <p className="klein">Laden…</p> : patient ? (
           <PatientDetail p={patient} terug={() => setSel(null)} bewaar={bewaar} codes={lijst.map((x) => x.code)}
-            verwijder={async () => { if (confirm(`${patient.name} definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) { await store.verwijder(patient); setSel(null); laad(); } }} />
+            verwijder={async () => { if (confirm(`${patient.name}${patient.patnr ? " (" + patient.patnr + ")" : ""} definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) { await store.verwijder(patient); setSel(null); laad(); } }} />
         ) : (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
               <div><div className="titel" style={{ margin: 0 }}>Patiënten</div><p className="klein" style={{ margin: 0 }}>{lijst.length} actief · {meldingen} open {meldingen === 1 ? "melding" : "meldingen"}</p></div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <input placeholder="Zoeken…" value={zoek} onChange={(e) => setZoek(e.target.value)} style={{ border: "1px solid #d6ccd4", borderRadius: 12, padding: "9px 12px", fontSize: 14 }} />
+                <input placeholder="Zoek op nummer of naam…" value={zoek} onChange={(e) => setZoek(e.target.value)} style={{ border: "1px solid #d6ccd4", borderRadius: 12, padding: "9px 12px", fontSize: 14 }} />
+                <button className="knop2 sm" onClick={() => setUitleg(!uitleg)}>Uitleg fases</button>
                 {DEMO && <button className="knop2 sm" onClick={() => { if (confirm("Demodata terugzetten?")) { store.demoSchrijf(demoSeed()); laad(); } }}>Demodata herstellen</button>}
                 <button className="knop sm" onClick={() => setNieuw(true)}>+ Patiënt toevoegen</button>
               </div>
             </div>
-            {nieuw && <NieuwePatient codes={lijst.map((x) => x.code)} annuleer={() => setNieuw(false)} bewaar={async (p, pin) => { const r = await bewaar(p); await store.zetPin(r, pin); await laad(); setNieuw(false); setSel(r.id); }} />}
+            {uitleg && <FaseUitleg sluit={() => setUitleg(false)} />}
+            {nieuw && <NieuwePatient codes={lijst.map((x) => x.code)} nummers={lijst.map((x) => String(x.patnr || ""))} toonUitleg={() => setUitleg(true)} annuleer={() => setNieuw(false)} bewaar={async (p, pin) => { const r = await bewaar(p); await store.zetPin(r, pin); await laad(); setNieuw(false); setSel(r.id); }} />}
             <div className="kaart" style={{ padding: 6, overflowX: "auto" }}>
-              <table className="t">
-                <thead><tr><th>Naam</th><th>Code</th><th>Fase</th><th>Voortgang</th><th className="verberg-sm">Laatste training</th><th>Status</th></tr></thead>
+              <table className="t lijsttabel">
+                <thead><tr><th>Patiëntnr.</th><th>Voornaam</th><th>Code</th><th>Fase</th><th>Voortgang</th><th>Laatste training</th><th>Status</th></tr></thead>
                 <tbody>
-                  {lijst.filter((p) => (p.name + p.code).toLowerCase().includes(zoek.toLowerCase())).map((p) => {
+                  {lijst.filter((p) => `${p.patnr || ""} ${p.name} ${p.code}`.toLowerCase().includes(zoek.toLowerCase().trim())).map((p) => {
                     const al = (p.alerts || []).filter((a) => !a.ack).length; const g = p.phaseDone ? 12 : p.session - 1;
                     return (
                       <tr key={p.id} className="klik" tabIndex={0} onClick={() => setSel(p.id)} onKeyDown={(e) => e.key === "Enter" && setSel(p.id)}>
-                        <td><b style={{ fontWeight: 600 }}>{p.name}</b></td>
-                        <td style={{ letterSpacing: 1.5, fontWeight: 600 }}>{p.code}</td>
-                        <td><Fase f={p.phase} /></td>
-                        <td><div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 110 }}><div className="balk" style={{ flex: 1 }}><i style={{ width: `${(g / 12) * 100}%` }} /></div><span className="klein">{g}/12</span></div></td>
-                        <td className="verberg-sm klein">{relDag(p.lastTraining)}</td>
-                        <td>{p.phaseDone ? <span className="tag" style={{ background: "var(--oranje-l)", color: "var(--oranje)" }}>Hertest nodig</span> : al ? <span className="tag" style={{ background: "var(--rood-l)", color: "var(--rood)" }}>{al} {al === 1 ? "melding" : "meldingen"}</span> : <span className="klein">Op schema</span>}</td>
+                        <td className="c-nr" style={{ fontWeight: 600 }}>{p.patnr || "–"}</td>
+                        <td className="c-naam"><b style={{ fontWeight: 600 }}>{p.name}</b></td>
+                        <td className="c-code" style={{ letterSpacing: 1.5 }}>{p.code}</td>
+                        <td className="c-fase"><Fase f={p.phase} /></td>
+                        <td className="c-voortgang"><div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 110 }}><div className="balk" style={{ flex: 1 }}><i style={{ width: `${(g / 12) * 100}%` }} /></div><span className="klein">{g}/12</span></div></td>
+                        <td className="c-laatst klein">{relDag(p.lastTraining)}</td>
+                        <td className="c-status">{p.phaseDone ? <span className="tag" style={{ background: "var(--oranje-l)", color: "var(--oranje)" }}>Hertest nodig</span> : al ? <span className="tag" style={{ background: "var(--rood-l)", color: "var(--rood)" }}>{al} {al === 1 ? "melding" : "meldingen"}</span> : <span className="klein">Op schema</span>}</td>
                       </tr>);
                   })}
                 </tbody>
@@ -969,21 +1032,57 @@ function Dashboard({ uit }) {
 function TestVelden({ tests, setTests }) {
   return (
     <div className="rij">
-      {[...TESTED, ...MANUAL].map(([k, l]) => (
-        <label key={k} className="veld">{l} (kg)<input type="number" inputMode="decimal" value={tests[k] ?? ""} onChange={(e) => setTests({ ...tests, [k]: e.target.value === "" ? "" : Number(e.target.value) })} /></label>
+      {TESTS.map(([k, l]) => (
+        <label key={k} className="veld">{l} (kg)<input type="number" inputMode="decimal" placeholder="niet getest" value={tests[k] ?? ""}
+          onChange={(e) => { const t = { ...tests }; if (e.target.value === "") delete t[k]; else t[k] = Number(e.target.value); setTests(t); }} /></label>
       ))}
     </div>
   );
 }
 
-function NieuwePatient({ codes, annuleer, bewaar }) {
-  const [naam, setNaam] = useState(""); const [fase, setFase] = useState("Basis"); const [bezig, setBezig] = useState(false);
-  const [tests, setTests] = useState({ legpress: 100, legext: 30, legcurl: 25, squat: 50, bench: 40, lat: 40, abdadd: 30, abdback: 25, ft: 10 });
+const FASE_INFO = {
+  Basis: { doel: "Belastbaarheid opbouwen en techniek aanleren.", wie: "Start voor de meeste patiënten: na een operatie of blessure, bij (nog) pijn of een prikkelbare klacht, weinig ervaring met krachttraining, of bij verminderde conditie.", belasting: "40–60% van de testwaarde · 12–15 herhalingen · 2–3 sets · rust 75 s", nadruk: "Rustig tempo (2 tellen op, 3 neer). Concentrisch en isokinetisch traag." },
+  Medium: { doel: "Spiermassa en kracht opbouwen.", wie: "Geen pijnreactie meer, techniek op orde en de doorstroomcriteria van Basis gehaald.", belasting: "60–75% · 8–12 herhalingen · 2–3 sets · rust 90 s", nadruk: "Extra zware terugweg (excentrisch +15–30%). Drop sets in week 5." },
+  Sport: { doel: "Maximale kracht, voorbereiding op sport of zwaar fysiek werk.", wie: "Sporters en patiënten met een hoge fysieke belasting die de criteria van Medium halen.", belasting: "75–85% · 4–6 herhalingen · 3–4 sets · rust 150 s", nadruk: "Zwaar en krachtig. Eenbenige leg press, zware excentrische oefeningen." },
+  Performance: { doel: "Explosiviteit en snelheid, laatste stap richting volledige sporthervatting.", wie: "Alleen na het halen van de criteria van Sport.", belasting: "35–55% · 3–6 herhalingen · 3–5 sets · rust 150 s (leg press: krachtonderhoud op 80%)", nadruk: "Explosief en elastisch, isokinetisch snel. Maximale snelheid." },
+};
+
+function FaseUitleg({ sluit }) {
+  return (
+    <section className="kaart fade">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+        <h2>Uitleg fases en indeling</h2>
+        <button className="knop2 sm" onClick={sluit}>Sluiten</button>
+      </div>
+      <p style={{ marginTop: 0 }}>Elke fase bestaat uit <b>12 trainingen</b> (bij 2x per week zes weken), afwisselend training A en B. Het gewicht loopt per week op; week 6 is lichter om te herstellen. Na training 12 volgt een hertest. Haalt de patiënt alle doorstroomcriteria, dan gaat hij door naar de volgende fase. Anders herhaal je de fase met de nieuwe testwaarden.</p>
+      <div className="notitie" style={{ marginBottom: 14 }}><b>Indelen bij de start:</b> begin in Basis, tenzij de patiënt aantoonbaar al voldoet aan de doorstroomcriteria van de fase ervoor. Een getrainde patiënt zonder pijn die de Basis-criteria haalt, kan dus direct in Medium starten. Performance alleen na Sport.</div>
+      <div className="fasegrid">
+        {PHASES.map((f, i) => (
+          <div key={f} className="faseblok" style={{ borderTopColor: faseKleur(f) }}>
+            <Fase f={f} />
+            <p style={{ margin: "8px 0 6px", fontWeight: 600 }}>{FASE_INFO[f].doel}</p>
+            <p className="klein" style={{ margin: "0 0 6px" }}><b>Voor wie:</b> {FASE_INFO[f].wie}</p>
+            <p className="klein" style={{ margin: "0 0 6px" }}><b>Belasting:</b> {FASE_INFO[f].belasting}</p>
+            <p className="klein" style={{ margin: "0 0 6px" }}><b>Nadruk:</b> {FASE_INFO[f].nadruk}</p>
+            <p className="klein" style={{ margin: "0 0 2px" }}><b>{i < 3 ? `Door naar ${PHASES[i + 1]} als:` : "Afronden als:"}</b></p>
+            <ul className="klein" style={{ margin: 0, paddingLeft: 18 }}>{CRITERIA[f].map((c) => <li key={c}>{c}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+      <p className="klein" style={{ marginBottom: 0, marginTop: 12 }}>Belasting = percentage van de testwaarde (geschatte 1RM). De percentages komen uit het schema in deze app.</p>
+    </section>
+  );
+}
+
+function NieuwePatient({ codes, nummers, annuleer, bewaar, toonUitleg }) {
+  const [patnr, setPatnr] = useState(""); const [naam, setNaam] = useState(""); const [fase, setFase] = useState("Basis"); const [bezig, setBezig] = useState(false);
+  const dubbel = patnr.trim() !== "" && nummers.includes(patnr.trim());
+  const [tests, setTests] = useState({});
   const opslaan = async () => {
     setBezig(true);
     const pin = maakPin();
-    const p = { code: maakCode(codes), name: naam.trim(), phase: fase, session: 1, phaseDone: false, lastTraining: null, tests,
-      testHistory: [{ label: `Start ${fase}`, date: new Date().toISOString(), tests: { ...tests } }], corrections: {}, history: [], alerts: [] };
+    const p = { code: maakCode(codes), patnr: patnr.trim(), name: naam.trim(), phase: fase, session: 1, phaseDone: false, lastTraining: null, tests,
+      testHistory: [{ label: `Start ${fase}`, date: new Date().toISOString(), tests: { ...tests } }], corrections: {}, refOverride: {}, history: [], alerts: [] };
     if (DEMO) p.id = nieuwId();
     try { sessionStorage.setItem("ftsg_laatste_pin", JSON.stringify({ code: p.code, pin })); } catch {}
     try { await bewaar(p, pin); } catch {}
@@ -993,13 +1092,16 @@ function NieuwePatient({ codes, annuleer, bewaar }) {
     <div className="kaart fade">
       <h2>Nieuwe patiënt</h2>
       <div className="rij" style={{ marginBottom: 12 }}>
-        <label className="veld">Naam (of voornaam + initiaal)<input value={naam} onChange={(e) => setNaam(e.target.value)} /></label>
+        <label className="veld">Patiëntnummer<input value={patnr} inputMode="numeric" autoComplete="off" onChange={(e) => setPatnr(e.target.value)} /></label>
+        <label className="veld">Voornaam<input value={naam} autoComplete="off" onChange={(e) => setNaam(e.target.value)} /></label>
         <label className="veld">Startfase<select value={fase} onChange={(e) => setFase(e.target.value)}>{PHASES.map((f) => <option key={f}>{f}</option>)}</select></label>
       </div>
-      <p className="klein" style={{ margin: "0 0 8px" }}>Testwaarden uit de DKN-test (geschatte 1RM). De laatste drie schat je zelf in.</p>
+      {dubbel && <div className="melding fout">Er bestaat al een patiënt met dit patiëntnummer.</div>}
+      <p className="klein" style={{ margin: "-4px 0 12px" }}>Twijfel je over de startfase? <button className="link" onClick={toonUitleg}>Bekijk de uitleg over de fases</button></p>
+      <p className="klein" style={{ margin: "0 0 8px" }}>Vul alleen de toestellen in die je getest hebt (geschatte 1RM uit de DKN-test). Op basis daarvan krijg je een voorstel voor de trainingsgewichten, dat je daarna per toestel kunt aanpassen.</p>
       <TestVelden tests={tests} setTests={setTests} />
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-        <button className="knop sm" disabled={!naam.trim() || bezig} onClick={opslaan}>Patiënt aanmaken</button>
+        <button className="knop sm" disabled={!naam.trim() || !patnr.trim() || dubbel || bezig} onClick={opslaan}>Patiënt aanmaken</button>
         <button className="knop2 sm" onClick={annuleer}>Annuleren</button>
       </div>
     </div>
@@ -1033,10 +1135,65 @@ function Inloggegevens({ p, bewaarPin }) {
   );
 }
 
+function Trainingsgewichten({ p, bewaar }) {
+  const [concept, setConcept] = useState({});
+  if (p.phaseDone) return <section className="kaart"><h2>Fase afgerond</h2><p className="klein">Voer de hertest in om de volgende fase of een herhaling te starten.</p></section>;
+  const klem = (n) => (n > 12 ? n - 2 : n);
+  const nrA = klem(p.session % 2 === 1 ? p.session : p.session + 1);
+  const nrB = klem(p.session % 2 === 0 ? p.session : p.session + 1);
+  const sessies = [[nrA, buildSession(p, nrA)], [nrB, buildSession(p, nrB)]].sort((x, y) => x[0] - y[0]);
+  const zet = (ex, waarde) => {
+    const ro = { ...(p.refOverride || {}) };
+    if (waarde === null) delete ro[ex.machine];
+    else { const kgW = Number(waarde); if (!(kgW > 0)) return; ro[ex.machine] = kgW / (ex.pct * ex.factor); }
+    setConcept((c) => { const n = { ...c }; delete n[ex.machine]; return n; });
+    bewaar({ ...p, refOverride: ro });
+  };
+  const leeg = sessies.some(([, s]) => s.some((ex) => ex.geenGewicht));
+  return (
+    <section className="kaart">
+      <h2>Trainingsgewichten</h2>
+      <p className="klein" style={{ marginTop: 0 }}>Voorstel op basis van de testwaarden. Pas een gewicht aan en druk op Enter of klik ernaast. Jouw gewicht wordt het uitgangspunt: de opbouw per week loopt daarna automatisch verder.</p>
+      {leeg && <div className="melding let">Bij toestellen zonder testwaarde staat nog geen gewicht. Vul die zelf in, anders ziet de patiënt "vraag je fysio".</div>}
+      {sessies.map(([nr, sessie]) => (
+        <div key={nr} style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0" }}>
+            <b>Training {nr} ({nr % 2 === 1 ? "A" : "B"})</b>{nr === p.session && <span className="tag">volgende</span>}
+          </div>
+          <table className="t"><tbody>{sessie.map((ex) => (
+            <tr key={ex.machine}>
+              <td><b style={{ fontWeight: 600 }}>{ex.oef}</b><br /><span className="klein">{ex.sets} × {ex.reps} · {MODE_INFO[ex.mode].name}{ex.ecc ? ` +${Math.round(ex.ecc * 100)}%` : ""}{ex.dropset ? ", drop set" : ""}</span></td>
+              <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+                {ex.speed ? <b style={{ color: "var(--paars)" }}>{ex.speed}</b> : (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    {ex.handmatig && <span className="tag b" title="Handmatig aangepast">aangepast</span>}
+                    <input type="number" step="2.5" min="0" inputMode="decimal" aria-label={`Gewicht ${ex.oef}`}
+                      value={concept[ex.machine] ?? (ex.weight ?? "")} placeholder="kg"
+                      onChange={(e) => setConcept({ ...concept, [ex.machine]: e.target.value })}
+                      onBlur={() => {
+                        const v = concept[ex.machine]; if (v == null) return;
+                        setConcept((c) => { const n = { ...c }; delete n[ex.machine]; return n; });
+                        if (v === "") { if (ex.handmatig) zet(ex, null); return; }
+                        if (Number(v) > 0 && Number(v) !== ex.weight) zet(ex, v);
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+                      style={{ width: 82, border: `1px solid ${ex.geenGewicht ? "var(--oranje)" : "#d6ccd4"}`, borderRadius: 10, padding: "7px 8px", fontSize: 15, textAlign: "right", fontWeight: 600, color: "var(--paars)" }} />
+                    <span className="klein">kg</span>
+                    {ex.handmatig && <button className="link" title="Terug naar voorstel" onClick={() => zet(ex, null)}>↺</button>}
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))}</tbody></table>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function PatientDetail({ p, terug, bewaar, verwijder, codes }) {
   const [hertest, setHertest] = useState(false);
   const corrLijst = Object.entries(p.corrections || {}).filter(([, c]) => c.factor !== 1 || c.holdPct != null || c.light || c.heavy || c.pain);
-  const volgende = buildSession(p);
   const open = (p.alerts || []).filter((a) => !a.ack);
 
   return (
@@ -1044,7 +1201,7 @@ function PatientDetail({ p, terug, bewaar, verwijder, codes }) {
       <button className="knop2 sm" onClick={terug} style={{ marginBottom: 12 }}>← Alle patiënten</button>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
         <div>
-          <div className="titel" style={{ margin: 0 }}>{p.name}</div>
+          <div className="titel" style={{ margin: 0 }}>{p.name}{p.patnr ? <span className="klein" style={{ fontSize: 15, fontWeight: 500, marginLeft: 8 }}>patiëntnr. {p.patnr}</span> : null}</div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}><Fase f={p.phase} /><span className="klein">{p.phaseDone ? "12 van 12 gedaan" : `Training ${p.session} van 12 is de volgende`}</span></div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -1068,16 +1225,7 @@ function PatientDetail({ p, terug, bewaar, verwijder, codes }) {
       )}
 
       <div className="twee">
-        <section className="kaart">
-          <h2>{p.phaseDone ? "Fase afgerond" : `Volgende training (${p.session} van 12)`}</h2>
-          {p.phaseDone ? <p className="klein">Voer de hertest in om de volgende fase of een herhaling te starten.</p> : (
-            <table className="t"><tbody>{volgende.map((ex) => (
-              <tr key={ex.machine}><td><b style={{ fontWeight: 600 }}>{ex.oef}</b><br /><span className="klein">{MODE_INFO[ex.mode].name}{ex.ecc ? ` +${Math.round(ex.ecc * 100)}%` : ""}{ex.dropset ? ", drop set" : ""}</span></td>
-                <td style={{ whiteSpace: "nowrap" }}>{ex.sets} × {ex.reps}</td>
-                <td style={{ whiteSpace: "nowrap", textAlign: "right", fontWeight: 700, color: "var(--paars)" }}>{ex.weight ? `${kg(ex.weight)} kg` : ex.speed}</td></tr>
-            ))}</tbody></table>
-          )}
-        </section>
+        <Trainingsgewichten p={p} bewaar={bewaar} />
         <Inloggegevens p={p} bewaarPin={(pin) => store.zetPin(p, pin)} />
       </div>
 
@@ -1122,7 +1270,7 @@ function Hertest({ p, annuleer, bewaar }) {
   const alles = crit.every((_, i) => checks[i]);
   const volgende = PHASES[Math.min(PHASES.indexOf(p.phase) + 1, 3)];
   const opslaan = (fase) => bewaar({
-    ...p, tests, phase: fase, session: 1, phaseDone: false, corrections: {},
+    ...p, tests, phase: fase, session: 1, phaseDone: false, corrections: {}, refOverride: {},
     testHistory: [...(p.testHistory || []), { label: fase === p.phase ? `Herhaling ${fase}` : `Start ${fase}`, date: new Date().toISOString(), tests: { ...tests } }],
   });
   return (
@@ -1148,13 +1296,17 @@ function Hertest({ p, annuleer, bewaar }) {
         </>
       ) : (
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-          <button className="knop sm" onClick={() => bewaar({ ...p, tests })}>Testwaarden opslaan</button>
+          <button className="knop sm" onClick={() => bewaar({ ...p, tests, refOverride: {} })}>Testwaarden opslaan</button>
           <button className="knop2 sm" onClick={annuleer}>Annuleren</button>
         </div>
       )}
+      <p className="klein" style={{ marginBottom: 0 }}>Na opslaan worden de trainingsgewichten opnieuw berekend uit de testwaarden. Handmatige aanpassingen vervallen.</p>
     </section>
   );
 }
+
+// Scrollen boven een getalveld verandert de waarde niet: het veld verliest focus en de pagina scrolt gewoon door
+document.addEventListener("wheel", (e) => { const el = document.activeElement; if (el && el.type === "number" && e.target === el) el.blur(); }, { passive: true });
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
