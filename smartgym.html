@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-23.10 -->
+<!-- APP_VERSION: 2026-11-23.13 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-23.10";
+  var APP_VERSION = "2026-11-23.13";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -48,10 +48,11 @@
   --basis:#1f9d55; --medium:#00728e; --sport:#d97706; --performance:#82176D;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0}
+html,body{margin:0;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-family:'Poppins','Segoe UI',sans-serif;color:var(--tekst);background:var(--bg);font-size:15px;line-height:1.5}
 button{font-family:inherit;cursor:pointer}
-input,select{font-family:inherit}
+input,select,textarea{font-family:inherit;max-width:100%;min-width:0;box-sizing:border-box}
+#root>*{min-width:0;max-width:100%}
 #root{min-height:100vh;display:flex;flex-direction:column}
 .inhoud{flex:1}
 
@@ -84,7 +85,7 @@ input,select{font-family:inherit}
 .tag.b{background:var(--tag-b);color:var(--blauw)}
 .fase{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;color:#fff}
 .veld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--grijs)}
-.veld input,.veld select{font-size:16px;color:var(--tekst);background:#fff;border:1px solid #d6ccd4;border-radius:12px;padding:11px 12px;font-weight:400}
+.veld input,.veld select{width:100%;font-size:16px;color:var(--tekst);background:#fff;border:1px solid #d6ccd4;border-radius:12px;padding:11px 12px;font-weight:400}
 .veld input:focus,.veld select:focus{outline:none;border-color:var(--paars);box-shadow:0 0 0 3px var(--tag-p)}
 .melding{border-radius:14px;padding:12px 14px;font-size:14px;margin-bottom:12px;background:var(--tag-b);color:#0b4b5c}
 .melding.let{background:var(--oranje-l);color:#7a4300}
@@ -158,7 +159,7 @@ table.t tr.klik:hover td{background:#faf6f9}
 .stdrij select{font-size:15px;border:1px solid #d6ccd4;border-radius:10px;padding:7px 8px;background:#fff;font-family:inherit}
 .trainingen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-bottom:12px}
 .twee>*,.trainingen-grid>*{min-width:0}
-.inhoud{min-width:0;max-width:100vw}
+.inhoud{min-width:0;width:100%}
 .trainingblok{border:1px solid var(--rand);border-radius:16px;padding:4px 14px 8px}
 @media (max-width:420px){.trainingen-grid{grid-template-columns:1fr}.trainingblok{padding:4px 10px 8px}}
 .inlogstrip{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:12px 18px}
@@ -226,7 +227,11 @@ const WEEKS = {
 const TEMPO = { Basis: "2 tellen op, 3 tellen neer", Medium: "2 tellen op, 3 tellen neer", Sport: "Krachtig op, 3 tellen neer", Performance: "Explosief op, 2 tellen neer" };
 const REST = { Basis: 75, Medium: 90, Sport: 150, Performance: 150 };
 const ECC = { Medium: [0.15, 0.2, 0.2, 0.3, 0.3, 0.2], Sport: [0.3, 0.3, 0.35, 0.4, 0.4, 0.3] };
-const INZET = { Basis: "6 à 7 van 10 inzet", Medium: "8 van 10 inzet", Sport: "Maximale inzet", Performance: "Maximaal snel" };
+// Intensiteit op een schaal van 0 tot 10 (standaard per fase, per patiënt en oefening aan te passen)
+const INT_STD = { Basis: 7, Medium: 8, Sport: 10, Performance: 10 };
+const INT_OPTIES = Array.from({ length: 11 }, (_, i) => i);
+const REST_OPTIES = [0, 15, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240];
+const intTekst = (n) => `${n} op een schaal van 0 (heel licht) tot 10 (maximaal)`;
 // Alle toestellen. Welke een patiënt per training doet, bepaalt de fysio.
 const TOESTELLEN = ["Leg press", "Leg extension", "Leg curl", "Squat", "Abductor", "Adductor", "Bench press", "Shoulder press", "Lat pulldown", "Pec dec retro", "Buik", "Rug", "Functional trainer"];
 const FT = "Functional trainer";
@@ -378,10 +383,20 @@ function normPatient(p) {
   }
   out.freq = out.freq || STD_FREQ; out.weken = out.weken || STD_WEKEN;
   out.trainingen = Array.from({ length: out.freq }, (_, i) => out.trainingen[i] || []);
+  // instellingen per toestel (oud) omzetten naar instellingen per toestel per training
+  ["refOverride", "instelling", "corrections"].forEach((k) => {
+    const obj = { ...(out[k] || {}) };
+    Object.keys(obj).forEach((naam) => {
+      if (/ \d+$/.test(naam)) return;
+      out.trainingen.forEach((t, i) => { if (t.includes(naam) && obj[`${naam} ${i + 1}`] == null) obj[`${naam} ${i + 1}`] = obj[naam]; });
+      delete obj[naam];
+    });
+    out[k] = obj;
+  });
   return out;
 }
-/* sleutel per oefening: de functional trainer telt per training apart (eigen oefening en gewicht) */
-const oefKey = (m, slot) => (m === FT ? `${FT} ${slot}` : m);
+/* sleutel per oefening: elk toestel heeft per training van de week eigen instellingen */
+const oefKey = (m, slot) => `${m} ${slot}`;
 
 const CRITERIA = {
   Basis: ["Geen pijnreactie langer dan 24 uur in laatste 2 weken", "Links-rechtsverschil leg extension/curl kleiner dan 20%", "Techniek op alle toestellen goedgekeurd", "Minimaal 80% van de trainingen gedaan"],
@@ -443,9 +458,10 @@ function buildSession(p, sessieNr) {
       kg: kgv, weight: kgv, conc: mode === "Eccentric" && kgv ? round05(kgv * ratio) : null, ratio, speed, level,
       eigen: !!(eigen && eigen.naam), instGewijzigd: Object.keys(inst).length > 0,
       ontbreekt: (metGewicht && !kgv) || (mode === "Elastic" && !level),
-      dropset: ds && wi === 4 && p.phase === "Medium",
-      inzet: mode === "Isokinetic" || mode === "Elastic" || p.phase === "Performance" ? INZET[p.phase] : null,
-      tempo: TEMPO[p.phase], rest: REST[p.phase], instr,
+      dropset: ds && wi === 4 && p.phase === "Medium" && metGewicht,
+      intensiteit: inst.int ?? p.stdInt ?? INT_STD[p.phase],
+      tempo: mode === "Isokinetic" ? null : mode === "Elastic" ? "snel en veerkrachtig, zonder pauze" : TEMPO[p.phase].toLowerCase(),
+      rest: inst.rest ?? p.stdRest ?? REST[p.phase], instr,
     };
   });
 }
@@ -673,7 +689,7 @@ function PatientLogin({ onLogin }) {
               <h2 style={{ fontSize: 22, color: "var(--tekst)" }}>Welkom</h2>
               <p className="klein" style={{ marginTop: 0 }}>Vul de code in die op je SmartGym-kaartje staat.</p>
               <label className="veld" style={{ textAlign: "left", margin: "16px 0" }}>Jouw code
-                <input className="codeinvoer" value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false}
+                <input className="codeinvoer" size={6} value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" autoCorrect="off" spellCheck={false}
                   onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
                   onKeyDown={(e) => e.key === "Enter" && code.length === 6 && setStap("pin")} placeholder="ABC123" />
               </label>
@@ -851,11 +867,12 @@ function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
         </div>
         <div className="cijfers">
           <div className="cijfer"><b>{ex.sets}</b><span>sets</span></div>
-          <div className="cijfer"><b>{ex.reps}</b><span>{ex.machine === "Leg press" && p.phase === "Sport" ? "herh. per been" : "herhalingen"}</span></div>
+          <div className="cijfer"><b>{ex.reps}</b><span>{ex.toestel === "Leg press" && p.phase === "Sport" ? "herh. per been" : "herhalingen"}</span></div>
           <div className="cijfer"><b>{ex.rest}</b><span>sec rust</span></div>
         </div>
         <p style={{ margin: "14px 0 4px" }}>{ex.instr}</p>
-        <p className="klein" style={{ margin: 0 }}>Tempo: {ex.tempo}.{ex.inzet ? ` ${ex.inzet}.` : ""}</p>
+        {ex.tempo && <p className="klein" style={{ margin: 0 }}>Tempo: {ex.tempo}.</p>}
+        <p className="klein" style={{ margin: "2px 0 0" }}>Intensiteit: {intTekst(ex.intensiteit)}.</p>
         {ex.dropset && <p className="notitie oranje" style={{ marginTop: 12 }}>Laatste set is een drop set: na je laatste herhaling direct 20% lichter en doorgaan tot het niet meer lukt. Twee keer.</p>}
       </div>
 
@@ -1143,10 +1160,10 @@ function TestVelden({ tests, setTests }) {
 }
 
 const FASE_INFO = {
-  Basis: { doel: "Belastbaarheid opbouwen en techniek aanleren.", wie: "Start voor de meeste patiënten: na een operatie of blessure, bij (nog) pijn of een prikkelbare klacht, weinig ervaring met krachttraining, of bij verminderde conditie.", belasting: "40–60% van de testwaarde · rust 75 s", nadruk: "Rustig tempo (2 tellen op, 3 neer)." },
-  Medium: { doel: "Spiermassa en kracht opbouwen.", wie: "Geen pijnreactie meer, techniek op orde en de doorstroomcriteria van Basis gehaald.", belasting: "60–75% · rust 90 s", nadruk: "Gecontroleerd terug. Drop sets in de voorlaatste week." },
-  Sport: { doel: "Maximale kracht, voorbereiding op sport of zwaar fysiek werk.", wie: "Sporters en patiënten met een hoge fysieke belasting die de criteria van Medium halen.", belasting: "75–85% · rust 150 s", nadruk: "Zwaar en krachtig. Eenbenige leg press." },
-  Performance: { doel: "Explosiviteit en snelheid, laatste stap richting volledige sporthervatting.", wie: "Alleen na het halen van de criteria van Sport.", belasting: "35–55% · rust 150 s (leg press: krachtonderhoud op 80%)", nadruk: "Explosief en snel." },
+  Basis: { doel: "Belastbaarheid opbouwen en techniek aanleren.", wie: "Start voor de meeste patiënten: na een operatie of blessure, bij (nog) pijn of een prikkelbare klacht, weinig ervaring met krachttraining, of bij verminderde conditie.", belasting: "40–60% van de testwaarde · rust 75 s · intensiteit 7", nadruk: "Rustig tempo (2 tellen op, 3 neer)." },
+  Medium: { doel: "Spiermassa en kracht opbouwen.", wie: "Geen pijnreactie meer, techniek op orde en de doorstroomcriteria van Basis gehaald.", belasting: "60–75% · rust 90 s · intensiteit 8", nadruk: "Gecontroleerd terug. Drop sets in de voorlaatste week." },
+  Sport: { doel: "Maximale kracht, voorbereiding op sport of zwaar fysiek werk.", wie: "Sporters en patiënten met een hoge fysieke belasting die de criteria van Medium halen.", belasting: "75–85% · rust 150 s · intensiteit 10", nadruk: "Zwaar en krachtig. Eenbenige leg press." },
+  Performance: { doel: "Explosiviteit en snelheid, laatste stap richting volledige sporthervatting.", wie: "Alleen na het halen van de criteria van Sport.", belasting: "35–55% · rust 150 s · intensiteit 10, zo snel mogelijk (leg press: krachtonderhoud op 80%)", nadruk: "Explosief en snel." },
 };
 
 function FaseUitleg({ sluit }) {
@@ -1171,7 +1188,7 @@ function FaseUitleg({ sluit }) {
           </div>
         ))}
       </div>
-      <p className="klein" style={{ marginBottom: 0, marginTop: 12 }}>Belasting = percentage van de testwaarde (geschatte 1RM). De percentages komen uit het schema in deze app. Alle oefeningen staan standaard op Standard en 3 × 10; per patiënt en per oefening kun je dat aanpassen.</p>
+      <p className="klein" style={{ marginBottom: 0, marginTop: 12 }}>Belasting = percentage van de testwaarde (geschatte 1RM). De percentages komen uit het schema in deze app. Alle oefeningen staan standaard op Standard en 3 × 10; rust en intensiteit volgen de fase. Per patiënt en per oefening kun je dat allemaal aanpassen. Intensiteit is op een schaal van 0 (heel licht) tot 10 (maximaal).</p>
     </section>
   );
 }
@@ -1267,6 +1284,8 @@ function Inloggegevens({ p, bewaarPin }) {
   );
 }
 
+const FT_SUGGESTIES = ["Chest press", "Row", "Pallof press", "Houthakker", "Face pull", "Lat pulldown eenarmig", "Triceps pushdown", "Biceps curl", "Squat met kabel", "Lunge met kabel", "Heupextensie staand", "Heupabductie staand", "Exorotatie schouder", "Endorotatie schouder"];
+
 function EigenOefening({ p, m, bewaar }) {
   const huidig = (p.ftEigen || {})[m] || {};
   const [open, setOpen] = useState(false);
@@ -1349,6 +1368,8 @@ function Trainingsgewichten({ p, bewaar }) {
         <label>Sets<select value={p.stdSets ?? STD_SETS} onChange={(e) => bewaar({ ...p, stdSets: Number(e.target.value) })}>{SETS_OPTIES.map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
         <span style={{ paddingBottom: 8 }}>×</span>
         <label>Herhalingen<select value={p.stdReps ?? STD_REPS} onChange={(e) => bewaar({ ...p, stdReps: Number(e.target.value) })}>{REPS_OPTIES.map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+        <label>Rust tussen sets<select value={p.stdRest ?? ""} onChange={(e) => bewaar({ ...p, stdRest: e.target.value === "" ? null : Number(e.target.value) })}><option value="">volgens fase ({REST[p.phase]} s)</option>{REST_OPTIES.map((n) => <option key={n} value={n}>{n} s</option>)}</select></label>
+        <label>Intensiteit (0–10)<select value={p.stdInt ?? ""} onChange={(e) => bewaar({ ...p, stdInt: e.target.value === "" ? null : Number(e.target.value) })}><option value="">volgens fase ({INT_STD[p.phase]})</option>{INT_OPTIES.map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
         <span className="klein" style={{ paddingBottom: 8 }}>Geldt voor alle oefeningen, behalve waar je per oefening iets anders kiest.</span>
       </div>
       <div className="trainingen-grid">
@@ -1374,6 +1395,8 @@ function Trainingsgewichten({ p, bewaar }) {
                   <div className="instel">
                     <label>Sets<select value={ex.sets} onChange={(e) => zetInst(ex, { sets: Number(e.target.value) })}>{SETS_OPTIES.map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
                     <label>Herh.<select value={ex.reps} onChange={(e) => zetInst(ex, { reps: Number(e.target.value) })}>{REPS_OPTIES.map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+                    <label>Rust<select value={ex.rest} onChange={(e) => zetInst(ex, { rest: Number(e.target.value) })}>{[...new Set([...REST_OPTIES, ex.rest])].sort((a, b) => a - b).map((n) => <option key={n} value={n}>{n} s</option>)}</select></label>
+                    <label>Intensiteit<select value={ex.intensiteit} onChange={(e) => zetInst(ex, { int: Number(e.target.value) })}>{INT_OPTIES.map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
                     <label>Stand<select value={ex.mode} onChange={(e) => zetInst(ex, { mode: e.target.value })}>{MODES.map((m) => <option key={m}>{m}</option>)}</select></label>
                     {(ex.mode === "Standard" || ex.mode === "Eccentric") && (
                       <label>Gewicht (kg)
@@ -1402,7 +1425,7 @@ function Trainingsgewichten({ p, bewaar }) {
         );
       })}
       </div>
-      <p className="klein" style={{ marginBottom: 0 }}>Bij Eccentric vul je het excentrische gewicht in; het concentrische gewicht is dat gewicht × de ratio. Snelheid (Isokinetic) en level (Elastic) blijven staan tot je ze zelf aanpast. Een toestel dat in meerdere trainingen staat, gebruikt overal dezelfde instelling. De functional trainer heeft per training een eigen oefening en gewicht.</p>
+      <p className="klein" style={{ marginBottom: 0 }}>Bij Eccentric vul je het excentrische gewicht in; het concentrische gewicht is dat gewicht × de ratio. Snelheid (Isokinetic) en level (Elastic) blijven staan tot je ze zelf aanpast. Elke training heeft eigen instellingen: staat een toestel in meerdere trainingen, dan stel je het per training apart in.</p>
     </section>
   );
 }
