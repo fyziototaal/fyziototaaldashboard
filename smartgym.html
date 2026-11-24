@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-23.20 -->
+<!-- APP_VERSION: 2026-11-24.1 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-23.20";
+  var APP_VERSION = "2026-11-24.1";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -34,6 +34,10 @@
 <link rel="apple-touch-icon" href="smartgym-icon-180.png">
 <link rel="icon" type="image/png" href="smartgym-icon-192.png">
 <script>
+/* Patiëntkant krijgt de look van de DKN-toestellen; de fysiokant blijft in de Fyzio Totaal-huisstijl */
+if (location.hash !== "#fysio") document.documentElement.classList.add("dkn");
+</script>
+<script>
 /* Op beginscherm zetten: installatie-melding van Android/Chrome opvangen en de service worker aanmelden */
 window.__installEvt = null;
 window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__installEvt = e; window.dispatchEvent(new Event("ftsg-install")); });
@@ -55,6 +59,7 @@ if ("serviceWorker" in navigator) { window.addEventListener("load", function () 
   --rand:#e2d5df; --bg:#f3eef2; --wit:#fff; --tekst:#2a1726; --grijs:#6f6270;
   --groen:#1f9d55; --groen-l:#e3f5ea; --oranje:#d97706; --oranje-l:#fff2dc; --rood:#d0342c; --rood-l:#fde7e5;
   --schaduw:0 2px 14px rgba(130,23,109,0.08);
+  --spoor:#f1e9ef; --staaf-oud:#cdbcc9; --grad:linear-gradient(90deg,#82176D,#a8368f);
   --basis:#1f9d55; --medium:#00728e; --sport:#d97706; --performance:#82176D;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -219,6 +224,80 @@ input[type=number]{-moz-appearance:textfield}
 }
 @media (max-width:420px){.kop .sub .pil{display:none}.titel{font-size:22px}}
 
+
+/* =================== DKN-look (patiëntkant) =================== */
+html.dkn{
+  --paars:#5aa9f5; --paars-d:#0d1017; --tekst:#ffffff; --grijs:#a9b4c6; --bg:#3a4458; --rand:#4a5468;
+  --tag-p:rgba(90,169,245,.18); --tag-b:rgba(54,196,245,.16); --blauw:#36c4f5;
+  --groen:#3ddc84; --groen-l:rgba(61,220,132,.16); --oranje:#ffb547; --oranje-l:rgba(255,181,71,.16); --rood:#ff6b6b; --rood-l:rgba(255,107,107,.16);
+  --spoor:#3a4458; --staaf-oud:#4f5a70; --grad:linear-gradient(90deg,#36c4f5,#3ee6d0);
+  --kaart:#262d3c; --vlak:#343d50; --cta:linear-gradient(100deg,#3ee6d0,#36b9f5);
+  --basis:#2fbf71; --medium:#3b82f6; --sport:#f59e0b; --performance:#a855f7;
+}
+html.dkn,html.dkn body{background-color:#121620}
+html.dkn body{background-image:radial-gradient(1200px 500px at 50% -5%,#1d2535 0%,rgba(18,22,32,0) 70%);background-repeat:no-repeat;color:#fff}
+html.dkn .kop{background:#121620;border-bottom:3px solid #2b46ff;box-shadow:0 2px 14px rgba(43,70,255,.55)}
+html.dkn .logo{background:#1f2533;border-color:#36c4f5;color:#fff}
+html.dkn .pil,html.dkn .kopknop{background:#343d50;border-color:transparent;color:#fff}
+html.dkn .kaart{background:var(--kaart);box-shadow:0 6px 24px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.05)}
+html.dkn .kaart h2{color:#fff}
+html.dkn .klein{color:var(--grijs)}
+html.dkn .knop{background:var(--cta);color:#0e1420;font-weight:700;box-shadow:0 4px 18px rgba(54,196,245,.3)}
+html.dkn .knop:hover{background:var(--cta);filter:brightness(1.06)}
+html.dkn .knop:disabled{opacity:.35}
+html.dkn .knop2{background:#3a4458;border:0;color:#fff}
+html.dkn .knop2:hover{background:#465169}
+html.dkn .link{color:#5aa9f5}
+html.dkn .veld{color:var(--grijs)}
+html.dkn .veld input,html.dkn .veld select{background:#1c2230;border-color:#4a5468;color:#fff}
+html.dkn .veld input:focus{border-color:#36c4f5;box-shadow:0 0 0 3px rgba(54,196,245,.25)}
+html.dkn .codeinvoer::placeholder{color:#5b6680}
+html.dkn .pinvak span{background:#1c2230;border-color:#4a5468;color:#36c4f5}
+html.dkn .pinvak span.v{border-color:#36c4f5;box-shadow:0 0 0 2px rgba(54,196,245,.2)}
+html.dkn .key{background:#3a4458;color:#fff;box-shadow:none}
+html.dkn .key:active{background:#4d8fe0}
+html.dkn .onthoud{background:rgba(77,143,224,.18);color:#cfe3ff}
+html.dkn .melding{background:rgba(54,196,245,.14);color:#d6f3ff}
+html.dkn .melding.let{background:var(--oranje-l);color:#ffe2b3}
+html.dkn .melding.fout{background:var(--rood-l);color:#ffd2d2}
+html.dkn .notitie{background:rgba(54,196,245,.12);border-color:#36c4f5;color:#d6f3ff}
+html.dkn .notitie.oranje{background:var(--oranje-l);border-color:var(--oranje);color:#ffe2b3}
+html.dkn .tag{background:var(--tag-p);color:#9cc8ff}
+html.dkn .tag.b{background:var(--tag-b);color:#8fe3ff}
+html.dkn .oeflijst button{border-top-color:rgba(255,255,255,.07);color:#fff}
+html.dkn .stap{background:#3a4458;color:#fff}
+html.dkn .stap.klaar{background:var(--groen);color:#0e1420}
+html.dkn .gewicht{color:#fff}
+html.dkn .instelblok{background:#1c2230;border:1px solid rgba(255,255,255,.06)}
+html.dkn .instelblok .gewicht,html.dkn .instelblok [style*="font-weight: 800"]{color:#fff}
+html.dkn .cijfer{background:var(--vlak)}
+html.dkn .cijfer b{color:#fff}
+html.dkn .set{background:#3a4458;border-color:transparent;color:#c7cfdb}
+html.dkn .set.aan{background:var(--cta);color:#0e1420}
+html.dkn .fb button,html.dkn .pijn button{background:#3a4458;border-color:transparent;color:#fff}
+html.dkn .fb button.licht.aan{background:#4d8fe0;border-color:#4d8fe0;color:#fff}
+html.dkn .fb button.goed.aan{background:#2fbf71;border-color:#2fbf71;color:#0e1420}
+html.dkn .fb button.zwaar.aan{background:#f0a020;border-color:#f0a020;color:#0e1420}
+html.dkn .pijn button.ja.aan{background:#ff5d5d;border-color:#ff5d5d;color:#fff}
+html.dkn .pijn button.nee.aan{background:#5b6680;border-color:#5b6680;color:#fff}
+html.dkn .rust{color:#36c4f5}
+html.dkn .tabbar{background:#121620;border-top:1px solid rgba(255,255,255,.08)}
+html.dkn .tabbar button{color:#a9b4c6}
+html.dkn .tabbar button.aan{background:#4d8fe0;color:#fff}
+html.dkn .chip{background:#3a4458;border-color:transparent;color:#c7cfdb}
+html.dkn .chip.aan{background:#4d8fe0;border-color:#4d8fe0;color:#fff}
+html.dkn .groei{background:var(--groen-l);color:#a6f0c7}
+html.dkn .groei.neutraal{background:var(--vlak);color:#fff}
+html.dkn .staaf .waarde{color:#8fe3ff}
+html.dkn .staaf .balkje{background:#4f5a70}
+html.dkn .staaf .balkje.laatste{background:linear-gradient(180deg,#36c4f5,#3ee6d0);box-shadow:0 0 12px rgba(54,196,245,.45)}
+html.dkn .lijst .item{border-top-color:rgba(255,255,255,.07)}
+html.dkn .balk{background:#3a4458}
+html.dkn .beginbanner{border:1px solid rgba(54,196,245,.45)}
+html.dkn .voet{background:#0d1017;color:rgba(255,255,255,.4)}
+html.dkn .voet b{color:rgba(255,255,255,.75)}
+html.dkn input[type=checkbox]{accent-color:#36c4f5}
+@media print{html.dkn body{background:#fff;color:#000}html.dkn .kaart{background:#fff;color:#000}}
 .voet{background:var(--paars-d);color:rgba(255,255,255,.5);font-size:12px;text-align:center;padding:12px 16px}
 .voet b{color:rgba(255,255,255,.85)}
 @media print{.kop,.tabbar,.voet,.geenprint{display:none!important}body{background:#fff}.kaart{box-shadow:none;border:1px solid #ddd}}
@@ -675,7 +754,13 @@ function App() {
 /* ============================ PATIËNT ============================ */
 const ONTHOUD_KEY = "ftsg_onthoud";
 
+function zetThema(dkn) {
+  document.documentElement.classList.toggle("dkn", dkn);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", dkn ? "#121620" : "#82176D");
+}
+
 function PatientApp() {
+  useEffect(() => { zetThema(true); }, []);
   const [sessie, setSessie] = useState(null); // {patient, code, pin}
   const [bezig, setBezig] = useState(true);
   const [geenVerbinding, setGeenVerbinding] = useState(false);
@@ -1027,14 +1112,14 @@ function TestBalken({ p }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 14, fontSize: 12, marginBottom: 10, flexWrap: "wrap" }}>
-        {th.map((t, i) => <span key={i}><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, marginRight: 5, background: i === th.length - 1 ? "#82176D" : "#cdbcc9" }} />{t.label}</span>)}
+        {th.map((t, i) => <span key={i}><i style={{ display: "inline-block", width: 10, height: 10, borderRadius: 3, marginRight: 5, background: i === th.length - 1 ? "var(--paars)" : "var(--staaf-oud)" }} />{t.label}</span>)}
       </div>
       {rijen.map(([k, l]) => (
         <div key={k} style={{ marginBottom: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span>{l}</span><b>{th.map((t) => getal(t.tests[k]) ?? "–").join(" → ")} kg</b></div>
           {th.map((t, i) => (
-            <div key={i} style={{ height: 8, borderRadius: 99, background: "#f1e9ef", marginTop: 3 }}>
-              <div style={{ height: "100%", borderRadius: 99, width: `${((getal(t.tests[k]) || 0) / max) * 100}%`, background: i === th.length - 1 ? "linear-gradient(90deg,#82176D,#a8368f)" : "#cdbcc9" }} />
+            <div key={i} style={{ height: 8, borderRadius: 99, background: "var(--spoor)", marginTop: 3 }}>
+              <div style={{ height: "100%", borderRadius: 99, width: `${((getal(t.tests[k]) || 0) / max) * 100}%`, background: i === th.length - 1 ? "var(--grad)" : "var(--staaf-oud)" }} />
             </div>
           ))}
         </div>
@@ -1103,10 +1188,10 @@ function Voortgang({ p }) {
       <div className="titel">Jouw voortgang</div>
       <div className="kaart" style={{ display: "flex", gap: 18, alignItems: "center" }}>
         <svg className="ring" viewBox="0 0 120 120" role="img" aria-label={`${gedaan} van ${T} trainingen gedaan`}>
-          <circle cx="60" cy="60" r="50" fill="none" stroke="#f1e9ef" strokeWidth="12" />
-          <circle cx="60" cy="60" r="50" fill="none" stroke="#82176D" strokeWidth="12" strokeLinecap="round" strokeDasharray={omtrek} strokeDashoffset={omtrek * (1 - gedaan / T)} transform="rotate(-90 60 60)" />
-          <text x="60" y="58" textAnchor="middle" fontSize="28" fontWeight="700" fill="#82176D" fontFamily="Poppins">{gedaan}</text>
-          <text x="60" y="78" textAnchor="middle" fontSize="12" fill="#6f6270" fontFamily="Poppins">van {T}</text>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--spoor)" strokeWidth="12" />
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--paars)" strokeWidth="12" strokeLinecap="round" strokeDasharray={omtrek} strokeDashoffset={omtrek * (1 - gedaan / T)} transform="rotate(-90 60 60)" />
+          <text x="60" y="58" textAnchor="middle" fontSize="28" fontWeight="700" fill="var(--paars)" fontFamily="Poppins">{gedaan}</text>
+          <text x="60" y="78" textAnchor="middle" fontSize="12" fill="var(--grijs)" fontFamily="Poppins">van {T}</text>
         </svg>
         <div>
           <Fase f={p.phase} />
@@ -1120,7 +1205,7 @@ function Voortgang({ p }) {
         <div style={{ display: "flex", gap: 6 }}>
           {PHASES.map((f) => { const i = PHASES.indexOf(f), nu = PHASES.indexOf(p.phase); return (
             <div key={f} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ height: 8, borderRadius: 99, background: i <= nu ? faseKleur(f) : "#f1e9ef" }} />
+              <div style={{ height: 8, borderRadius: 99, background: i <= nu ? faseKleur(f) : "var(--spoor)" }} />
               <div style={{ fontSize: 11.5, marginTop: 4, fontWeight: i === nu ? 700 : 400, color: i === nu ? "var(--tekst)" : "var(--grijs)" }}>{f}</div>
             </div>); })}
         </div>
@@ -1174,6 +1259,7 @@ function Uitleg() {
 
 /* ============================ FYSIO ============================ */
 function FysioApp() {
+  useEffect(() => { zetThema(false); }, []);
   const [user, setUser] = useState(undefined);
   const [moetWachtwoord, setMoetWachtwoord] = useState(!DEMO && !!AUTH_TYPE);
   useEffect(() => {
@@ -1742,7 +1828,7 @@ function Hertest({ p, annuleer, bewaar }) {
           <div style={{ display: "grid", gap: 6 }}>
             {crit.map((c, i) => (
               <label key={i} style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14 }}>
-                <input type="checkbox" checked={!!checks[i]} onChange={(e) => setChecks({ ...checks, [i]: e.target.checked })} style={{ width: 18, height: 18, accentColor: "#82176D" }} />{c}
+                <input type="checkbox" checked={!!checks[i]} onChange={(e) => setChecks({ ...checks, [i]: e.target.checked })} style={{ width: 18, height: 18, accentColor: "var(--paars)" }} />{c}
               </label>
             ))}
           </div>
