@@ -1,11 +1,11 @@
-<!-- APP_VERSION: 2026-11-24.1 -->
+<!-- APP_VERSION: 2026-11-24.2 -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <script>
 /* Versiecheck: altijd de nieuwste versie laden (moet het eerste script blijven) */
 (function () {
-  var APP_VERSION = "2026-11-24.1";
+  var APP_VERSION = "2026-11-24.2";
   window.APP_VERSION = APP_VERSION;
   try {
     var al = new URLSearchParams(location.search).has("_v");
@@ -225,6 +225,22 @@ input[type=number]{-moz-appearance:textfield}
 @media (max-width:420px){.kop .sub .pil{display:none}.titel{font-size:22px}}
 
 
+.toestelscherm{background:var(--bg);border-radius:16px;padding:14px;margin:4px 0 2px}
+.ts-kop{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--grijs);margin-bottom:8px}
+.ts-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:rgba(0,0,0,.06);border-radius:12px;padding:4px}
+.ts-tabs span{text-align:center;font-weight:700;font-size:clamp(11px,3.2vw,15px);padding:9px 2px;border-radius:9px;color:var(--grijs);white-space:nowrap}
+.ts-tabs span.aan{background:#4d8fe0;color:#fff;box-shadow:0 2px 10px rgba(77,143,224,.4)}
+.ts-waarden{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px}
+.ts-label{display:block;font-size:13px;font-weight:600;color:var(--grijs)}
+.ts-waarde b{display:block;font-size:clamp(54px,15vw,88px);line-height:1;font-weight:800;color:var(--paars);letter-spacing:-1px}
+.ts-waarde small{font-size:.32em;margin-left:6px;letter-spacing:0;font-weight:700}
+.cijfer{text-align:left;padding:10px 12px}
+.cijfer .tegel-label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--grijs);font-weight:600}
+.cijfer .tegel-label svg{color:#00B6E8;flex:none}
+.cijfer b small{font-size:13px;font-weight:600;margin-left:3px;color:var(--grijs)}
+.resultaat-tegels{grid-template-columns:repeat(2,1fr)}
+.records{margin-top:12px;text-align:left;background:var(--groen-l);border-radius:12px;padding:10px 12px;display:grid;gap:4px;font-size:14px}
+
 /* =================== DKN-look (patiëntkant) =================== */
 html.dkn{
   --paars:#5aa9f5; --paars-d:#0d1017; --tekst:#ffffff; --grijs:#a9b4c6; --bg:#3a4458; --rand:#4a5468;
@@ -271,7 +287,13 @@ html.dkn .gewicht{color:#fff}
 html.dkn .instelblok{background:#1c2230;border:1px solid rgba(255,255,255,.06)}
 html.dkn .instelblok .gewicht,html.dkn .instelblok [style*="font-weight: 800"]{color:#fff}
 html.dkn .cijfer{background:var(--vlak)}
-html.dkn .cijfer b{color:#fff}
+html.dkn .cijfer b{color:#fff;font-size:28px}
+html.dkn .cijfer .tegel-label svg{color:#3ee6d0}
+html.dkn .toestelscherm{background:#1c2230;border:1px solid rgba(255,255,255,.06)}
+html.dkn .ts-tabs{background:#3a4458}
+html.dkn .ts-tabs span{color:#e6ebf3}
+html.dkn .ts-waarde b{color:#fff}
+html.dkn .records{color:#c9f5dc}
 html.dkn .set{background:#3a4458;border-color:transparent;color:#c7cfdb}
 html.dkn .set.aan{background:var(--cta);color:#0e1420}
 html.dkn .fb button,html.dkn .pijn button{background:#3a4458;border-color:transparent;color:#fff}
@@ -891,6 +913,24 @@ function PatientOmgeving({ sessie, setSessie, uitloggen }) {
   );
 }
 
+/* ---------- Tegels in de stijl van het toestelscherm ---------- */
+const ICONEN = {
+  sets: <path d="M4 18V9M10 18V5M16 18v-7M3 21h18" />,
+  herh: <path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" />,
+  rust: <><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2M9 2h6" /></>,
+  klok: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  oef: <path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12" />,
+  record: <path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4zM17 6h3a3 3 0 0 1-3 3M7 6H4a3 3 0 0 0 3 3" />,
+};
+function Tegel({ icoon, label, waarde, eenheid }) {
+  return (
+    <div className="cijfer">
+      <span className="tegel-label"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{ICONEN[icoon]}</svg>{label}</span>
+      <b>{waarde}{eenheid && <small>{eenheid}</small>}</b>
+    </div>
+  );
+}
+
 /* ---------- Op beginscherm zetten ---------- */
 const isStandalone = () => { try { return window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches; } catch { return false; } };
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -953,19 +993,44 @@ function Vandaag({ sessie, zetPatient, uitloggen }) {
   const session = useMemo(() => buildSession(p), [p.id, p.phase, p.session]);
   const aantal = Object.keys(results).length;
 
+  const [startTijd, setStartTijd] = useState(null);
+  const [resultaat, setResultaat] = useState(null);
   const afronden = async () => {
     setOpslaan(true); setFout("");
     const np = verwerkTraining(p, session, results);
-    try { await store.patientOpslaan(np, sessie.code, sessie.pin); zetPatient(np); setScherm("klaar"); setResults({}); }
+    // samenvatting voor het resultaatscherm
+    const vorigMax = {};
+    (p.history || []).forEach((h) => { if (h.weight > 0) { const t = machineLabel(h.machine); vorigMax[t] = Math.max(vorigMax[t] || 0, h.weight); } });
+    const gedaanEx = session.filter((ex) => results[ex.machine]);
+    const records = gedaanEx.filter((ex) => ex.kg > 0 && vorigMax[ex.toestel] && ex.kg > vorigMax[ex.toestel]).map((ex) => ({ naam: ex.oef, kg: ex.kg }));
+    const samenvatting = {
+      duur: startTijd ? Math.round((Date.now() - startTijd) / 1000) : null,
+      oefeningen: gedaanEx.length, totaal: session.length,
+      sets: gedaanEx.reduce((n, ex) => n + (results[ex.machine].sets ?? ex.sets), 0),
+      records, goed: gedaanEx.filter((ex) => results[ex.machine].fb === "goed").length,
+    };
+    try { await store.patientOpslaan(np, sessie.code, sessie.pin); zetPatient(np); setResultaat(samenvatting); setScherm("klaar"); setResults({}); setStartTijd(null); }
     catch { setFout("Opslaan lukte niet. Controleer je internet en probeer het nog een keer."); }
     setOpslaan(false);
   };
 
+  const mmss = (sec) => `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
   if (scherm === "klaar") return (
-    <div className="kaart fade" style={{ textAlign: "center", padding: 28 }}>
-      <div style={{ fontSize: 52 }}>🎉</div>
-      <h2 style={{ fontSize: 24, color: "var(--tekst)" }}>Training opgeslagen</h2>
-      <p className="klein">Goed gedaan, {voornaam(p.name)}. Je feedback past je volgende training automatisch aan.</p>
+    <div className="kaart fade resultaat" style={{ textAlign: "center", padding: 24 }}>
+      <h2 style={{ fontSize: 26, color: "var(--tekst)", margin: "4px 0 2px" }}>Trainingsresultaat</h2>
+      <p style={{ margin: "0 0 16px", fontWeight: 600 }}>{resultaat && resultaat.records.length ? "Wat een prestatie! 🎉" : "Goed gedaan, " + voornaam(p.name) + "! 🎉"}</p>
+      {resultaat && (
+        <div className="cijfers resultaat-tegels">
+          {resultaat.duur != null && <Tegel icoon="klok" label="Trainingsduur" waarde={mmss(resultaat.duur)} />}
+          <Tegel icoon="oef" label="Oefeningen" waarde={`${resultaat.oefeningen}/${resultaat.totaal}`} />
+          <Tegel icoon="sets" label="Sets" waarde={resultaat.sets} />
+          <Tegel icoon="record" label="Nieuwe records" waarde={resultaat.records.length} />
+        </div>
+      )}
+      {resultaat && resultaat.records.length > 0 && (
+        <div className="records">{resultaat.records.map((r) => <div key={r.naam}>🏆 Nieuw record op de <b>{r.naam}</b>: {nl(r.kg)} kg</div>)}</div>
+      )}
+      <p className="klein" style={{ marginTop: 14 }}>Je training is opgeslagen. Je feedback past je volgende training automatisch aan.</p>
       {p.phaseDone && <p className="notitie oranje" style={{ textAlign: "left" }}>Je hebt alle trainingen van deze fase gedaan. Je fysiotherapeut plant de hertest met je in.</p>}
       <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
         <button className="knop" onClick={() => setScherm("overzicht")}>Terug naar overzicht</button>
@@ -1022,7 +1087,7 @@ function Vandaag({ sessie, zetPatient, uitloggen }) {
       {fout && <div className="melding fout">{fout}</div>}
       <div style={{ display: "grid", gap: 10 }}>
         {aantal < session.length
-          ? <button className="knop vol" onClick={() => { setIdx(session.findIndex((e) => !results[e.machine])); setScherm("oefening"); window.scrollTo(0, 0); }}>{aantal ? "Verder met training" : "Start training"}</button>
+          ? <button className="knop vol" onClick={() => { if (!startTijd) setStartTijd(Date.now()); setIdx(session.findIndex((e) => !results[e.machine])); setScherm("oefening"); window.scrollTo(0, 0); }}>{aantal ? "Verder met training" : "Start training"}</button>
           : <button className="knop vol" disabled={opslaan} onClick={afronden}>{opslaan ? "Bezig met opslaan…" : "Training afronden"}</button>}
         {aantal > 0 && aantal < session.length && <button className="knop2" disabled={opslaan} onClick={afronden}>Stoppen en opslaan</button>}
       </div>
@@ -1049,25 +1114,25 @@ function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
       <div className="kaart" style={{ borderTop: `6px solid ${faseKleur(p.phase)}` }}>
         <span className="tag b">{machineLabel(ex.machine)}</span>
         <h2 style={{ fontSize: 24, color: "var(--tekst)", margin: "8px 0 10px", lineHeight: 1.2 }}>{ex.oef}</h2>
-        <div className="instelblok">
-          <div className="klein" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Stand op het toestel</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "var(--tekst)", marginBottom: 6 }}>{ex.mode}</div>
-          {ex.ontbreekt ? <div className="notitie oranje">Voor dit toestel is nog niet alles ingesteld. Vraag je fysiotherapeut wat je moet instellen.</div>
-            : ex.mode === "Standard" ? <div className="gewicht">{nl(ex.kg)}<span style={{ fontSize: ".3em", marginLeft: 6, letterSpacing: 0 }}>kg</span></div>
-            : ex.mode === "Eccentric" ? (<>
-                <div style={{ display: "flex", gap: 18, alignItems: "flex-end", flexWrap: "wrap" }}>
-                  <div><div className="klein">Gewicht</div><div style={groot}>{nl(ex.kg)}<span style={{ fontSize: ".35em", marginLeft: 4 }}>kg</span></div></div>
-                  <div><div className="klein">Ratio</div><div style={groot}>{nl(ex.ratio)}</div></div>
-                </div>
-              </>)
-            : ex.mode === "Isokinetic" ? <div style={groot}>{nl(ex.speed)}<span style={{ fontSize: ".35em", marginLeft: 6 }}>m/s</span></div>
-            : <div style={groot}><span style={{ fontSize: ".45em", marginRight: 8 }}>Level</span>{ex.level}</div>}
-          <div className="klein" style={{ marginTop: 8 }}>{mi.plain}</div>
+        <div className="toestelscherm">
+          <div className="ts-kop">Zo stel je het toestel in</div>
+          <div className="ts-tabs" role="list" aria-label="Stand op het toestel">
+            {MODES.map((m) => <span key={m} role="listitem" className={m === ex.mode ? "aan" : ""} aria-current={m === ex.mode ? "true" : undefined}>{m}</span>)}
+          </div>
+          {ex.ontbreekt ? <div className="notitie oranje" style={{ marginTop: 12 }}>Voor dit toestel is nog niet alles ingesteld. Vraag je fysiotherapeut wat je moet instellen.</div> : (
+            <div className="ts-waarden">
+              {(ex.mode === "Standard" || ex.mode === "Eccentric") && <div className="ts-waarde"><span className="ts-label">Weight</span><b>{nl(ex.kg)}<small>kg</small></b></div>}
+              {ex.mode === "Eccentric" && <div className="ts-waarde"><span className="ts-label">Ratio</span><b>{nl(ex.ratio)}</b></div>}
+              {ex.mode === "Isokinetic" && <div className="ts-waarde"><span className="ts-label">Speed</span><b>{nl(ex.speed)}<small>m/s</small></b></div>}
+              {ex.mode === "Elastic" && <div className="ts-waarde"><span className="ts-label">Level</span><b>{ex.level}</b></div>}
+            </div>
+          )}
+          <div className="klein" style={{ marginTop: 10 }}>{mi.plain}</div>
         </div>
         <div className="cijfers">
-          <div className="cijfer"><b>{ex.sets}</b><span>sets</span></div>
-          <div className="cijfer"><b>{ex.reps}</b><span>{ex.toestel === "Leg press" && p.phase === "Sport" ? "herh. per been" : "herhalingen"}</span></div>
-          <div className="cijfer"><b>{ex.rest}</b><span>sec rust</span></div>
+          <Tegel icoon="sets" label="Sets" waarde={ex.sets} />
+          <Tegel icoon="herh" label={ex.toestel === "Leg press" && p.phase === "Sport" ? "Herh. per been" : "Herhalingen"} waarde={ex.reps} />
+          <Tegel icoon="rust" label="Rust" waarde={ex.rest} eenheid="sec" />
         </div>
         <p style={{ margin: "14px 0 4px" }}>{ex.instr}</p>
         {ex.tempo && <p className="klein" style={{ margin: 0 }}>Tempo: {ex.tempo}.</p>}
@@ -1096,7 +1161,7 @@ function Oefening({ p, ex, nr, totaal, start, terug, bewaar }) {
           <button className={`nee ${pijn === false ? "aan" : ""}`} onClick={() => setPijn(false)}>Nee</button>
           <button className={`ja ${pijn === true ? "aan" : ""}`} onClick={() => setPijn(true)}>Ja</button>
         </div>
-        <button className="knop vol" style={{ marginTop: 16 }} disabled={!fb || pijn === null} onClick={() => bewaar({ fb, pain: pijn })}>
+        <button className="knop vol" style={{ marginTop: 16 }} disabled={!fb || pijn === null} onClick={() => bewaar({ fb, pain: pijn, sets: gedaan })}>
           {nr < totaal ? "Opslaan en volgende oefening" : "Opslaan"}
         </button>
       </div>
