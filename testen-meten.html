@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-11-26.4 -->
+<!-- APP_VERSION: 2026-11-26.5 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-11-26.4";
+  const APP_VERSION = "2026-11-26.5";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -281,7 +281,13 @@
   /* Modal */
   #modal2 .modal-bg{z-index:110}
   .tag-b{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;background:#fff1d6;color:#8a5a00;margin-right:4px;vertical-align:1px}
-  .lc-item{border:1px solid var(--line,#e2d5df);border-radius:12px;padding:10px;margin-top:10px}
+  .lc-item{border:1.5px solid var(--line,#e2d5df);border-radius:12px;padding:12px;margin-top:10px;transition:border-color .15s}
+  .lc-item.done{border-color:#2e9d5b}
+  .lc-item.weg .lc-txt{text-decoration:line-through;opacity:.55}
+  .lc-txt{font-size:14px;line-height:1.5}
+  .lc-opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .lc-opt{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--line,#e2d5df);border-radius:20px;font-size:13px;cursor:pointer;min-height:36px}
+  .lc-opt:has(input:checked){border-color:#82176D;background:rgba(130,23,109,.08);font-weight:600}
   .modal-bg{position:fixed;inset:0;background:rgba(42,22,38,.55);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:40px 12px;overflow-y:auto}
   .modal{background:var(--surface);border-radius:22px;box-shadow:var(--shadow-lg);width:100%;max-width:640px;padding:22px}
   .modal.wide{max-width:860px}
@@ -1328,12 +1334,15 @@ function fixAi(t){
   return t;
 }
 const LOAD_RE = /(opbouw|opbouwen|bouw\w* .{0,40}\bop\b|belast|wandel|hardlo|loop|fiets|sport|train\w* .{0,20}(per week|keer|minuten)|afstand|kilometer|\bkm\b|minuten|uur per|rust|pijngrens|pijn|werk|hervat|frequentie|per week|dagelijks|intensiteit|wedstrijd)/i;
-function loadItems(t){
-  const L = String(t || '').split('\n'); let sec = '';
+const normAdv = l => stripMarks(l).replace(/^\s*\*\s+/, '').replace(/\s+/g, ' ').trim();
+function advFrom(t){ return String(t || '').split('\n').filter(l => /\[B\]/.test(l)).map(normAdv); }
+// Belastingsadviezen: door de AI gemarkeerd (opgeslagen lijst of [B]) of herkend aan woorden in "Aan de slag"
+function loadItems(t, adv){
+  const set = new Set((adv || []).map(normAdv)), L = String(t || '').split('\n'); let sec = '';
   return L.map((l, i) => { if(isHeadingLine(l)) sec = l.trim().toLowerCase(); return {i, l, sec}; })
-    .filter(x => /\[B\]/.test(x.l) || (sec => sec === 'aan de slag')(x.sec) && /^\s*\*\s/.test(x.l) && LOAD_RE.test(x.l) && !/physitrack/i.test(x.l));
+    .filter(x => x.l.trim() && !isHeadingLine(x.l) && (/\[B\]/.test(x.l) || set.has(normAdv(x.l)) || (x.sec === 'aan de slag' && /^\s*\*\s/.test(x.l) && LOAD_RE.test(x.l) && !/physitrack/i.test(x.l))));
 }
-function aiTextHTML(t){ t = cleanAi(t); return esc(t).split('\n').map(line => isHeadingLine(line) ? '<span class="h">' + line + '</span>' : line.replace(/\[B\]\s*/g, '<span class="tag-b" title="Advies over belasting: wordt vóór de PDF ter controle voorgelegd">belasting</span>')).join('\n'); }
+function aiTextHTML(t){ t = cleanAi(t); return esc(t).split('\n').map(line => isHeadingLine(line) ? '<span class="h">' + line + '</span>' : stripMarks(line)).join('\n'); }
 function isHeadingLine(l){ const s = l.trim(); return s && s.length < 60 && !/[.:!?]$/.test(s) && !s.startsWith('*') && !/^\d/.test(s); }
 function renderAiTab(){
   const list = S.patient.samenvattingen.slice().sort((a,b) => (b.created || '').localeCompare(a.created || ''));
@@ -1754,9 +1763,10 @@ async function runAi(){
     out.innerHTML = '<div class="banner info" style="margin-top:12px"><span class="spinner"></span> Het verslag wordt nagekeken op spelling, woordkeus en verbanden…</div>';
     let tekst = concept;
     try{ const nagekeken = fixAi(await callClaude(key, buildReviewPrompt(concept, moments, context))); if(nagekeken.length > concept.length * 0.6) tekst = nagekeken; } catch(e){ console.warn('Nakijken mislukt', e); }
-    const bad = bannedIn(stripMarks(tekst));
+    DRAFT_ADV = advFrom(tekst); tekst = stripMarks(tekst);
+    const bad = bannedIn(tekst);
     out.innerHTML = `${bad.length ? `<div class="banner err" style="margin-top:12px">Let op, controleer deze woorden in de tekst: ${bad.map(esc).join(', ')}</div>` : ''}<label class="f" style="margin-top:12px">Resultaat (je kunt het hier nog aanpassen)<textarea class="inp" id="ai-result" style="min-height:320px;font-size:13.5px;line-height:1.6">${esc(tekst)}</textarea></label>
-      <p class="small muted" style="margin:6px 0 0">[B] = advies over belasting. Deze adviezen krijg je vóór het maken van de PDF ter controle te zien; in de PDF en bij kopiëren staat de markering er niet in.</p>`;
+      <p class="small muted" style="margin:6px 0 0">Adviezen over belasting moet je vóór het maken van de PDF nog bevestigen of aanpassen.</p>`;
     act.innerHTML = `<button class="btn" data-act="closeModal">Niet opslaan</button><button class="btn" data-act="copyAiDraft">📋 Kopiëren</button><button class="btn" data-act="aiPdfDraft" data-ids="${ids.join(',')}">📄 PDF</button><button class="btn primary" data-act="saveAi" data-ids="${ids.join(',')}">💾 Opslaan bij patiënt</button>`;
   } catch(e){
     out.innerHTML = `<div class="banner err" style="margin-top:12px">Genereren mislukt: ${esc(e.message)}${/auth|key|401/i.test(e.message) ? '<br><button class="linkbtn" data-act="resetKey">API-key opnieuw invoeren</button>' : ''}</div>`;
@@ -1777,21 +1787,39 @@ function uploadNaarDrive(doc, bestandsnaam){
     return true;
   } catch(e){ return false; }
 }
-let LOADCHECK = null;
-function checkLoadThenPdf(tekst, ids, datums, save){
+let LOADCHECK = null, DRAFT_ADV = [];
+function checkLoadThenPdf(tekst, ids, datums, adv, save){
   if(!tekst){ toast('Er is nog geen tekst', true); return; }
-  const items = loadItems(tekst);
+  const items = loadItems(tekst, adv);
   if(!items.length){ aiPdf(stripMarks(tekst), ids, datums); return; }
   LOADCHECK = {tekst, ids, datums, save, items};
+  const opt = (k, v, lbl) => `<label class="lc-opt"><input type="radio" name="lc${k}" value="${v}"> ${lbl}</label>`;
   $('#modal2').innerHTML = `<div class="modal-bg" data-act="bgCloseCheck"><div class="modal wide" role="dialog">
-    <h2>Adviezen over belasting controleren</h2>
-    <p class="small" style="margin:6px 0 0">Deze adviezen gaan over wat ${esc(S.patient.voornaam)} wel of niet kan belasten. Klopt dit met wat jullie met de patiënt hebben afgesproken? Pas de tekst aan of laat het advies weg voordat de PDF wordt gemaakt.</p>
-    ${items.map((x, k) => `<div class="lc-item"><textarea class="inp" data-li="${k}" style="min-height:64px;font-size:13.5px;line-height:1.5">${esc(stripMarks(x.l.replace(/^\s*\*\s+/, '')))}</textarea>
-      <label class="small" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" data-lo="${k}"> Dit advies weglaten</label></div>`).join('')}
-    <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-weight:600"><input type="checkbox" id="lc-ok" style="margin-top:3px"> Ik heb deze adviezen gecontroleerd en ze kloppen met wat met de patiënt is afgesproken</label>
-    <div class="actions"><button class="btn" data-act="closeCheck">Annuleren</button><button class="btn primary" data-act="loadOk">📄 Akkoord, maak PDF</button></div>
+    <h2>Adviezen over belasting bevestigen</h2>
+    <p class="small" style="margin:6px 0 0">Deze adviezen gaan over wat ${esc(S.patient.voornaam)} wel of niet kan belasten. Kies per advies of je het ermee eens bent, het wilt aanpassen of het wilt weglaten. Pas als je alle adviezen hebt beoordeeld, kun je de PDF maken.</p>
+    ${items.map((x, k) => `<div class="lc-item" data-k="${k}">
+      <div class="lc-txt">${esc(normAdv(x.l))}</div>
+      <div class="lc-opts">${opt(k, 'ok', '✅ Akkoord')}${opt(k, 'edit', '✏️ Aanpassen')}${opt(k, 'weg', '🗑️ Weglaten')}</div>
+      <textarea class="inp" data-li="${k}" style="display:none;min-height:64px;margin-top:8px;font-size:13.5px;line-height:1.5">${esc(normAdv(x.l))}</textarea></div>`).join('')}
+    <div class="actions"><span class="small muted" id="lc-status" style="margin-right:auto;align-self:center"></span><button class="btn" data-act="closeCheck">Annuleren</button><button class="btn primary" data-act="loadOk" id="lc-go" disabled>📄 Maak PDF</button></div>
   </div></div>`;
+  lcUpdate();
 }
+function lcUpdate(){
+  const P = LOADCHECK; if(!P) return;
+  let open = 0;
+  P.items.forEach((x, k) => {
+    const v = (document.querySelector('input[name="lc' + k + '"]:checked') || {}).value, ta = document.querySelector('[data-li="' + k + '"]'), box = document.querySelector('.lc-item[data-k="' + k + '"]');
+    ta.style.display = v === 'edit' ? '' : 'none';
+    box.classList.toggle('done', !!v && !(v === 'edit' && !ta.value.trim()));
+    box.classList.toggle('weg', v === 'weg');
+    if(!v || (v === 'edit' && !ta.value.trim())) open++;
+  });
+  $('#lc-go').disabled = open > 0;
+  $('#lc-status').textContent = open ? 'Nog ' + open + ' van ' + P.items.length + ' te beoordelen' : 'Alles beoordeeld';
+}
+document.addEventListener('change', e => { if(e.target.closest && e.target.closest('#modal2')) lcUpdate(); });
+document.addEventListener('input', e => { if(e.target.closest && e.target.closest('#modal2')) lcUpdate(); });
 async function aiPdf(tekst, momentIds, datums){
   if(!tekst){ toast('Er is nog geen tekst', true); return; }
   try{
@@ -2519,32 +2547,34 @@ const ACT = {
   checkAll(el){ const bx = [...document.querySelectorAll('input[data-g="' + el.dataset.g + '"]')]; const all = bx.every(b => b.checked); bx.forEach(b => b.checked = !all); },
   resetKey(){ try{ localStorage.removeItem('ft_apikey'); } catch(e){} toast('Key verwijderd, klik opnieuw op Genereren'); const b = document.querySelector('[data-act="runAi"]'); if(b) b.disabled = false; },
   copyAiDraft(){ copyText(stripMarks(cleanAi($('#ai-result').value))); },
-  aiPdfDraft(el){ checkLoadThenPdf(cleanAi($('#ai-result').value), (el.dataset.ids || '').split(','), null, t => { const ta = $('#ai-result'); if(ta) ta.value = t; }); },
+  aiPdfDraft(el){ checkLoadThenPdf(cleanAi($('#ai-result').value), (el.dataset.ids || '').split(','), null, DRAFT_ADV, (t, adv) => { const ta = $('#ai-result'); if(ta) ta.value = t; DRAFT_ADV = adv; }); },
   aiPdfSaved(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(!s) return;
-    checkLoadThenPdf(cleanAi(s.tekst), s.momentIds || [], s.momenten, async t => { if(t === s.tekst) return; try{ await savePatient(p => { const z = p.samenvattingen.find(x => x.id === s.id); if(z){ z.tekst = t; z.edited = new Date().toISOString(); } }); render(); } catch(e){ toast('Aanpassing niet opgeslagen: ' + e.message, true); } }); },
+    checkLoadThenPdf(cleanAi(s.tekst), s.momentIds || [], s.momenten, s.belasting || [], async (t, adv) => { try{ await savePatient(p => { const z = p.samenvattingen.find(x => x.id === s.id); if(z){ if(z.tekst !== t) z.edited = new Date().toISOString(); z.tekst = t; z.belasting = adv; z.belastingAkkoord = new Date().toISOString(); } }); render(); } catch(e){ toast('Aanpassing niet opgeslagen: ' + e.message, true); } }); },
   closeCheck(){ $('#modal2').innerHTML = ''; }, bgCloseCheck(el, e){ if(e.target === el) $('#modal2').innerHTML = ''; },
   loadOk(){
     const P = LOADCHECK; if(!P) return;
-    if(!$('#lc-ok').checked){ toast('Vink eerst aan dat je de adviezen hebt gecontroleerd', true); return; }
-    const L = P.tekst.split('\n'), drop = new Set();
-    P.items.forEach((x, k) => {
-      const weg = document.querySelector('[data-lo="' + k + '"]').checked, nieuw = document.querySelector('[data-li="' + k + '"]').value.replace(/\s+/g, ' ').trim();
-      if(weg || !nieuw){ drop.add(x.i); return; }
-      L[x.i] = (/^\s*\*\s/.test(x.l) ? '* ' : '') + '[B] ' + nieuw.replace(/^\*\s*/, '').replace(/^\[B\]\s*/, '');
-    });
-    const tekst = L.filter((l, i) => !drop.has(i)).join('\n');
+    const L = P.tekst.split('\n'), drop = new Set(), adv = [];
+    for(let k = 0; k < P.items.length; k++){
+      const x = P.items[k], v = (document.querySelector('input[name="lc' + k + '"]:checked') || {}).value, nieuw = document.querySelector('[data-li="' + k + '"]').value.replace(/\s+/g, ' ').trim();
+      if(!v || (v === 'edit' && !nieuw)){ toast('Beoordeel eerst alle adviezen', true); return; }
+      if(v === 'weg'){ drop.add(x.i); continue; }
+      const txt = v === 'edit' ? nieuw.replace(/^\*\s*/, '') : normAdv(x.l);
+      L[x.i] = (/^\s*\*\s/.test(x.l) ? '* ' : '') + txt; adv.push(txt);
+    }
+    const tekst = stripMarks(L.filter((l, i) => !drop.has(i)).join('\n'));
     $('#modal2').innerHTML = ''; LOADCHECK = null;
-    if(P.save) P.save(tekst);
+    if(P.save) P.save(tekst, adv);
     aiPdf(stripMarks(tekst), P.ids, P.datums);
   },
   async saveAi(el){
-    const tekst = fixAi($('#ai-result').value); if(!tekst) return;
-    const s = {id:uid('s'), created:new Date().toISOString(), momenten:el.dataset.ids.split(',').map(id => S.patient.momenten.find(m => m.id === id)?.datum).filter(Boolean), momentIds:el.dataset.ids.split(','), tekst};
+    const raw = fixAi($('#ai-result').value); if(!raw) return;
+    const tekst = stripMarks(raw), adv = [...new Set([...DRAFT_ADV, ...advFrom(raw)])];
+    const s = {id:uid('s'), created:new Date().toISOString(), momenten:el.dataset.ids.split(',').map(id => S.patient.momenten.find(m => m.id === id)?.datum).filter(Boolean), momentIds:el.dataset.ids.split(','), tekst, belasting:adv};
     try{ await savePatient(p => { p.samenvattingen.push(s); }); closeModal(); S.dashTab = 'ai'; render(); toast('Samenvatting opgeslagen'); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); }
   },
   copyAi(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(s) copyText(stripMarks(cleanAi(s.tekst))); },
   editAi(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(!s) return;
-    openModal(`<h2>Samenvatting bewerken</h2><textarea class="inp" id="ai-edit" style="min-height:380px;margin-top:10px;font-size:13.5px;line-height:1.6">${esc(s.tekst)}</textarea><p class="small muted" style="margin:6px 0 0">[B] = advies over belasting; dat krijg je vóór het maken van de PDF ter controle te zien.</p><div class="actions"><button class="btn" data-act="closeModal">Annuleren</button><button class="btn primary" data-act="saveAiEdit" data-id="${s.id}">Opslaan</button></div>`, true); },
+    openModal(`<h2>Samenvatting bewerken</h2><textarea class="inp" id="ai-edit" style="min-height:380px;margin-top:10px;font-size:13.5px;line-height:1.6">${esc(s.tekst)}</textarea><div class="actions"><button class="btn" data-act="closeModal">Annuleren</button><button class="btn primary" data-act="saveAiEdit" data-id="${s.id}">Opslaan</button></div>`, true); },
   async saveAiEdit(el){ const t = $('#ai-edit').value; try{ await savePatient(p => { const s = p.samenvattingen.find(x => x.id === el.dataset.id); if(s){ s.tekst = t; s.edited = new Date().toISOString(); } }); closeModal(); render(); toast('Opgeslagen'); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); } },
   async delAi(el){ if(!confirm('Deze samenvatting verwijderen?')) return; try{ await savePatient(p => { p.samenvattingen = p.samenvattingen.filter(x => x.id !== el.dataset.id); }); render(); } catch(e){ toast('Verwijderen mislukt: ' + e.message, true); } }
 };
