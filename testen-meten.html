@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-11-26.2 -->
+<!-- APP_VERSION: 2026-11-26.4 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-11-26.2";
+  const APP_VERSION = "2026-11-26.4";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -279,6 +279,9 @@
   .mres .r b{display:block;font-size:12.5px;margin-bottom:2px}
 
   /* Modal */
+  #modal2 .modal-bg{z-index:110}
+  .tag-b{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:9px;background:#fff1d6;color:#8a5a00;margin-right:4px;vertical-align:1px}
+  .lc-item{border:1px solid var(--line,#e2d5df);border-radius:12px;padding:10px;margin-top:10px}
   .modal-bg{position:fixed;inset:0;background:rgba(42,22,38,.55);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:40px 12px;overflow-y:auto}
   .modal{background:var(--surface);border-radius:22px;box-shadow:var(--shadow-lg);width:100%;max-width:640px;padding:22px}
   .modal.wide{max-width:860px}
@@ -323,6 +326,7 @@
   <footer class="app-footer"><strong>Fyzio Totaal</strong> · Testen &amp; meten · versie <span class="num" id="app-version"></span></footer>
 </div>
 <div id="modal-root"></div>
+<div id="modal2"></div>
 <div id="toast"></div>
 
 <script>
@@ -1308,7 +1312,28 @@ function cleanAi(t){
     .replace(/^\s*[-•–]\s+/, '* ').replace(/^\s*\*\s+/, '* ')
     .replace(/\s+$/, '')).join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
-function aiTextHTML(t){ t = cleanAi(t); return esc(t).split('\n').map(line => isHeadingLine(line) ? '<span class="h">' + line + '</span>' : line).join('\n'); }
+// [B] markeert een advies over belasting/belastbaarheid; dat wordt vóór de PDF ter controle voorgelegd
+function stripMarks(t){ return String(t || '').replace(/\[B\]\s*/g, ''); }
+const AI_BANNED = [[/\bzwabber\w*/i, 'zwabberen'], [/\bkuitmeter\w*/i, 'kuitmeter'], [/\bbenedenlichaam\w*/i, 'benedenlichaam'], [/\buithouding\b/i, 'uithouding']];
+function bannedIn(t){ return AI_BANNED.filter(([re]) => re.test(t)).map(x => x[1]); }
+const PHYSITRACK_ZIN = '* Op basis van je testresultaten krijg je via Physitrack een oefenschema, zodat je thuis gericht aan de slag kunt.';
+function fixAi(t){
+  t = cleanAi(t).replace(/^(\*\s+)\s*\[\s*b\s*\]\s*/gim, '$1[B] ');
+  t = t.replace(/\b([Uu])ithouding\b/g, (m, u) => u + 'ithoudingsvermogen');
+  if(!/physitrack/i.test(t)){
+    const L = t.split('\n'), i = L.findIndex(l => /^aan de slag$/i.test(l.trim()));
+    if(i >= 0){ let j = i + 1; while(j < L.length && !L[j].trim()) j++; L.splice(j, 0, PHYSITRACK_ZIN); } else L.push('', 'Aan de slag', PHYSITRACK_ZIN);
+    t = L.join('\n');
+  }
+  return t;
+}
+const LOAD_RE = /(opbouw|opbouwen|bouw\w* .{0,40}\bop\b|belast|wandel|hardlo|loop|fiets|sport|train\w* .{0,20}(per week|keer|minuten)|afstand|kilometer|\bkm\b|minuten|uur per|rust|pijngrens|pijn|werk|hervat|frequentie|per week|dagelijks|intensiteit|wedstrijd)/i;
+function loadItems(t){
+  const L = String(t || '').split('\n'); let sec = '';
+  return L.map((l, i) => { if(isHeadingLine(l)) sec = l.trim().toLowerCase(); return {i, l, sec}; })
+    .filter(x => /\[B\]/.test(x.l) || (sec => sec === 'aan de slag')(x.sec) && /^\s*\*\s/.test(x.l) && LOAD_RE.test(x.l) && !/physitrack/i.test(x.l));
+}
+function aiTextHTML(t){ t = cleanAi(t); return esc(t).split('\n').map(line => isHeadingLine(line) ? '<span class="h">' + line + '</span>' : line.replace(/\[B\]\s*/g, '<span class="tag-b" title="Advies over belasting: wordt vóór de PDF ter controle voorgelegd">belasting</span>')).join('\n'); }
 function isHeadingLine(l){ const s = l.trim(); return s && s.length < 60 && !/[.:!?]$/.test(s) && !s.startsWith('*') && !/^\d/.test(s); }
 function renderAiTab(){
   const list = S.patient.samenvattingen.slice().sort((a,b) => (b.created || '').localeCompare(a.created || ''));
@@ -1609,6 +1634,33 @@ function resultLines(t, r, m){
   if(r.o) parts.push('Opmerking tester: ' + r.o);
   return '- ' + t.n + ' [' + domainOf(t.d).n + ']' + (PD[t.id] ? ' (wat de test meet: ' + PD[t.id] + ')' : '') + ': ' + parts.join(' | ');
 }
+function buildReviewPrompt(tekst, moments, context){
+  const data = moments.map(m => 'TESTMOMENT ' + fmtDate(m.datum) + (m.leeftijd ? ' | leeftijd ' + m.leeftijd : '') + '\n' + (m.results || []).map(r => { const t = testById(r.t); return t ? resultLines(t, r, m) : null; }).filter(Boolean).join('\n')).join('\n\n');
+  return `Je bent een zorgvuldige Nederlandse eindredacteur met kennis van fysiotherapie. Hieronder staat een concept-testverslag voor een patiënt van Fyzio Totaal, met de testgegevens waarop het gebaseerd is. Controleer het verslag en verbeter het waar nodig.
+
+Controleer zin voor zin:
+1. Spelling en grammatica. Let vooral op de buigings-e bij bijvoeglijke naamwoorden, ook in de vergrotende trap ("een stevigere romp", niet "een steviger romp"), op d/t, op enkelvoud/meervoud en op aaneengeschreven samenstellingen.
+2. Woordkeus. Alleen bestaande, gangbare Nederlandse woorden die een fysiotherapeut hardop tegen een patiënt zou zeggen. Vervang "uithouding" door "uithoudingsvermogen". Gebruik nooit "zwabberen", "kuitmeter" of "benedenlichaam". Herschrijf stijve of krom lopende zinnen tot natuurlijk Nederlands.
+3. Verbanden. Volgt elk oorzakelijk verband echt uit de testgegevens of de context? Is het verband aannemelijk maar niet aangetoond (bijvoorbeeld kramp of snelle vermoeidheid als mogelijke aanwijzing voor te weinig uithoudingsvermogen), formuleer het dan voorzichtig ("kan leiden tot", "kan erop wijzen", "kan een reden zijn", "past bij"). Is het verband niet aannemelijk, schrap het. "Maar" alleen bij een echte tegenstelling, "dus" alleen als het volgende werkelijk uit het voorgaande volgt, "en" alleen bij gelijkwaardige zaken. Een conclusie mag als de gegevens die ondersteunen; anders alleen beschrijven.
+4. Feiten. Elk getal, elke zijde (links/rechts), elke testnaam en elke normgrens moet kloppen met de testgegevens. Herstel afwijkingen en verwijder alles wat niet in de gegevens staat.
+5. Onder "Aan de slag" staat als eerste actie dat de patiënt op basis van de testresultaten via Physitrack een oefenschema krijgt.
+6. Elk advies over belasting of belastbaarheid (opbouw van wandelen, hardlopen of sport, afstand, duur, frequentie, rust, werk, omgaan met pijn) begint met "[B] " direct na de asterisk. Voeg die markering toe waar ze ontbreekt en laat bestaande markeringen staan.
+
+Verander niets wat niet nodig is: behoud de toon, de structuur, de kopjes en de opsommingen met "* ". Geef ALLEEN het verbeterde verslag terug, in platte tekst zonder markdown en zonder toelichting op je wijzigingen.
+
+${context ? 'CONTEXT VAN DE THERAPEUT: ' + context + '\n\n' : ''}TESTGEGEVENS:
+${data}
+
+CONCEPT-VERSLAG:
+${tekst}`;
+}
+async function callClaude(key, prompt){
+  const r = await fetch('https://api.anthropic.com/v1/messages', {method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-5', max_tokens:2500, messages:[{role:'user', content:prompt}]})});
+  const j = await r.json();
+  if(!r.ok) throw new Error(j.error?.message || r.status);
+  return (j.content || []).map(c => c.text || '').join('');
+}
 function buildPrompt(moments, context){
   const p = S.patient;
   const data = moments.map(m => {
@@ -1644,7 +1696,9 @@ TAAL EN STIJL:
 - Een "conclusie therapeut" mag je gebruiken als richting voor je verslag, maar neem vaktaal daaruit niet letterlijk over.
 - Leg LSI of symmetrie kort en eenvoudig uit als je het noemt (bijv. "je rechterbeen haalt 85% van de kracht van je linkerbeen").
 - Bij een balansschaal (zoals Berg Balance Scale): benoem de totaalscore en vat de items met puntverlies samen in gewone woorden.
-- Let op grammatica, ook bij meervoud.
+- SPELLING EN GRAMMATICA: controleer elke zin. Let speciaal op de buigings-e bij bijvoeglijke naamwoorden, ook in de vergrotende trap ("een stevigere romp", "een sterkere basis", "een betere balans"; dus niet "een steviger romp"), op d/t bij werkwoorden en op enkelvoud/meervoud van onderwerp en werkwoord.
+- WOORDKEUS: schrijf "uithoudingsvermogen", nooit "uithouding". Gebruik nooit "zwabberen", "wiebelen" of andere spreektalige woorden voor gebrek aan controle; zeg "minder stabiel" of "minder gecontroleerd". Geen kromme constructies als "je beenkracht kan meer uithoudingsvermogen gebruiken"; schrijf liever "je benen en romp hebben nog meer uithoudingsvermogen nodig" of "daar valt met training winst te halen".
+- VERBANDEN EN VERBINDINGSWOORDEN: gebruik "maar" alleen bij een echte tegenstelling, "dus" alleen als het volgende werkelijk uit het voorgaande volgt, en "en" alleen om gelijkwaardige zaken te verbinden. Trek een conclusie wanneer de testresultaten of de context van de therapeut die ondersteunen; trek geen conclusie wanneer dat niet kan, maar beschrijf dan alleen wat je zag. Een klacht of observatie (zoals kramp of snelle vermoeidheid) kan wel een aanwijzing zijn voor een mogelijke oorzaak. Benoem zo'n verband dan voorzichtig, bijvoorbeeld: "Te weinig uithoudingsvermogen in je hamstrings en onderrug kan leiden tot kramp en snelle vermoeidheid, zoals je die nu merkt." of "De kramp en snelle vermoeidheid kunnen erop wijzen dat je benen en romp nog wat meer uithoudingsvermogen nodig hebben." Gebruik stellige woorden als "dus", "geeft aan dat" of "komt door" alleen als de testresultaten het verband echt aantonen; anders "kan leiden tot", "kan erop wijzen", "kan een reden zijn" of "past bij".
 
 VERGELIJKING MET NORMWAARDEN:
 - Achter veel scores staat tussen haakjes de beoordeling van de tool met de normgrens voor de leeftijd van de patiënt, bijvoorbeeld "(Matig (60–89 s))" of "(Goed (≥90 s))". Maak bij elke test waar zo'n beoordeling bij staat in een lopende zin duidelijk hoe de patiënt scoort ten opzichte van die norm. Bijvoorbeeld: "Voor jouw leeftijd zien we graag minimaal 90 seconden; jij hield het 62 seconden vol, dus daar valt nog winst te halen." of "Met 35 herhalingen zit je ruim boven de norm."
@@ -1654,7 +1708,7 @@ VERGELIJKING MET NORMWAARDEN:
 - ">30" betekent dat de patiënt het maximum van de test (30 herhalingen) heeft gehaald; zeg dat zo ("je haalt het maximum van 30 herhalingen"). Een LSI met "hooguit" of "minstens" ervoor is een grens, geen exact getal.
 
 ROMP EN KLACHTEN IN HET ONDERLICHAAM:
-Scoort de patiënt matig of als aandachtspunt op een romptest (planktest, zijwaartse plank, Biering-Sørensen test, Double Leg Lowering Test, McGill flexor endurance test) én gaat het om klachten of testen van het onderlichaam (knie, enkel, heup, achillespees, hoptesten, eenbenige testen of de Performance check OE), leg dan in twee of drie zinnen in gewone taal uit waarom een sterkere romp ook de klachten in knie of enkel kan verminderen. De kern: je romp is de basis van waaruit je benen bewegen. Is die basis niet stevig genoeg, dan zwabberen je bekken en bovenbeen meer bij landen, springen en op één been staan; je knie zakt dan makkelijker naar binnen en je knie en enkel moeten meer opvangen. Een sterkere romp geeft meer controle over je bekken en been, waardoor de belasting beter verdeeld wordt en knie en enkel minder hoeven te compenseren. Koppel het waar mogelijk aan wat bij deze patiënt te zien was (bijvoorbeeld een knie die naar binnen zakte bij de single leg hop test). Beloof niets: schrijf "kan helpen" of "draagt bij", niet "lost op".
+Scoort de patiënt matig of als aandachtspunt op een romptest (planktest, zijwaartse plank, Biering-Sørensen test, Double Leg Lowering Test, McGill flexor endurance test) én gaat het om klachten of testen van het onderlichaam (knie, enkel, heup, achillespees, hoptesten, eenbenige testen of de Performance check OE), leg dan in twee of drie zinnen in gewone taal uit waarom een sterkere romp ook de klachten in knie of enkel kan verminderen. De kern: je romp is de basis van waaruit je benen bewegen. Is die basis niet stevig genoeg, dan bewegen je bekken en bovenbeen minder gecontroleerd bij landen, springen en op één been staan; je knie zakt dan makkelijker naar binnen en je knie en enkel moeten meer opvangen. Een sterkere romp geeft meer controle over je bekken en been, waardoor de belasting beter verdeeld wordt en knie en enkel minder hoeven te compenseren. Koppel het waar mogelijk aan wat bij deze patiënt te zien was (bijvoorbeeld een knie die naar binnen zakte bij de single leg hop test). Beloof niets: schrijf "kan helpen" of "draagt bij", niet "lost op".
 
 ADVIESTOON:
 - Als een score goed is, benoem dat positief en geef geen vervolgadvies voor dat onderdeel. Goed is goed.
@@ -1680,6 +1734,8 @@ Opsomming waarbij elke regel begint met een asterisk en een spatie (* ). 3 tot 5
 
 Aan de slag
 Concrete actielijst, elke actie begint met een asterisk en een spatie (* ). 2 tot 4 uitvoerbare acties op basis van de testresultaten. Geen vage adviezen.
+- De eerste actie is altijd: op basis van je testresultaten krijg je via Physitrack een oefenschema. Bedenk geen eigen oefenprogramma; noem hooguit kort waar het schema zich op richt (bijv. "met oefeningen voor je romp en kuiten").
+- ADVIEZEN OVER BELASTING: elk advies over belasting of belastbaarheid (bijv. wandelen, hardlopen of sporten opbouwen of afbouwen, afstand, duur, frequentie, rust, werk, omgaan met pijn) begin je met de markering [B] direct na de asterisk, dus "* [B] ...". De therapeut controleert deze adviezen voordat het verslag naar de patiënt gaat. Geef zo'n advies alleen als het aansluit bij de context van de therapeut en verzin geen getallen of schema's.
 
 Maximaal 550 woorden. Schrijf in het Nederlands, in platte tekst zonder markdown. Zorg dat elke sectie volledig is afgerond.`;
 }
@@ -1694,12 +1750,13 @@ async function runAi(){
   out.innerHTML = '<div class="banner info" style="margin-top:12px"><span class="spinner"></span> Het verslag wordt geschreven…</div>';
   act.querySelector('[data-act="runAi"]').disabled = true;
   try{
-    const r = await fetch('https://api.anthropic.com/v1/messages', {method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-5', max_tokens:2500, messages:[{role:'user', content:buildPrompt(moments, context)}]})});
-    const j = await r.json();
-    if(!r.ok) throw new Error(j.error?.message || r.status);
-    const tekst = cleanAi((j.content || []).map(c => c.text || '').join(''));
-    out.innerHTML = `<label class="f" style="margin-top:12px">Resultaat (je kunt het hier nog aanpassen)<textarea class="inp" id="ai-result" style="min-height:320px;font-size:13.5px;line-height:1.6">${esc(tekst)}</textarea></label>`;
+    const concept = fixAi(await callClaude(key, buildPrompt(moments, context)));
+    out.innerHTML = '<div class="banner info" style="margin-top:12px"><span class="spinner"></span> Het verslag wordt nagekeken op spelling, woordkeus en verbanden…</div>';
+    let tekst = concept;
+    try{ const nagekeken = fixAi(await callClaude(key, buildReviewPrompt(concept, moments, context))); if(nagekeken.length > concept.length * 0.6) tekst = nagekeken; } catch(e){ console.warn('Nakijken mislukt', e); }
+    const bad = bannedIn(stripMarks(tekst));
+    out.innerHTML = `${bad.length ? `<div class="banner err" style="margin-top:12px">Let op, controleer deze woorden in de tekst: ${bad.map(esc).join(', ')}</div>` : ''}<label class="f" style="margin-top:12px">Resultaat (je kunt het hier nog aanpassen)<textarea class="inp" id="ai-result" style="min-height:320px;font-size:13.5px;line-height:1.6">${esc(tekst)}</textarea></label>
+      <p class="small muted" style="margin:6px 0 0">[B] = advies over belasting. Deze adviezen krijg je vóór het maken van de PDF ter controle te zien; in de PDF en bij kopiëren staat de markering er niet in.</p>`;
     act.innerHTML = `<button class="btn" data-act="closeModal">Niet opslaan</button><button class="btn" data-act="copyAiDraft">📋 Kopiëren</button><button class="btn" data-act="aiPdfDraft" data-ids="${ids.join(',')}">📄 PDF</button><button class="btn primary" data-act="saveAi" data-ids="${ids.join(',')}">💾 Opslaan bij patiënt</button>`;
   } catch(e){
     out.innerHTML = `<div class="banner err" style="margin-top:12px">Genereren mislukt: ${esc(e.message)}${/auth|key|401/i.test(e.message) ? '<br><button class="linkbtn" data-act="resetKey">API-key opnieuw invoeren</button>' : ''}</div>`;
@@ -1719,6 +1776,21 @@ function uploadNaarDrive(doc, bestandsnaam){
     fetch(DRIVE_UPLOAD_URL, {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({bestandsnaam, pdfBase64:base64})}).catch(() => {});
     return true;
   } catch(e){ return false; }
+}
+let LOADCHECK = null;
+function checkLoadThenPdf(tekst, ids, datums, save){
+  if(!tekst){ toast('Er is nog geen tekst', true); return; }
+  const items = loadItems(tekst);
+  if(!items.length){ aiPdf(stripMarks(tekst), ids, datums); return; }
+  LOADCHECK = {tekst, ids, datums, save, items};
+  $('#modal2').innerHTML = `<div class="modal-bg" data-act="bgCloseCheck"><div class="modal wide" role="dialog">
+    <h2>Adviezen over belasting controleren</h2>
+    <p class="small" style="margin:6px 0 0">Deze adviezen gaan over wat ${esc(S.patient.voornaam)} wel of niet kan belasten. Klopt dit met wat jullie met de patiënt hebben afgesproken? Pas de tekst aan of laat het advies weg voordat de PDF wordt gemaakt.</p>
+    ${items.map((x, k) => `<div class="lc-item"><textarea class="inp" data-li="${k}" style="min-height:64px;font-size:13.5px;line-height:1.5">${esc(stripMarks(x.l.replace(/^\s*\*\s+/, '')))}</textarea>
+      <label class="small" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" data-lo="${k}"> Dit advies weglaten</label></div>`).join('')}
+    <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-weight:600"><input type="checkbox" id="lc-ok" style="margin-top:3px"> Ik heb deze adviezen gecontroleerd en ze kloppen met wat met de patiënt is afgesproken</label>
+    <div class="actions"><button class="btn" data-act="closeCheck">Annuleren</button><button class="btn primary" data-act="loadOk">📄 Akkoord, maak PDF</button></div>
+  </div></div>`;
 }
 async function aiPdf(tekst, momentIds, datums){
   if(!tekst){ toast('Er is nog geen tekst', true); return; }
@@ -1749,17 +1821,24 @@ async function aiPdf(tekst, momentIds, datums){
     });
     y += 27;
     const newPage = () => { doc.addPage(); y = 24; };
+    // Opdelen in hoofdstukken (kopje + inhoud); een hoofdstuk dat niet meer op de pagina past, begint op een nieuwe pagina
     const lines = tekst.split('\n');
-    lines.forEach((line, i) => {
-      if(i === 0 && /^testverslag/i.test(line.trim())) return;   // titel staat al in de kop
+    if(lines.length && /^testverslag/i.test(lines[0].trim())) lines.shift();   // titel staat al in de kop
+    const secs = []; let cur = [];
+    lines.forEach(l => { if(isHeadingLine(l) && cur.some(x => x.trim())){ secs.push(cur); cur = []; } cur.push(l); });
+    if(cur.some(x => x.trim())) secs.push(cur);
+    const isBul = l => /^\*\s/.test(l);
+    const lineH = l => { if(!l.trim()) return 2.5; if(isHeadingLine(l)) return 9; font('normal', 10.5, TXT); const b = isBul(l); return doc.splitTextToSize(b ? l.replace(/^\*\s/, '') : l, CW - (b ? 6 : 0)).length * 5.2 + (b ? 1 : 1.5); };
+    const trimEnd = s => { const a = s.slice(); while(a.length && !a[a.length-1].trim()) a.pop(); return a; };
+    const drawLine = line => {
       if(!line.trim()){ y += 2.5; return; }
-      const head = isHeadingLine(line), bullet = /^\*\s/.test(line);
-      if(head){
+      if(isHeadingLine(line)){
         if(y + 16 > BOTTOM) newPage();
         y += 2;
         doc.setFillColor(...PUR); doc.rect(M, y - 4.4, 1.5, 5.8, 'F');
         font('bold', 12.5, PUR); doc.text(line.trim(), M + 4, y); y += 7; return;
       }
+      const bullet = isBul(line);
       font('normal', 10.5, TXT);
       const wrapped = doc.splitTextToSize(bullet ? line.replace(/^\*\s/, '') : line, CW - (bullet ? 6 : 0));
       wrapped.forEach((w, k) => {
@@ -1768,6 +1847,15 @@ async function aiPdf(tekst, momentIds, datums){
         doc.text(w, M + (bullet ? 6 : 0), y); y += 5.2;
       });
       y += bullet ? 1 : 1.5;
+    };
+    secs.forEach(sec => {
+      const s = trimEnd(sec), h = s.reduce((a, l) => a + lineH(l), 0) - 2;
+      if(y + h > BOTTOM){
+        if(h <= BOTTOM - 24) newPage();                                   // past op een lege pagina: hele hoofdstuk door
+        else if(y + lineH(s[0]) + (s[1] ? lineH(s[1]) : 0) > BOTTOM) newPage();   // te lang voor één pagina: kopje niet los laten staan
+      }
+      if(y === 24) while(sec.length && !sec[0].trim()) sec = sec.slice(1);
+      sec.forEach(drawLine);
     });
     const n = doc.getNumberOfPages();
     for(let i = 1; i <= n; i++){
@@ -2069,8 +2157,10 @@ async function buildPdf(o){
     const s = p.samenvattingen.find(x => x.id === o.aiId);
     if(s){
       heading('Toelichting');
-      s.tekst.split('\n').forEach((line, i) => {
-        if(i === 0 && /^Testverslag/i.test(line.trim())) return;
+      const tl = stripMarks(cleanAi(s.tekst)).split('\n'); if(tl.length && /^Testverslag/i.test(tl[0].trim())) tl.shift();
+      const tH = l => { if(!l.trim()) return 2; if(isHeadingLine(l)) return 6.5; font('normal', 9.5); const b = /^\*\s/.test(l); return doc.splitTextToSize(b ? l.replace(/^\*\s/, '') : l, CW - (b ? 6 : 0)).length * 4.6; };
+      tl.forEach((line, i) => {
+        if(isHeadingLine(line)){ let h = 0; for(let j = i; j < tl.length && (j === i || !isHeadingLine(tl[j])); j++) h += tH(tl[j]); if(h <= BOTTOM - 30) ensure(h); }
         const head = isHeadingLine(line), bullet = /^\*\s/.test(line);
         font(head ? 'bold' : 'normal', head ? 10.5 : 9.5, head ? PUR : TXT);
         if(!line.trim()){ y += 2; return; }
@@ -2428,17 +2518,33 @@ const ACT = {
   mailAi(el){ if(MAIL_ENABLED) pdfModal(el.dataset.id); },
   checkAll(el){ const bx = [...document.querySelectorAll('input[data-g="' + el.dataset.g + '"]')]; const all = bx.every(b => b.checked); bx.forEach(b => b.checked = !all); },
   resetKey(){ try{ localStorage.removeItem('ft_apikey'); } catch(e){} toast('Key verwijderd, klik opnieuw op Genereren'); const b = document.querySelector('[data-act="runAi"]'); if(b) b.disabled = false; },
-  copyAiDraft(){ copyText(cleanAi($('#ai-result').value)); },
-  aiPdfDraft(el){ aiPdf(cleanAi($('#ai-result').value), (el.dataset.ids || '').split(',')); },
-  aiPdfSaved(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(s) aiPdf(cleanAi(s.tekst), s.momentIds || [], s.momenten); },
+  copyAiDraft(){ copyText(stripMarks(cleanAi($('#ai-result').value))); },
+  aiPdfDraft(el){ checkLoadThenPdf(cleanAi($('#ai-result').value), (el.dataset.ids || '').split(','), null, t => { const ta = $('#ai-result'); if(ta) ta.value = t; }); },
+  aiPdfSaved(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(!s) return;
+    checkLoadThenPdf(cleanAi(s.tekst), s.momentIds || [], s.momenten, async t => { if(t === s.tekst) return; try{ await savePatient(p => { const z = p.samenvattingen.find(x => x.id === s.id); if(z){ z.tekst = t; z.edited = new Date().toISOString(); } }); render(); } catch(e){ toast('Aanpassing niet opgeslagen: ' + e.message, true); } }); },
+  closeCheck(){ $('#modal2').innerHTML = ''; }, bgCloseCheck(el, e){ if(e.target === el) $('#modal2').innerHTML = ''; },
+  loadOk(){
+    const P = LOADCHECK; if(!P) return;
+    if(!$('#lc-ok').checked){ toast('Vink eerst aan dat je de adviezen hebt gecontroleerd', true); return; }
+    const L = P.tekst.split('\n'), drop = new Set();
+    P.items.forEach((x, k) => {
+      const weg = document.querySelector('[data-lo="' + k + '"]').checked, nieuw = document.querySelector('[data-li="' + k + '"]').value.replace(/\s+/g, ' ').trim();
+      if(weg || !nieuw){ drop.add(x.i); return; }
+      L[x.i] = (/^\s*\*\s/.test(x.l) ? '* ' : '') + '[B] ' + nieuw.replace(/^\*\s*/, '').replace(/^\[B\]\s*/, '');
+    });
+    const tekst = L.filter((l, i) => !drop.has(i)).join('\n');
+    $('#modal2').innerHTML = ''; LOADCHECK = null;
+    if(P.save) P.save(tekst);
+    aiPdf(stripMarks(tekst), P.ids, P.datums);
+  },
   async saveAi(el){
-    const tekst = cleanAi($('#ai-result').value); if(!tekst) return;
+    const tekst = fixAi($('#ai-result').value); if(!tekst) return;
     const s = {id:uid('s'), created:new Date().toISOString(), momenten:el.dataset.ids.split(',').map(id => S.patient.momenten.find(m => m.id === id)?.datum).filter(Boolean), momentIds:el.dataset.ids.split(','), tekst};
     try{ await savePatient(p => { p.samenvattingen.push(s); }); closeModal(); S.dashTab = 'ai'; render(); toast('Samenvatting opgeslagen'); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); }
   },
-  copyAi(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(s) copyText(cleanAi(s.tekst)); },
+  copyAi(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(s) copyText(stripMarks(cleanAi(s.tekst))); },
   editAi(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(!s) return;
-    openModal(`<h2>Samenvatting bewerken</h2><textarea class="inp" id="ai-edit" style="min-height:380px;margin-top:10px;font-size:13.5px;line-height:1.6">${esc(s.tekst)}</textarea><div class="actions"><button class="btn" data-act="closeModal">Annuleren</button><button class="btn primary" data-act="saveAiEdit" data-id="${s.id}">Opslaan</button></div>`, true); },
+    openModal(`<h2>Samenvatting bewerken</h2><textarea class="inp" id="ai-edit" style="min-height:380px;margin-top:10px;font-size:13.5px;line-height:1.6">${esc(s.tekst)}</textarea><p class="small muted" style="margin:6px 0 0">[B] = advies over belasting; dat krijg je vóór het maken van de PDF ter controle te zien.</p><div class="actions"><button class="btn" data-act="closeModal">Annuleren</button><button class="btn primary" data-act="saveAiEdit" data-id="${s.id}">Opslaan</button></div>`, true); },
   async saveAiEdit(el){ const t = $('#ai-edit').value; try{ await savePatient(p => { const s = p.samenvattingen.find(x => x.id === el.dataset.id); if(s){ s.tekst = t; s.edited = new Date().toISOString(); } }); closeModal(); render(); toast('Opgeslagen'); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); } },
   async delAi(el){ if(!confirm('Deze samenvatting verwijderen?')) return; try{ await savePatient(p => { p.samenvattingen = p.samenvattingen.filter(x => x.id !== el.dataset.id); }); render(); } catch(e){ toast('Verwijderen mislukt: ' + e.message, true); } }
 };
@@ -2447,7 +2553,7 @@ function copyText(t){ (navigator.clipboard ? navigator.clipboard.writeText(t) : 
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if(!el) return;
   const fn = ACT[el.dataset.act]; if(!fn) return;
-  if(el.dataset.act === 'bgClose'){ fn(el, e); return; }
+  if(el.dataset.act === 'bgClose' || el.dataset.act === 'bgCloseCheck'){ fn(el, e); return; }
   e.preventDefault(); fn(el, e);
 });
 document.addEventListener('input', e => {
@@ -2508,7 +2614,7 @@ document.addEventListener('submit', async e => {
     } catch(err){ toast('Opslaan mislukt: ' + err.message, true); }
   }
 });
-document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('#modal-root').innerHTML) closeModal(); });
+document.addEventListener('keydown', e => { if(e.key !== 'Escape') return; if($('#modal2').innerHTML){ $('#modal2').innerHTML = ''; return; } if($('#modal-root').innerHTML) closeModal(); });
 window.addEventListener('beforeunload', e => { if(S.view === 'moment' && S.dirty){ e.preventDefault(); e.returnValue = ''; } });
 
 /* ===== INIT ===== */
