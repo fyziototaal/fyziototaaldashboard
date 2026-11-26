@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-11-26.1 -->
+<!-- APP_VERSION: 2026-11-26.2 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-11-26.1";
+  const APP_VERSION = "2026-11-26.2";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -881,7 +881,7 @@ const RATIOS = [
 const MAIL_ENABLED = false;
 // Web-app-URL van het Apps Script dat PDF's van AI-samenvattingen opslaat in de Drive-map "Testen & meten" (eindigt op /exec).
 // Leeg = geen upload naar de Drive; de PDF wordt dan alleen gedownload.
-const DRIVE_UPLOAD_URL = '';
+const DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbzJu1dQFmdzNXooTtFPUcbpJU71fKfq7nxgwi3qVIDyZd8opjXYiRvO33hJgTWKZ5huZQ/exec';
 const SB_URL = 'https://szunargvsmtzbbnmnghc.supabase.co';
 const SB_KEY = 'sb_publishable_EiIt1zJuqgjj-2FJ4mXTlg__kmUrPu5';
 const TABLE = 'fyzio_testen_meten';
