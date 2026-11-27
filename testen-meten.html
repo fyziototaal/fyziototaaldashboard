@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-11-26.5 -->
+<!-- APP_VERSION: 2026-11-27.1 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-11-26.5";
+  const APP_VERSION = "2026-11-27.1";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -1348,7 +1348,7 @@ function renderAiTab(){
   const list = S.patient.samenvattingen.slice().sort((a,b) => (b.created || '').localeCompare(a.created || ''));
   if(!list.length) return `<div class="card empty"><div class="big">✨</div><h3>Nog geen AI-samenvattingen</h3><p>Optioneel: laat een testverslag schrijven op basis van één of meer testmomenten.</p><button class="btn primary" data-act="aiModal">✨ AI-samenvatting maken</button></div>`;
   return list.map(s => `<section class="card"><div class="row"><h3>Samenvatting ${fmtDate((s.created || '').slice(0,10))}</h3><span class="muted small">Testmomenten: ${(s.momenten || []).map(fmtDate).join(', ')}</span><span class="spacer"></span>
-    <button class="btn small" data-act="copyAi" data-id="${s.id}">📋 Kopiëren</button><button class="btn small" data-act="aiPdfSaved" data-id="${s.id}">📄 PDF</button>${MAIL_ENABLED ? `<button class="btn small" data-act="mailAi" data-id="${s.id}">📧 Mailen</button>` : ''}<button class="btn small" data-act="editAi" data-id="${s.id}">✏️ Bewerken</button><button class="btn small danger" data-act="delAi" data-id="${s.id}">Verwijderen</button></div>
+    <button class="btn small" data-act="copyAi" data-id="${s.id}">📋 Kopiëren</button><button class="btn small" data-act="aiPdfSaved" data-id="${s.id}">📄 PDF</button><button class="btn small" data-act="aiPdfSaved" data-mode="mail" data-id="${s.id}">📧 Mail naar patiënt</button>${MAIL_ENABLED ? `<button class="btn small" data-act="mailAi" data-id="${s.id}">📧 Mailen</button>` : ''}<button class="btn small" data-act="editAi" data-id="${s.id}">✏️ Bewerken</button><button class="btn small danger" data-act="delAi" data-id="${s.id}">Verwijderen</button></div>
     <div class="ai-text" style="margin-top:10px">${aiTextHTML(s.tekst)}</div></section>`).join('');
 }
 
@@ -1767,7 +1767,7 @@ async function runAi(){
     const bad = bannedIn(tekst);
     out.innerHTML = `${bad.length ? `<div class="banner err" style="margin-top:12px">Let op, controleer deze woorden in de tekst: ${bad.map(esc).join(', ')}</div>` : ''}<label class="f" style="margin-top:12px">Resultaat (je kunt het hier nog aanpassen)<textarea class="inp" id="ai-result" style="min-height:320px;font-size:13.5px;line-height:1.6">${esc(tekst)}</textarea></label>
       <p class="small muted" style="margin:6px 0 0">Adviezen over belasting moet je vóór het maken van de PDF nog bevestigen of aanpassen.</p>`;
-    act.innerHTML = `<button class="btn" data-act="closeModal">Niet opslaan</button><button class="btn" data-act="copyAiDraft">📋 Kopiëren</button><button class="btn" data-act="aiPdfDraft" data-ids="${ids.join(',')}">📄 PDF</button><button class="btn primary" data-act="saveAi" data-ids="${ids.join(',')}">💾 Opslaan bij patiënt</button>`;
+    act.innerHTML = `<button class="btn" data-act="closeModal">Niet opslaan</button><button class="btn" data-act="copyAiDraft">📋 Kopiëren</button><button class="btn" data-act="aiPdfDraft" data-ids="${ids.join(',')}">📄 PDF</button><button class="btn" data-act="aiPdfDraft" data-mode="mail" data-ids="${ids.join(',')}">📧 Mail naar patiënt</button><button class="btn primary" data-act="saveAi" data-ids="${ids.join(',')}">💾 Opslaan bij patiënt</button>`;
   } catch(e){
     out.innerHTML = `<div class="banner err" style="margin-top:12px">Genereren mislukt: ${esc(e.message)}${/auth|key|401/i.test(e.message) ? '<br><button class="linkbtn" data-act="resetKey">API-key opnieuw invoeren</button>' : ''}</div>`;
     act.querySelector('[data-act="runAi"]').disabled = false;
@@ -1787,12 +1787,33 @@ function uploadNaarDrive(doc, bestandsnaam){
     return true;
   } catch(e){ return false; }
 }
+/* Delen/mailen: via het deelmenu gaat alleen het PDF-bestand mee (geen blob:-link zoals bij Safari's PDF-weergave) */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches || IS_IOS;
+let PENDING_SHARE = null;
+async function sharePdf(doc, name, extra){
+  const file = new File([doc.output('blob')], name, {type:'application/pdf'});
+  if(!(navigator.canShare && navigator.canShare({files:[file]}))) return 'unsupported';
+  const data = Object.assign({files:[file]}, extra || {});
+  try{ await navigator.share(data); return 'shared'; }
+  catch(e){
+    if(e.name === 'AbortError') return 'aborted';
+    // te veel tijd sinds de klik: laat de gebruiker nog één keer tikken
+    PENDING_SHARE = data;
+    $('#modal2').innerHTML = `<div class="modal-bg" data-act="bgCloseCheck"><div class="modal" role="dialog"><h2>De PDF staat klaar</h2><p>Tik op de knop om het deelmenu te openen${extra && extra.text ? ' en kies je mail-app' : ''}.</p><div class="actions"><button class="btn" data-act="closeCheck">Annuleren</button><button class="btn primary" data-act="sharePending">${extra && extra.text ? '📧 Open mail' : '📤 Delen / bewaren'}</button></div></div></div>`;
+    return 'pending';
+  }
+}
+function mailTekst(voornaam, datum, testers){
+  return {subject:'Je testverslag van Fyzio Totaal',
+    body:'Hoi ' + voornaam + ',\n\nIn de bijlage vind je het verslag van je testmoment van ' + datum + '. Je leest hierin hoe je scoorde en waar we de komende tijd samen aan gaan werken. Je oefenschema ontvang je via Physitrack.\n\nHeb je vragen over het verslag? Stel ze gerust tijdens je volgende afspraak of neem contact met ons op.\n\nMet sportieve groet,\n' + (testers && testers !== '-' ? testers + '\n' : '') + 'Fyzio Totaal'};
+}
 let LOADCHECK = null, DRAFT_ADV = [];
-function checkLoadThenPdf(tekst, ids, datums, adv, save){
+function checkLoadThenPdf(tekst, ids, datums, adv, save, mode){
   if(!tekst){ toast('Er is nog geen tekst', true); return; }
   const items = loadItems(tekst, adv);
-  if(!items.length){ aiPdf(stripMarks(tekst), ids, datums); return; }
-  LOADCHECK = {tekst, ids, datums, save, items};
+  if(!items.length){ aiPdf(stripMarks(tekst), ids, datums, mode); return; }
+  LOADCHECK = {tekst, ids, datums, save, items, mode};
   const opt = (k, v, lbl) => `<label class="lc-opt"><input type="radio" name="lc${k}" value="${v}"> ${lbl}</label>`;
   $('#modal2').innerHTML = `<div class="modal-bg" data-act="bgCloseCheck"><div class="modal wide" role="dialog">
     <h2>Adviezen over belasting bevestigen</h2>
@@ -1801,7 +1822,7 @@ function checkLoadThenPdf(tekst, ids, datums, adv, save){
       <div class="lc-txt">${esc(normAdv(x.l))}</div>
       <div class="lc-opts">${opt(k, 'ok', '✅ Akkoord')}${opt(k, 'edit', '✏️ Aanpassen')}${opt(k, 'weg', '🗑️ Weglaten')}</div>
       <textarea class="inp" data-li="${k}" style="display:none;min-height:64px;margin-top:8px;font-size:13.5px;line-height:1.5">${esc(normAdv(x.l))}</textarea></div>`).join('')}
-    <div class="actions"><span class="small muted" id="lc-status" style="margin-right:auto;align-self:center"></span><button class="btn" data-act="closeCheck">Annuleren</button><button class="btn primary" data-act="loadOk" id="lc-go" disabled>📄 Maak PDF</button></div>
+    <div class="actions"><span class="small muted" id="lc-status" style="margin-right:auto;align-self:center"></span><button class="btn" data-act="closeCheck">Annuleren</button><button class="btn primary" data-act="loadOk" id="lc-go" disabled>${mode === 'mail' ? '📧 Maak PDF en mail' : '📄 Maak PDF'}</button></div>
   </div></div>`;
   lcUpdate();
 }
@@ -1820,8 +1841,10 @@ function lcUpdate(){
 }
 document.addEventListener('change', e => { if(e.target.closest && e.target.closest('#modal2')) lcUpdate(); });
 document.addEventListener('input', e => { if(e.target.closest && e.target.closest('#modal2')) lcUpdate(); });
-async function aiPdf(tekst, momentIds, datums){
+async function aiPdf(tekst, momentIds, datums, mode){
   if(!tekst){ toast('Er is nog geen tekst', true); return; }
+  // Op de computer het Gmail-venster direct bij de klik openen, anders blokkeert de browser de pop-up
+  const win = mode === 'mail' && !IS_TOUCH ? window.open('', '_blank') : null;
   try{
     const { jsPDF } = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
     const ps = x => String(x).replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/→/g,'->').replace(/−/g,'-').replace(/[“”]/g,'"');
@@ -1899,9 +1922,29 @@ async function aiPdf(tekst, momentIds, datums){
       doc.text('Pagina ' + i + ' van ' + n, W - M, H - 8.5, {align:'right'});
     }
     const name = 'Testverslag_' + p.voornaam.replace(/\W+/g, '_') + '_' + p.nr + '_' + datum + '.pdf';
+    const drive = uploadNaarDrive(doc, name), dTxt = drive ? ' en naar de Drive verstuurd' : '';
+    if(mode === 'mail'){
+      const m = mailTekst(p.voornaam, datum, testers);
+      if(IS_TOUCH){
+        const r = await sharePdf(doc, name, {title:m.subject, text:m.body});
+        if(r === 'shared') toast('PDF gedeeld' + dTxt);
+        if(r !== 'unsupported') return;
+      }
+      doc.save(name);
+      const gmail = 'https://mail.google.com/mail/?view=cm&fs=1&su=' + encodeURIComponent(m.subject) + '&body=' + encodeURIComponent(m.body);
+      const mailto = 'mailto:?subject=' + encodeURIComponent(m.subject) + '&body=' + encodeURIComponent(m.body);
+      if(win) win.location.href = gmail; else window.open(gmail, '_blank');
+      $('#modal2').innerHTML = `<div class="modal-bg" data-act="bgCloseCheck"><div class="modal" role="dialog"><h2>📧 Bijna klaar</h2>
+        <p>De PDF <b>${esc(name)}</b> is gedownload${dTxt} en er staat een mail met begeleidende tekst klaar in Gmail.</p>
+        <p><b>Nog doen:</b> vul het e-mailadres van ${esc(p.voornaam)} in, sleep de PDF uit je downloads in de mail (of klik op de paperclip) en verstuur.</p>
+        <p class="muted small">Gebruik je een ander mailprogramma? <a href="${esc(mailto)}">Open in je standaard mail-app</a>.</p>
+        <div class="actions"><button class="btn primary" data-act="closeCheck">Sluiten</button></div></div></div>`;
+      return;
+    }
+    if(IS_IOS){ const r = await sharePdf(doc, name); if(r === 'shared') toast('PDF gedeeld' + dTxt); if(r !== 'unsupported') return; }
     doc.save(name);
-    toast(uploadNaarDrive(doc, name) ? 'PDF gedownload en naar de Drive verstuurd' : 'PDF gedownload' + (DRIVE_UPLOAD_URL ? '' : ' (Drive-koppeling nog niet ingesteld)'));
-  } catch(e){ console.error(e); toast('PDF maken mislukt: ' + e.message, true); }
+    toast(drive ? 'PDF gedownload en naar de Drive verstuurd' : 'PDF gedownload' + (DRIVE_UPLOAD_URL ? '' : ' (Drive-koppeling nog niet ingesteld)'));
+  } catch(e){ if(win) win.close(); console.error(e); toast('PDF maken mislukt: ' + e.message, true); }
 }
 
 let LOGO = null;
@@ -2411,7 +2454,7 @@ async function doPdf(mode){
   try{
     if(btn){ btn.disabled = true; btn.dataset.lbl = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span> Bezig…'; }
     const {doc, name} = await buildPdf(o);
-    if(mode !== 'mail'){ doc.save(name); closeModal(); toast('PDF gedownload'); return; }
+    if(mode !== 'mail'){ if(IS_IOS){ const r = await sharePdf(doc, name); if(r !== 'unsupported'){ closeModal(); return; } } doc.save(name); closeModal(); toast('PDF gedownload'); return; }
     const to = $('#mail-to').value.trim(), su = $('#mail-su').value.trim(), body = $('#mail-body').value;
     const blob = doc.output('blob'), file = new File([blob], name, {type:'application/pdf'});
     if(isMobile && navigator.canShare && navigator.canShare({files:[file]})){
@@ -2547,9 +2590,9 @@ const ACT = {
   checkAll(el){ const bx = [...document.querySelectorAll('input[data-g="' + el.dataset.g + '"]')]; const all = bx.every(b => b.checked); bx.forEach(b => b.checked = !all); },
   resetKey(){ try{ localStorage.removeItem('ft_apikey'); } catch(e){} toast('Key verwijderd, klik opnieuw op Genereren'); const b = document.querySelector('[data-act="runAi"]'); if(b) b.disabled = false; },
   copyAiDraft(){ copyText(stripMarks(cleanAi($('#ai-result').value))); },
-  aiPdfDraft(el){ checkLoadThenPdf(cleanAi($('#ai-result').value), (el.dataset.ids || '').split(','), null, DRAFT_ADV, (t, adv) => { const ta = $('#ai-result'); if(ta) ta.value = t; DRAFT_ADV = adv; }); },
+  aiPdfDraft(el){ checkLoadThenPdf(cleanAi($('#ai-result').value), (el.dataset.ids || '').split(','), null, DRAFT_ADV, (t, adv) => { const ta = $('#ai-result'); if(ta) ta.value = t; DRAFT_ADV = adv; }, el.dataset.mode); },
   aiPdfSaved(el){ const s = S.patient.samenvattingen.find(x => x.id === el.dataset.id); if(!s) return;
-    checkLoadThenPdf(cleanAi(s.tekst), s.momentIds || [], s.momenten, s.belasting || [], async (t, adv) => { try{ await savePatient(p => { const z = p.samenvattingen.find(x => x.id === s.id); if(z){ if(z.tekst !== t) z.edited = new Date().toISOString(); z.tekst = t; z.belasting = adv; z.belastingAkkoord = new Date().toISOString(); } }); render(); } catch(e){ toast('Aanpassing niet opgeslagen: ' + e.message, true); } }); },
+    checkLoadThenPdf(cleanAi(s.tekst), s.momentIds || [], s.momenten, s.belasting || [], async (t, adv) => { try{ await savePatient(p => { const z = p.samenvattingen.find(x => x.id === s.id); if(z){ if(z.tekst !== t) z.edited = new Date().toISOString(); z.tekst = t; z.belasting = adv; z.belastingAkkoord = new Date().toISOString(); } }); render(); } catch(e){ toast('Aanpassing niet opgeslagen: ' + e.message, true); } }, el.dataset.mode); },
   closeCheck(){ $('#modal2').innerHTML = ''; }, bgCloseCheck(el, e){ if(e.target === el) $('#modal2').innerHTML = ''; },
   loadOk(){
     const P = LOADCHECK; if(!P) return;
@@ -2564,8 +2607,9 @@ const ACT = {
     const tekst = stripMarks(L.filter((l, i) => !drop.has(i)).join('\n'));
     $('#modal2').innerHTML = ''; LOADCHECK = null;
     if(P.save) P.save(tekst, adv);
-    aiPdf(stripMarks(tekst), P.ids, P.datums);
+    aiPdf(stripMarks(tekst), P.ids, P.datums, P.mode);
   },
+  async sharePending(){ const d = PENDING_SHARE; PENDING_SHARE = null; $('#modal2').innerHTML = ''; if(!d) return; try{ await navigator.share(d); } catch(e){ if(e.name !== 'AbortError') toast('Delen mislukt: ' + e.message, true); } },
   async saveAi(el){
     const raw = fixAi($('#ai-result').value); if(!raw) return;
     const tekst = stripMarks(raw), adv = [...new Set([...DRAFT_ADV, ...advFrom(raw)])];
