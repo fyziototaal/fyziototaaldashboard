@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-11-27.2 -->
+<!-- APP_VERSION: 2026-11-27.3 -->
 <!-- Versienummer ophogen bij elke update: hierboven én in de constante APP_VERSION hieronder -->
 <html lang="nl">
 <head>
@@ -11,7 +11,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-11-27.2";
+  const APP_VERSION = "2026-11-27.3";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -105,6 +105,7 @@ textarea.ft-input{resize:vertical;min-height:70px;}
 .vg-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#2a1626}
 .vg-chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
 .vg-chip em{font-style:normal;font-size:11px;font-weight:600}
+.vg-tabs{display:flex;background:#f3eef2;border-radius:9px;padding:3px;gap:2px}.vg-tabs button{border:none;background:transparent;font-size:12px;padding:5px 10px;border-radius:7px;color:#5a5a56;cursor:pointer}.vg-tabs button.act{background:#fff;color:#82176D;font-weight:600;box-shadow:0 1px 3px rgba(130,23,109,.15)}
 .vg-chip em.up{color:#2E9D5B}.vg-chip em.down{color:#c0392b}
 /* Verslag */
 .vs-item{border-top:1px solid #f0e8ee;margin-top:12px;padding-top:10px}
@@ -1052,55 +1053,75 @@ const VG_GROEPEN = [
   {id:'aclrsi', titel:'Vertrouwen in je knie', uitleg:'Score op de ACL-RSI vragenlijst (0 tot 100). Vanaf 72 ben je mentaal klaar voor je sport.', een:'', doel:72, doelLabel:'72', lijnen:[
     {l:'ACL-RSI', t:'aclrsi', f:m => { const w = m.testen?.aclrsi?.waarden; return w ? berekenACLRSI(w) : null; }}]}
 ];
+// Absolute waarden: geopereerde been (paars) en andere been (blauw)
+const ABS_DEF = [
+  ['Quadriceps (HHD)', 'kg', 'hhd', 'hhd_quad_aan', 'hhd_quad_niet'], ['Hamstrings (HHD)', 'kg', 'hhd', 'hhd_ham_aan', 'hhd_ham_niet'],
+  ['Quadriceps (1RM)', 'kg', 'een_rm', 'rm_qa_1rm', 'rm_qn_1rm'], ['Hamstrings (1RM)', 'kg', 'een_rm', 'rm_ha_1rm', 'rm_hn_1rm'],
+  ['Single Leg Hop for Distance', 'cm', 'slh', 'slh_aan', 'slh_niet'], ['Triple Hop for Distance', 'cm', 'thd', 'thd_aan', 'thd_niet'],
+  ['Crossover Hop for Distance', 'cm', 'crossover_hop', 'ch_aan', 'ch_niet'], ['Side Hop Test', 'keer', 'sh', 'sh_aan', 'sh_niet'],
+  ['Vertical Jump Test (CMJ)', 'cm', 'vj', 'vj_aan', 'vj_niet'], ['Hopping on the Spot', 'sprongen', 'hopping_spot', 'hs_aan', 'hs_niet'],
+  ['Single Leg Squat (1 minuut)', 'herhalingen', 'sls', 'sls_aan', 'sls_niet']];
+const ABS_GROEPEN = ABS_DEF.map(([titel, unit, t, a, n]) => ({id:'abs_' + a, titel, unit, een:'', abs:true,
+  lijnen:[{l:'Geopereerde been', t, k:a, kleur:'#82176D'}, {l:'Andere been', t, k:n, kleur:'#00B6E8'}]}));
+const eenh = g => g.unit ? ' ' + g.unit : g.een;
 function vgData(g, tot){
   const ms = mmSorted(tot), op = S.patData?.operatiedatum, t0 = op || (ms[0] && ms[0].datum);
-  const lijnen = g.lijnen.map((L, i) => ({...L, kleur:VG_KLEUREN[i % VG_KLEUREN.length], pts:ms.map(m => {
+  const lijnen = g.lijnen.map((L, i) => ({...L, kleur:L.kleur || VG_KLEUREN[i % VG_KLEUREN.length], pts:ms.map(m => {
     const v = L.f ? L.f(m) : getal((waardenVan(m, L.t) || {})[L.k]);
     return v === null || v === undefined || isNaN(v) ? null : {x:dagenverschil(t0, m.datum) / 7, v:Number(v), datum:m.datum, wk:wkPostOp(m.datum)};
   }).filter(Boolean)})).filter(L => L.pts.length);
   return {lijnen, metOp:!!op};
 }
 function vgSchaal(g, d){
-  const alle = d.lijnen.flatMap(L => L.pts.map(p => p.v)).concat([g.doel]);
+  const alle = d.lijnen.flatMap(L => L.pts.map(p => p.v)).concat(g.doel !== undefined ? [g.doel] : []);
   let lo = g.lsi ? Math.min(60, Math.floor(Math.min(...alle) / 10) * 10) : 0, hi = g.lsi ? Math.max(110, Math.ceil(Math.max(...alle) / 10) * 10) : 100;
+  let stap = (hi - lo) > 60 ? 20 : 10;
+  if(g.abs){
+    const mn = Math.min(...alle), mx = Math.max(...alle), ruw = Math.max((mx - mn) * 1.3, mx * 0.25, 1) / 4;
+    const mag = Math.pow(10, Math.floor(Math.log10(ruw))); stap = [1, 2, 2.5, 5, 10].map(f => f * mag).find(v => v >= ruw) || 10 * mag;
+    lo = Math.max(0, Math.floor((mn - ruw * 0.6) / stap) * stap); hi = Math.ceil((mx + ruw * 0.6) / stap) * stap; if(hi === lo) hi = lo + stap;
+  }
   const xs = d.lijnen.flatMap(L => L.pts.map(p => p.x)); let x0 = Math.min(...xs), x1 = Math.max(...xs);
   if(x1 - x0 < 1){ x0 -= 1; x1 += 1; }
-  const stap = (hi - lo) > 60 ? 20 : 10, ticks = []; for(let v = lo; v <= hi; v += stap) ticks.push(v);
+  const ticks = []; for(let v = lo; v <= hi + 1e-9; v += stap) ticks.push(Math.round(v * 100) / 100);
   const xt = [...new Map(d.lijnen.flatMap(L => L.pts).map(p => [p.datum, p])).values()].sort((a,b) => a.x - b.x);
   return {lo, hi, x0, x1, ticks, xt};
 }
 const xLabel = (p, d) => d.metOp && p.wk !== null ? 'wk ' + p.wk : nlDatum(p.datum).slice(0, 5);
 function vgSVG(g, d){
-  const W = 460, H = 230, L = 38, R = 60, T = 12, B = 26, sc = vgSchaal(g, d);
+  const W = 460, H = 230, L = 38, R = g.doel !== undefined ? 60 : 16, T = 12, B = 26, sc = vgSchaal(g, d);
   const X = x => L + (x - sc.x0) / (sc.x1 - sc.x0) * (W - L - R), Y = v => T + (1 - (v - sc.lo) / (sc.hi - sc.lo)) * (H - T - B);
   let s = `<svg viewBox="0 0 ${W} ${H}" class="vg-svg" role="img" aria-label="${esc(g.titel)}">`;
-  s += `<rect x="${L}" y="${Y(sc.hi)}" width="${W - L - R}" height="${Y(g.doel) - Y(sc.hi)}" fill="#e7f6ec"/>`;
+  if(g.doel !== undefined) s += `<rect x="${L}" y="${Y(sc.hi)}" width="${W - L - R}" height="${Y(g.doel) - Y(sc.hi)}" fill="#e7f6ec"/>`;
   sc.ticks.forEach(v => { s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#eee6ec"/><text x="${L - 7}" y="${Y(v) + 4}" text-anchor="end" class="vg-ax">${v}${g.een}</text>`; });
-  s += `<line x1="${L}" x2="${W - R}" y1="${Y(g.doel)}" y2="${Y(g.doel)}" stroke="#2E9D5B" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W - R + 5}" y="${Y(g.doel) + 4}" class="vg-ax" fill="#2E9D5B" style="fill:#2E9D5B;font-weight:600">doel ${g.doelLabel}</text>`;
+  if(g.doel !== undefined) s += `<line x1="${L}" x2="${W - R}" y1="${Y(g.doel)}" y2="${Y(g.doel)}" stroke="#2E9D5B" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W - R + 5}" y="${Y(g.doel) + 4}" class="vg-ax" fill="#2E9D5B" style="fill:#2E9D5B;font-weight:600">doel ${g.doelLabel}</text>`;
   let lastX = -99; sc.xt.forEach(p => { const x = X(p.x); if(x - lastX < 30) return; lastX = x; s += `<text x="${x}" y="${H - 9}" text-anchor="middle" class="vg-ax">${esc(xLabel(p, d))}</text>`; });
   d.lijnen.forEach(Ln => {
     if(Ln.pts.length > 1) s += `<polyline fill="none" stroke="${Ln.kleur}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${Ln.pts.map(p => X(p.x).toFixed(1) + ',' + Y(p.v).toFixed(1)).join(' ')}"/>`;
-    Ln.pts.forEach(p => { s += `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="4.5" fill="#fff" stroke="${Ln.kleur}" stroke-width="2.5"><title>${esc(Ln.l)} · ${esc(xLabel(p, d))}: ${Math.round(p.v)}${g.een}</title></circle>`; });
+    Ln.pts.forEach(p => { s += `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="4.5" fill="#fff" stroke="${Ln.kleur}" stroke-width="2.5"><title>${esc(Ln.l)} · ${esc(xLabel(p, d))}: ${fmtV(p.v)}${eenh(g)}</title></circle>`; });
   });
   return s + '</svg>';
 }
+const fmtV = v => String(Math.round(v * 10) / 10).replace('.', ',');
 function vgLaatste(Ln){ const p = Ln.pts[Ln.pts.length - 1], q = Ln.pts[Ln.pts.length - 2]; return {p, delta:q ? p.v - q.v : null}; }
+function vgChips(g, d){ return `<div class="vg-legend">${d.lijnen.map(Ln => { const {p, delta} = vgLaatste(Ln); const dl = g.abs ? Math.round(delta * 10) / 10 : Math.round(delta); return `<span class="vg-chip"><i style="background:${Ln.kleur}"></i>${esc(Ln.l)} <b>${g.abs ? fmtV(p.v) : Math.round(p.v)}${eenh(g)}</b>${delta !== null && dl !== 0 ? `<em class="${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '▲' : '▼'} ${g.abs ? fmtV(Math.abs(dl)) : Math.abs(dl)}</em>` : ''}</span>`; }).join('')}</div>`; }
 function renderVoortgang(){
-  const blokken = VG_GROEPEN.map(g => ({g, d:vgData(g)})).filter(x => x.d.lijnen.length);
-  if(!blokken.length) return '';
-  return `<div class="ft-card vg-card"><div style="font-size:15px;font-weight:600;color:${C.groen};margin-bottom:2px">📈 Voortgang</div>
-    <div style="font-size:12px;color:${C.muted};margin-bottom:6px">${S.patData?.operatiedatum ? 'Weken na de operatie' : 'Datum van het testmoment'} · het groene vlak is het doel</div>
-    ${blokken.map(({g, d}) => `<div class="vg-blok"><div class="vg-titel">${g.titel}</div><div class="vg-uitleg">${g.uitleg}</div>${vgSVG(g, d)}
-      <div class="vg-legend">${d.lijnen.map(Ln => { const {p, delta} = vgLaatste(Ln); return `<span class="vg-chip"><i style="background:${Ln.kleur}"></i>${esc(Ln.l)} <b>${Math.round(p.v)}${g.een}</b>${delta !== null && Math.round(delta) !== 0 ? `<em class="${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '▲' : '▼'} ${Math.abs(Math.round(delta))}</em>` : ''}</span>`; }).join('')}</div></div>`).join('')}
+  const lsiB = VG_GROEPEN.map(g => ({g, d:vgData(g)})).filter(x => x.d.lijnen.length), absB = ABS_GROEPEN.map(g => ({g, d:vgData(g)})).filter(x => x.d.lijnen.length);
+  if(!lsiB.length && !absB.length) return '';
+  const modus = S.vgModus === 'abs' && absB.length || !lsiB.length ? 'abs' : 'lsi', blokken = modus === 'abs' ? absB : lsiB;
+  return `<div class="ft-card vg-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:600;color:${C.groen}">📈 Voortgang</div>
+    <div class="vg-tabs">${lsiB.length ? `<button class="${modus === 'lsi' ? 'act' : ''}" onclick="S.vgModus='lsi';render()">In % (LSI)</button>` : ''}${absB.length ? `<button class="${modus === 'abs' ? 'act' : ''}" onclick="S.vgModus='abs';render()">In kg en cm</button>` : ''}</div></div>
+    <div style="font-size:12px;color:${C.muted};margin:2px 0 6px">${S.patData?.operatiedatum ? 'Weken na de operatie' : 'Datum van het testmoment'} · ${modus === 'abs' ? 'paars is het geopereerde been, blauw het andere been' : 'het groene vlak is het doel'}</div>
+    ${blokken.map(({g, d}) => `<div class="vg-blok"><div class="vg-titel">${esc(g.titel)}${g.unit ? ` <span style="font-weight:400;color:${C.muted}">(${g.unit})</span>` : ''}</div>${g.uitleg ? `<div class="vg-uitleg">${g.uitleg}</div>` : ''}${vgSVG(g, d)}${vgChips(g, d)}</div>`).join('')}
   </div>`;
 }
 function pdfGrafiek(doc, g, d, x, y, w, h, font){
-  const L = 13, R = 16, T = 4, B = 8, sc = vgSchaal(g, d);
+  const L = 13, R = g.doel !== undefined ? 16 : 4, T = 4, B = 8, sc = vgSchaal(g, d);
   const X = v => x + L + (v - sc.x0) / (sc.x1 - sc.x0) * (w - L - R), Y = v => y + T + (1 - (v - sc.lo) / (sc.hi - sc.lo)) * (h - T - B);
-  doc.setFillColor(231, 246, 236); doc.rect(x + L, Y(sc.hi), w - L - R, Y(g.doel) - Y(sc.hi), 'F');
-  sc.ticks.forEach(v => { doc.setDrawColor(238, 230, 236); doc.setLineWidth(0.2); doc.line(x + L, Y(v), x + w - R, Y(v)); font('normal', 7, [122,100,120]); doc.text(v + g.een, x + L - 2, Y(v) + 1.2, {align:'right'}); });
-  doc.setDrawColor(46, 157, 91); doc.setLineWidth(0.45); doc.setLineDashPattern([1.6, 1.2], 0); doc.line(x + L, Y(g.doel), x + w - R, Y(g.doel)); doc.setLineDashPattern([], 0);
-  font('bold', 7, [46,157,91]); doc.text('doel ' + g.doelLabel, x + w - R + 1.5, Y(g.doel) + 1.2);
+  if(g.doel !== undefined){ doc.setFillColor(231, 246, 236); doc.rect(x + L, Y(sc.hi), w - L - R, Y(g.doel) - Y(sc.hi), 'F'); }
+  sc.ticks.forEach(v => { doc.setDrawColor(238, 230, 236); doc.setLineWidth(0.2); doc.line(x + L, Y(v), x + w - R, Y(v)); font('normal', 7, [122,100,120]); doc.text(String(v).replace('.', ',') + g.een, x + L - 2, Y(v) + 1.2, {align:'right'}); });
+  if(g.doel !== undefined){ doc.setDrawColor(46, 157, 91); doc.setLineWidth(0.45); doc.setLineDashPattern([1.6, 1.2], 0); doc.line(x + L, Y(g.doel), x + w - R, Y(g.doel)); doc.setLineDashPattern([], 0);
+  font('bold', 7, [46,157,91]); doc.text('doel ' + g.doelLabel, x + w - R + 1.5, Y(g.doel) + 1.2); }
   let lastX = -99; sc.xt.forEach(p => { const px = X(p.x); if(px - lastX < 10) return; lastX = px; font('normal', 7, [122,100,120]); doc.text(xLabel(p, d), px, y + h - 2, {align:'center'}); });
   d.lijnen.forEach(Ln => {
     const rgb = [1,3,5].map(i => parseInt(Ln.kleur.substr(i, 2), 16));
@@ -1111,7 +1132,7 @@ function pdfGrafiek(doc, g, d, x, y, w, h, font){
   // legenda
   let lx = x + L, ly = y + h + 4;
   d.lijnen.forEach(Ln => {
-    const {p} = vgLaatste(Ln), t = Ln.l + '  ' + Math.round(p.v) + g.een; font('normal', 8, [42,22,38]);
+    const {p} = vgLaatste(Ln), t = Ln.l + '  ' + (g.abs ? fmtV(p.v) : Math.round(p.v)) + eenh(g); font('normal', 8, [42,22,38]);
     const tw = doc.getTextWidth(t) + 8; if(lx + tw > x + w){ lx = x + L; ly += 5; }
     const rgb = [1,3,5].map(i => parseInt(Ln.kleur.substr(i, 2), 16)); doc.setFillColor(...rgb); doc.circle(lx + 1.3, ly - 1.1, 1.2, 'F');
     doc.text(t, lx + 4, ly); lx += tw;
@@ -1482,6 +1503,24 @@ async function aiPdf(tekst, m, mode){
         font('bold', 11, TXT); doc.text(b.g.titel, M, y); font('normal', 8.5, MUT); doc.text(b.g.uitleg, M, y + 4.5); y += 8;
         y += pdfGrafiek(doc, b.g, b.d, M, y, CW, gh, font) + 6;
       });
+    }
+    const absB = ABS_GROEPEN.map(g => ({g, d:vgData(g, m.datum)})).filter(x => x.d.lijnen.length);
+    if(absB.length){
+      const gh = 40, colW = (CW - 8) / 2, rijH = 8 + gh + 6 + 6;
+      if(y + 22 + rijH > BOTTOM) newPage(); else y += 4;
+      heading('Je resultaten in kg en cm');
+      font('normal', 9.5, MUT); doc.splitTextToSize('Hier zie je de gemeten waarden zelf. Paars is je geopereerde been, blauw je andere been. Hoe dichter de lijnen bij elkaar liggen, hoe gelijker je benen zijn.', CW).forEach(w => { doc.text(w, M, y); y += 4.6; });
+      y += 3;
+      for(let i = 0; i < absB.length; i += 2){
+        if(y + rijH > BOTTOM) newPage();
+        let maxH = 0;
+        absB.slice(i, i + 2).forEach((b, j) => {
+          const x = M + j * (colW + 8);
+          font('bold', 10, TXT); doc.text(b.g.titel, x, y); const tw = doc.getTextWidth(b.g.titel); font('normal', 8.5, MUT); doc.text(' (' + b.g.unit + ')', x + tw, y);
+          maxH = Math.max(maxH, pdfGrafiek(doc, b.g, b.d, x, y + 3, colW, gh, font) + 3);
+        });
+        y += maxH + 6;
+      }
     }
     const n = doc.getNumberOfPages();
     for(let i = 1; i <= n; i++){
