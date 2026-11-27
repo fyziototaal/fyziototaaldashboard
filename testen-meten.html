@@ -1,4 +1,4 @@
-<!-- APP_VERSION: 2026-11-27.1 -->
+<!-- APP_VERSION: 2026-11-27.2 -->
 <!doctype html>
 <html lang="nl">
 <head>
@@ -9,7 +9,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
   // ===== Versiecheck — VERHOOG BIJ ELKE WIJZIGING (hier én in de comment op regel 1) =====
-  const APP_VERSION = "2026-11-27.1";
+  const APP_VERSION = "2026-11-27.2";
   (function(){
     function check(){
       fetch(location.pathname + "?_check=" + Date.now(), { cache: "no-store" })
@@ -1806,7 +1806,7 @@ async function sharePdf(doc, name, extra){
 }
 function mailTekst(voornaam, datum, testers){
   return {subject:'Je testverslag van Fyzio Totaal',
-    body:'Hoi ' + voornaam + ',\n\nIn de bijlage vind je het verslag van je testmoment van ' + datum + '. Je leest hierin hoe je scoorde en waar we de komende tijd samen aan gaan werken. Je oefenschema ontvang je via Physitrack.\n\nHeb je vragen over het verslag? Stel ze gerust tijdens je volgende afspraak of neem contact met ons op.\n\nMet sportieve groet,\n' + (testers && testers !== '-' ? testers + '\n' : '') + 'Fyzio Totaal'};
+    body:'Hoi ' + voornaam + ',\n\nIn de bijlage vind je het verslag van je testmoment van ' + datum + '. Je leest hierin hoe je scoorde en waar we de komende tijd samen aan gaan werken. Je oefenschema ontvang je via Physitrack.\n\nHeb je vragen over het verslag? Stel ze gerust tijdens je volgende afspraak of neem contact met ons op.\n\nMet sportieve groet,' + (testers && testers !== '-' ? '\n' + testers : '')};
 }
 let LOADCHECK = null, DRAFT_ADV = [];
 function checkLoadThenPdf(tekst, ids, datums, adv, save, mode){
