@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-11-27.1 -->
+<!-- APP_VERSION: 2026-11-27.2 -->
 <!-- Versienummer ophogen bij elke update: hierboven én in de constante APP_VERSION hieronder -->
 <html lang="nl">
 <head>
@@ -11,7 +11,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-11-27.1";
+  const APP_VERSION = "2026-11-27.2";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -1021,7 +1021,7 @@ async function verwijderPat(){
 // ═════════════════════════════════════════════════════════════════
 // PATIËNTVERSLAG · VOORTGANGSGRAFIEKEN · PDF · MAILEN
 // ═════════════════════════════════════════════════════════════════
-const DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbzJu1dQFmdzNXooTtFPUcbpJU71fKfq7nxgwi3qVIDyZd8opjXYiRvO33hJgTWKZ5huZQ/exec'; // zelfde Drive-koppeling als Testen & meten
+const DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbyVU3YpnGuPr2QwJUNd3PfU5e1i_OhiuGapji2BoyUjgt7YGYcS6-5yTG5mxD1MBr3T/exec'; // map 'VKB-testen rapporten'
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(msg, err){ const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(t._h); t._h = setTimeout(() => t.className = '', err ? 5000 : 2800); }
