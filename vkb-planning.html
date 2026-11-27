@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- APP_VERSION: 2026-10-05.4 (ophogen bij elke update — hier én in de constante hieronder) -->
+<!-- APP_VERSION: 2026-11-27.1 -->
+<!-- Versienummer ophogen bij elke update: hierboven én in de constante APP_VERSION hieronder -->
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
@@ -10,7 +11,7 @@
   // ─── AUTO-VERSIECONTROLE ─────────────────────────────────────────
   // Checkt bij elke page load of er een nieuwere versie live staat.
   // Zo niet consequent verhogen bij elke aanpassing: fetch faalt stil.
-  const APP_VERSION = "2026-10-05.4";
+  const APP_VERSION = "2026-11-27.1";
   (function(){
     try{
       if(location.search.indexOf("_v=")!==-1)return; // net al herladen, geen loop
@@ -31,6 +32,7 @@
 <meta name="theme-color" content="#82176D"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>Fyzio Totaal – VKB Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:'Poppins','Segoe UI',sans-serif;background:#f3eef2;color:#1a1a18;min-height:100vh;}
@@ -91,6 +93,48 @@ textarea.ft-input{resize:vertical;min-height:70px;}
 .ft-veld-wrap{margin-bottom:12px;}
 .ft-veld-label{font-size:13px;color:#5a5a56;margin-bottom:4px;}
 .ft-computed{padding:9px 12px;background:#f5f5f3;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:13px;}
+/* Voortgang */
+.vg-card{box-shadow:0 2px 14px rgba(130,23,109,0.08)}
+.vg-blok{margin-top:12px;padding-top:10px;border-top:1px solid #f0e8ee}
+.vg-blok:first-of-type{border-top:none;padding-top:0}
+.vg-titel{font-size:14px;font-weight:600;color:#2a1626}
+.vg-uitleg{font-size:12px;color:#5a5a56;margin-bottom:4px}
+.vg-svg{width:100%;height:auto;display:block}
+.vg-ax{font-size:12px;fill:#7a6478;font-family:Poppins,sans-serif}
+.vg-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:4px}
+.vg-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#2a1626}
+.vg-chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.vg-chip em{font-style:normal;font-size:11px;font-weight:600}
+.vg-chip em.up{color:#2E9D5B}.vg-chip em.down{color:#c0392b}
+/* Verslag */
+.vs-item{border-top:1px solid #f0e8ee;margin-top:12px;padding-top:10px}
+.vs-acts{display:flex;gap:6px;flex-wrap:wrap}
+.ai-text{white-space:pre-wrap;font-size:13.5px;line-height:1.6;margin-top:8px;max-height:320px;overflow:auto;background:#faf6f9;border-radius:10px;padding:10px 12px}
+.ai-text .h{font-weight:600;color:#82176D}
+/* Modals & toast */
+.modal-bg{position:fixed;inset:0;background:rgba(42,22,38,.55);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto}
+#modal2 .modal-bg{z-index:210}
+.modal{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:640px;box-shadow:0 10px 40px rgba(42,22,38,.25)}
+.modal h2{font-size:17px;font-weight:600;color:#82176D;margin-bottom:6px}
+.modal p{font-size:14px;line-height:1.5;margin-top:6px}
+.small{font-size:13px}
+.m-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.m-info{margin-top:12px;background:#dcf4fb;color:#00728e;border-radius:10px;padding:10px 12px;font-size:13px;display:flex;align-items:center;gap:8px}
+.m-err{margin-top:12px;background:#fdecea;color:#c0392b;border-radius:10px;padding:10px 12px;font-size:13px}
+.spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#2a1626;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:all .2s;z-index:300;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#toast.err{background:#c0392b}
+.lc-item{border:1.5px solid #e2d5df;border-radius:12px;padding:12px;margin-top:10px}
+.lc-item.done{border-color:#2e9d5b}
+.lc-item.weg .lc-txt{text-decoration:line-through;opacity:.55}
+.lc-txt{font-size:14px;line-height:1.5}
+.lc-opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.lc-opt{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid #e2d5df;border-radius:20px;font-size:13px;cursor:pointer;min-height:36px}
+.lc-opt:has(input:checked){border-color:#82176D;background:#f3e3ef;font-weight:600}
+.ft-footer{background:#4a0f42;color:rgba(255,255,255,.5);text-align:center;font-size:12px;padding:12px}
+.ft-footer b{color:rgba(255,255,255,.85)}
 </style>
 </head>
 <body>
@@ -101,7 +145,9 @@ textarea.ft-input{resize:vertical;min-height:70px;}
 <div style="text-align:center;font-size:10px;color:#c0bfba;padding:3px 0;background:#fff">v<span id="app-version-label"></span></div>
 <div id="pane-testen" class="screen"></div>
 <div id="pane-planning" class="screen" style="display:none"></div>
-<script>document.getElementById("app-version-label").textContent=APP_VERSION;</script>
+<div class="ft-footer"><b>Fyzio Totaal</b> · VKB Tool · versie <span id="app-version-footer"></span></div>
+<div id="modal-root"></div><div id="modal2"></div><div id="toast"></div>
+<script>document.getElementById("app-version-label").textContent=APP_VERSION;document.getElementById("app-version-footer").textContent=APP_VERSION;</script>
 
 <script>
 // ─── SUPABASE ─────────────────────────────────────────────────────
@@ -195,7 +241,10 @@ function calcHHD(w){
   return n;
 }
 
-function lsiKleur(v,type,fase){if(v===""||v===undefined||v===null)return null;const n=Number(v),d=LSI_DREMPEL[type]?.[fase];if(d===null)return{bg:C.groenLight,col:C.groen};if(n>=d)return{bg:C.okLight,col:C.ok};if(n>=d-10)return{bg:C.oranjeLight,col:C.oranje};return{bg:C.roodLight,col:C.rood};}
+// Mijlpalen hebben geen fasenummer: koppel ze aan de fase waarin ze vallen (voor de LSI-eis)
+const MIJLPAAL_FASE={m_hardlopen:3,m_springen:3,m_rts:4,m_rtt:4,m_rtc:5};
+function faseVan(m){return m.type==="fase"?m.refId:(MIJLPAAL_FASE[m.refId]||null);}
+function lsiKleur(v,type,fase){if(v===""||v===undefined||v===null)return null;if(typeof fase==="string")fase=MIJLPAAL_FASE[fase];const n=Number(v),d=LSI_DREMPEL[type]?.[fase];if(d===undefined)return{bg:C.groenLight,col:C.groen};if(d===null)return{bg:C.groenLight,col:C.groen};if(n>=d)return{bg:C.okLight,col:C.ok};if(n>=d-10)return{bg:C.oranjeLight,col:C.oranje};return{bg:C.roodLight,col:C.rood};}
 function hopSpotKleur(v){const n=Number(v);if(n>95)return{bg:C.okLight,col:C.ok,label:"Zeer goed (>95%)"};if(n>=90)return{bg:"#d1fae5",col:"#065f46",label:"Goed (90–95%)"};if(n>=70)return{bg:C.oranjeLight,col:C.oranje,label:"Matig (70–90%)"};return{bg:C.roodLight,col:C.rood,label:"Slecht (<70%)"};}
 function plankKleur(v){const n=Number(v);if(n>=120)return{bg:C.okLight,col:C.ok,label:"Goed (≥120 sec)"};if(n>=60)return{bg:C.oranjeLight,col:C.oranje,label:"Matig (60–119 sec)"};return{bg:C.roodLight,col:C.rood,label:"Onvoldoende (<60 sec)"};}
 function tijdNaarSec(s){if(!s)return null;const p=s.split(":");if(p.length===2){const m=parseInt(p[0]),sec=parseFloat(p[1]);if(!isNaN(m)&&!isNaN(sec))return m*60+sec;}return null;}
@@ -399,6 +448,7 @@ function renderDashboard(){
       </div>
       <button style="background:transparent;color:${C.mint};border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer" onclick="S.sc='start';render()">← Wissel</button>
     </div>
+    ${renderVoortgang()}
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <button class="${S.dashTab==="fasen"?"ft-tab-act":"ft-tab"}" onclick="S.dashTab='fasen';render()">Periodieke testen</button>
       <button class="${S.dashTab==="mijlpalen"?"ft-tab-act":"ft-tab"}" onclick="S.dashTab='mijlpalen';render()">Mijlpalen</button>
@@ -591,7 +641,7 @@ function renderRapport(){
   const critHTML=criteria.length?`<div class="ft-card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div style="font-size:15px;font-weight:500;color:${C.groen}">Fase-criteria</div><span style="font-size:13px;color:${C.muted}">${jaC}/${criteria.length} behaald</span></div>${criteria.map((c,i)=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:${i<criteria.length-1?"1px solid "+C.grijsBorder:"none"}"><span>${c}</span><span style="font-weight:500;color:${m.criteria?.[c]==="ja"?C.ok:m.criteria?.[c]==="nee"?C.rood:C.muted}">${m.criteria?.[c]==="ja"?"Ja":m.criteria?.[c]==="nee"?"Nee":"—"}</span></div>`).join("")}</div>`:"";
   const testenHTML=rapTesten.map(t=>{
     const r=m.testen?.[t.id];if(!r)return"";
-    const w=r.waarden||{};
+    const w=t.isHHD?calcHHD({...(r.waarden||{})}):calcW(t.id,{...(r.waarden||{})}); // berekende velden (LSI) altijd actueel tonen
     if(t.isGALN){const jaI=GALN_ITEMS.filter(i=>w[i.id]==="ja").length;return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div><div style="font-size:13px;margin-bottom:6px"><span style="color:${C.muted}">Aanwezig: </span><strong>${jaI}/${GALN_ITEMS.length}</strong>${w.galn_normaal?`<span style="margin-left:12px;color:${C.muted}">Genormaliseerd: <strong style="color:${w.galn_normaal==="ja"?C.ok:C.rood}">${w.galn_normaal==="ja"?"Ja":"Nee"}</strong></span>`:""}</div>${r.notitie?`<div style="font-size:13px;color:${C.muted}">Notitie: ${r.notitie}</div>`:""}</div>`;}
     if(t.isKwal){const items=t.items||[];const cats=t.cats||[];return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div>${cats.map(cat=>{const ci=items.filter(i=>i.cat===cat&&(w[i.id]==="ja"||w[i.id]==="nee"));if(!ci.length)return"";return`<div style="margin-bottom:6px"><div style="font-size:12px;color:${C.groenAccent};font-weight:500;margin-bottom:2px">${cat}</div>${ci.map(item=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>${item.label}</span><span style="font-weight:500;color:${w[item.id]==="ja"?C.ok:C.rood};margin-left:8px">${w[item.id]==="ja"?"Ja":"Nee"}</span></div>`).join("")}</div>`;}).join("")}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
     if(t.isCriteria){const ci=t.criteriaItems||[];return`<div class="ft-card"><div style="font-size:14px;font-weight:500;color:${C.groen};margin-bottom:8px">${t.naam}</div>${ci.map((c,i)=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid ${C.grijsBorder}"><span>${c}</span><span style="font-weight:500;color:${w["crit_"+i]==="ja"?C.ok:w["crit_"+i]==="nee"?C.rood:C.muted}">${w["crit_"+i]==="ja"?"Ja":w["crit_"+i]==="nee"?"Nee":"—"}</span></div>`).join("")}${r.notitie?`<div style="font-size:13px;color:${C.muted};margin-top:6px">Notitie: ${r.notitie}</div>`:""}</div>`;}
@@ -611,6 +661,7 @@ function renderRapport(){
       <div style="font-size:13px;color:${C.mint};margin-top:4px">${patLabel()} · ${m.datum}${m.timing?" · "+m.timing:""} · Aangedaan been: ${S.patData?.been||S.been}</div>
     </div>
     ${critHTML}${testenHTML}
+    ${renderVerslagBlok(m)}
     <div style="margin-top:16px;padding:10px 0;border-top:1px solid ${C.grijsBorder};font-size:12px;color:${C.muted}">Gegenereerd op ${new Date().toLocaleDateString("nl-NL")} · Fyzio Totaal Wierden · UMOOOVE</div>`;
 }
 
@@ -965,6 +1016,496 @@ async function slaGedaanDatumOp(id){
 async function verwijderPat(){
   if(S.plPatData){delete S.plPatData.operatiedatum;delete S.plPatData.planning;await saveData(S.plPatNr,S.plPatData);}
   S.plSc="overzicht";await laadOverzicht();
+}
+
+// ═════════════════════════════════════════════════════════════════
+// PATIËNTVERSLAG · VOORTGANGSGRAFIEKEN · PDF · MAILEN
+// ═════════════════════════════════════════════════════════════════
+const DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbzJu1dQFmdzNXooTtFPUcbpJU71fKfq7nxgwi3qVIDyZd8opjXYiRvO33hJgTWKZ5huZQ/exec'; // zelfde Drive-koppeling als Testen & meten
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg, err){ const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(t._h); t._h = setTimeout(() => t.className = '', err ? 5000 : 2800); }
+function openModal(html){ $('#modal-root').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" role="dialog">${html}</div></div>`; }
+function closeModal(){ $('#modal-root').innerHTML = ''; }
+function closeModal2(){ $('#modal2').innerHTML = ''; }
+function openModal2(html){ $('#modal2').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal2()"><div class="modal" role="dialog">${html}</div></div>`; }
+document.addEventListener('keydown', e => { if(e.key !== 'Escape') return; if($('#modal2').innerHTML) closeModal2(); else if($('#modal-root').innerHTML) closeModal(); });
+function copyText(t){ (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Gekopieerd'), () => toast('Kopiëren lukte niet', true)); }
+function getApiKey(){ try{ return localStorage.getItem('ft_apikey') || ''; } catch(e){ return ''; } }
+
+/* ---------- meetmomenten & waarden ---------- */
+function mmSorted(tot){ return [...(S.patData?.meetmomenten || [])].filter(m => !tot || m.datum <= tot).sort((a,b) => (a.datum || '').localeCompare(b.datum || '') || (a.mmId || '').localeCompare(b.mmId || '')); }
+function wkPostOp(datum){ const op = S.patData?.operatiedatum; return op && datum ? Math.floor(dagenverschil(op, datum) / 7) : null; }
+function waardenVan(m, id){ const w = m.testen?.[id]?.waarden; if(!w) return null; return id === 'hhd' ? calcHHD({...w}) : calcW(id, {...w}); }
+function getal(v){ const s = n2s(v); if(s === '') return null; const n = Number(s); return isNaN(n) ? null : n; }
+const faseNaam = f => (FASEN.find(x => x.id === f) || {}).naam || '';
+
+/* ---------- voortgang: series ---------- */
+const VG_KLEUREN = ['#82176D', '#00B6E8', '#E8833A', '#2E9D5B', '#6B4FBB', '#C2185B'];
+const VG_GROEPEN = [
+  {id:'kracht', titel:'Kracht', uitleg:'Kracht van je geopereerde been, als percentage van je andere been (LSI).', een:'%', doel:90, doelLabel:'90%', lsi:true, lijnen:[
+    {l:'Quadriceps (HHD)', t:'hhd', k:'hhd_quad_lsi'}, {l:'Hamstrings (HHD)', t:'hhd', k:'hhd_ham_lsi'},
+    {l:'Quadriceps (1RM)', t:'een_rm', k:'rm_q_lsi'}, {l:'Hamstrings (1RM)', t:'een_rm', k:'rm_h_lsi'}]},
+  {id:'hop', titel:'Springen', uitleg:'Springprestatie van je geopereerde been, als percentage van je andere been (LSI).', een:'%', doel:90, doelLabel:'90%', lsi:true, lijnen:[
+    {l:'Single Leg Hop', t:'slh', k:'slh_lsi'}, {l:'Triple Hop', t:'thd', k:'thd_lsi'}, {l:'Crossover Hop', t:'crossover_hop', k:'ch_lsi'},
+    {l:'Side Hop', t:'sh', k:'sh_lsi'}, {l:'Vertical Jump', t:'vj', k:'vj_lsi'}, {l:'Hopping on the Spot', t:'hopping_spot', k:'hs_lsi'}]},
+  {id:'aclrsi', titel:'Vertrouwen in je knie', uitleg:'Score op de ACL-RSI vragenlijst (0 tot 100). Vanaf 72 ben je mentaal klaar voor je sport.', een:'', doel:72, doelLabel:'72', lijnen:[
+    {l:'ACL-RSI', t:'aclrsi', f:m => { const w = m.testen?.aclrsi?.waarden; return w ? berekenACLRSI(w) : null; }}]}
+];
+function vgData(g, tot){
+  const ms = mmSorted(tot), op = S.patData?.operatiedatum, t0 = op || (ms[0] && ms[0].datum);
+  const lijnen = g.lijnen.map((L, i) => ({...L, kleur:VG_KLEUREN[i % VG_KLEUREN.length], pts:ms.map(m => {
+    const v = L.f ? L.f(m) : getal((waardenVan(m, L.t) || {})[L.k]);
+    return v === null || v === undefined || isNaN(v) ? null : {x:dagenverschil(t0, m.datum) / 7, v:Number(v), datum:m.datum, wk:wkPostOp(m.datum)};
+  }).filter(Boolean)})).filter(L => L.pts.length);
+  return {lijnen, metOp:!!op};
+}
+function vgSchaal(g, d){
+  const alle = d.lijnen.flatMap(L => L.pts.map(p => p.v)).concat([g.doel]);
+  let lo = g.lsi ? Math.min(60, Math.floor(Math.min(...alle) / 10) * 10) : 0, hi = g.lsi ? Math.max(110, Math.ceil(Math.max(...alle) / 10) * 10) : 100;
+  const xs = d.lijnen.flatMap(L => L.pts.map(p => p.x)); let x0 = Math.min(...xs), x1 = Math.max(...xs);
+  if(x1 - x0 < 1){ x0 -= 1; x1 += 1; }
+  const stap = (hi - lo) > 60 ? 20 : 10, ticks = []; for(let v = lo; v <= hi; v += stap) ticks.push(v);
+  const xt = [...new Map(d.lijnen.flatMap(L => L.pts).map(p => [p.datum, p])).values()].sort((a,b) => a.x - b.x);
+  return {lo, hi, x0, x1, ticks, xt};
+}
+const xLabel = (p, d) => d.metOp && p.wk !== null ? 'wk ' + p.wk : nlDatum(p.datum).slice(0, 5);
+function vgSVG(g, d){
+  const W = 460, H = 230, L = 38, R = 60, T = 12, B = 26, sc = vgSchaal(g, d);
+  const X = x => L + (x - sc.x0) / (sc.x1 - sc.x0) * (W - L - R), Y = v => T + (1 - (v - sc.lo) / (sc.hi - sc.lo)) * (H - T - B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="vg-svg" role="img" aria-label="${esc(g.titel)}">`;
+  s += `<rect x="${L}" y="${Y(sc.hi)}" width="${W - L - R}" height="${Y(g.doel) - Y(sc.hi)}" fill="#e7f6ec"/>`;
+  sc.ticks.forEach(v => { s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#eee6ec"/><text x="${L - 7}" y="${Y(v) + 4}" text-anchor="end" class="vg-ax">${v}${g.een}</text>`; });
+  s += `<line x1="${L}" x2="${W - R}" y1="${Y(g.doel)}" y2="${Y(g.doel)}" stroke="#2E9D5B" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W - R + 5}" y="${Y(g.doel) + 4}" class="vg-ax" fill="#2E9D5B" style="fill:#2E9D5B;font-weight:600">doel ${g.doelLabel}</text>`;
+  let lastX = -99; sc.xt.forEach(p => { const x = X(p.x); if(x - lastX < 30) return; lastX = x; s += `<text x="${x}" y="${H - 9}" text-anchor="middle" class="vg-ax">${esc(xLabel(p, d))}</text>`; });
+  d.lijnen.forEach(Ln => {
+    if(Ln.pts.length > 1) s += `<polyline fill="none" stroke="${Ln.kleur}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${Ln.pts.map(p => X(p.x).toFixed(1) + ',' + Y(p.v).toFixed(1)).join(' ')}"/>`;
+    Ln.pts.forEach(p => { s += `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="4.5" fill="#fff" stroke="${Ln.kleur}" stroke-width="2.5"><title>${esc(Ln.l)} · ${esc(xLabel(p, d))}: ${Math.round(p.v)}${g.een}</title></circle>`; });
+  });
+  return s + '</svg>';
+}
+function vgLaatste(Ln){ const p = Ln.pts[Ln.pts.length - 1], q = Ln.pts[Ln.pts.length - 2]; return {p, delta:q ? p.v - q.v : null}; }
+function renderVoortgang(){
+  const blokken = VG_GROEPEN.map(g => ({g, d:vgData(g)})).filter(x => x.d.lijnen.length);
+  if(!blokken.length) return '';
+  return `<div class="ft-card vg-card"><div style="font-size:15px;font-weight:600;color:${C.groen};margin-bottom:2px">📈 Voortgang</div>
+    <div style="font-size:12px;color:${C.muted};margin-bottom:6px">${S.patData?.operatiedatum ? 'Weken na de operatie' : 'Datum van het testmoment'} · het groene vlak is het doel</div>
+    ${blokken.map(({g, d}) => `<div class="vg-blok"><div class="vg-titel">${g.titel}</div><div class="vg-uitleg">${g.uitleg}</div>${vgSVG(g, d)}
+      <div class="vg-legend">${d.lijnen.map(Ln => { const {p, delta} = vgLaatste(Ln); return `<span class="vg-chip"><i style="background:${Ln.kleur}"></i>${esc(Ln.l)} <b>${Math.round(p.v)}${g.een}</b>${delta !== null && Math.round(delta) !== 0 ? `<em class="${delta > 0 ? 'up' : 'down'}">${delta > 0 ? '▲' : '▼'} ${Math.abs(Math.round(delta))}</em>` : ''}</span>`; }).join('')}</div></div>`).join('')}
+  </div>`;
+}
+function pdfGrafiek(doc, g, d, x, y, w, h, font){
+  const L = 13, R = 16, T = 4, B = 8, sc = vgSchaal(g, d);
+  const X = v => x + L + (v - sc.x0) / (sc.x1 - sc.x0) * (w - L - R), Y = v => y + T + (1 - (v - sc.lo) / (sc.hi - sc.lo)) * (h - T - B);
+  doc.setFillColor(231, 246, 236); doc.rect(x + L, Y(sc.hi), w - L - R, Y(g.doel) - Y(sc.hi), 'F');
+  sc.ticks.forEach(v => { doc.setDrawColor(238, 230, 236); doc.setLineWidth(0.2); doc.line(x + L, Y(v), x + w - R, Y(v)); font('normal', 7, [122,100,120]); doc.text(v + g.een, x + L - 2, Y(v) + 1.2, {align:'right'}); });
+  doc.setDrawColor(46, 157, 91); doc.setLineWidth(0.45); doc.setLineDashPattern([1.6, 1.2], 0); doc.line(x + L, Y(g.doel), x + w - R, Y(g.doel)); doc.setLineDashPattern([], 0);
+  font('bold', 7, [46,157,91]); doc.text('doel ' + g.doelLabel, x + w - R + 1.5, Y(g.doel) + 1.2);
+  let lastX = -99; sc.xt.forEach(p => { const px = X(p.x); if(px - lastX < 10) return; lastX = px; font('normal', 7, [122,100,120]); doc.text(xLabel(p, d), px, y + h - 2, {align:'center'}); });
+  d.lijnen.forEach(Ln => {
+    const rgb = [1,3,5].map(i => parseInt(Ln.kleur.substr(i, 2), 16));
+    doc.setDrawColor(...rgb); doc.setLineWidth(0.7);
+    for(let i = 1; i < Ln.pts.length; i++) doc.line(X(Ln.pts[i-1].x), Y(Ln.pts[i-1].v), X(Ln.pts[i].x), Y(Ln.pts[i].v));
+    Ln.pts.forEach(p => { doc.setFillColor(255,255,255); doc.setLineWidth(0.6); doc.circle(X(p.x), Y(p.v), 1.1, 'FD'); });
+  });
+  // legenda
+  let lx = x + L, ly = y + h + 4;
+  d.lijnen.forEach(Ln => {
+    const {p} = vgLaatste(Ln), t = Ln.l + '  ' + Math.round(p.v) + g.een; font('normal', 8, [42,22,38]);
+    const tw = doc.getTextWidth(t) + 8; if(lx + tw > x + w){ lx = x + L; ly += 5; }
+    const rgb = [1,3,5].map(i => parseInt(Ln.kleur.substr(i, 2), 16)); doc.setFillColor(...rgb); doc.circle(lx + 1.3, ly - 1.1, 1.2, 'F');
+    doc.text(t, lx + 4, ly); lx += tw;
+  });
+  return ly - y + 2;
+}
+
+/* ---------- testresultaten als tekst (voor de AI) ---------- */
+function lsiOordeel(v, type, m){
+  const d = LSI_DREMPEL[type]?.[faseVan(m)]; if(v === null) return '';
+  if(d === null || d === undefined) return ' (geen LSI-eis in deze fase)';
+  return v >= d ? ' (voldoet aan de eis van minimaal ' + d + '% voor deze fase)' : v >= d - 10 ? ' (iets onder de eis van ' + d + '% voor deze fase)' : ' (duidelijk onder de eis van ' + d + '% voor deze fase)';
+}
+function testRegels(t, m){
+  const r = m.testen?.[t.id]; if(!r) return null;
+  const w = waardenVan(m, t.id) || {}, nee = items => items.filter(i => w[i.id] === 'nee').map(i => i.label.toLowerCase()), ja = items => items.filter(i => w[i.id] === 'ja').length;
+  let s = '- ' + t.naam + ': ';
+  if(t.isGALN){ const n = nee(GALN_ITEMS); s += ja(GALN_ITEMS) + ' van de ' + GALN_ITEMS.length + ' kenmerken van een normaal looppatroon aanwezig' + (w.galn_normaal ? '; looppatroon genormaliseerd: ' + w.galn_normaal : '') + (n.length ? '; nog niet goed: ' + n.join('; ') : ''); }
+  else if(t.isKwal){ const n = nee(t.items || []); s += ja(t.items || []) + ' van de ' + (t.items || []).length + ' kwaliteitskenmerken goed' + (n.length ? '; nog niet goed: ' + n.join('; ') : ''); }
+  else if(t.isCriteria){ const ci = t.criteriaItems || []; s += ci.filter((c, i) => w['crit_' + i] === 'ja').length + ' van de ' + ci.length + ' criteria behaald' + (ci.some((c, i) => w['crit_' + i] === 'nee') ? '; nog niet behaald: ' + ci.filter((c, i) => w['crit_' + i] === 'nee').map(c => c.replace(/\?$/, '').toLowerCase()).join('; ') : ''); }
+  else if(t.isACLRSI){ const sc = berekenACLRSI(r.waarden || {}); if(sc === null) return null; s += 'score ' + sc + ' van 100 (vanaf 72 mentaal klaar voor de sport, 56–72 twijfelachtig, onder 56 nog niet klaar)'; }
+  else if(t.isSLS){ const cw = (r.waarden || {}).checkW || {}; const n = SLS_ITEMS.filter(i => cw[i.id] === 'nee').map(i => i.label.toLowerCase());
+    s += 'niet-geopereerde been ' + (w.sls_niet || '-') + ' herhalingen, geopereerde been ' + (w.sls_aan || '-') + ' herhalingen in 1 minuut (norm: meer dan 22)' + (n.length ? '; kwaliteit nog niet goed: ' + n.join('; ') : ''); }
+  else {
+    const delen = t.velden.map(v => {
+      const val = getal(w[v.id]); if(val === null && !(v.sel && w[v.id])) return null;
+      if(v.sel){ const o = (v.opties || []).find(x => x[0] === w[v.id]); return v.label + ': ' + (o ? o[1] : w[v.id]); }
+      let x = v.label + ': ' + (Math.round(val * 10) / 10) + (v.een ? ' ' + v.een : '');
+      if(v.lsiType) x += lsiOordeel(val, v.lsiType, m);
+      if(v.isHopSpot) x += ' (' + hopSpotKleur(val).label.toLowerCase() + ')';
+      if(v.isPlank) x += ' (' + plankKleur(val).label.toLowerCase() + ')';
+      return x;
+    }).filter(Boolean);
+    if(t.isRoeien && w.roei_tijd){ const k = roeiKleur(w.roei_tijd); delen.unshift('tijd ' + w.roei_tijd + (k ? ' (' + k.label.toLowerCase() + ')' : '')); }
+    if(!delen.length) return null;
+    s += delen.join(', ');
+  }
+  if(r.notitie) s += ' | notitie therapeut: ' + r.notitie;
+  return s;
+}
+function hhdRegel(m){
+  const w = waardenVan(m, 'hhd'); if(!w) return null;
+  const d = [];
+  if(getal(w.hhd_quad_aan) !== null) d.push('quadriceps geopereerde been ' + w.hhd_quad_aan + ' kg, andere been ' + (w.hhd_quad_niet || '-') + ' kg' + (getal(w.hhd_quad_lsi) !== null ? ', LSI ' + Math.round(getal(w.hhd_quad_lsi)) + '%' + lsiOordeel(getal(w.hhd_quad_lsi), 'kracht', m) : ''));
+  if(getal(w.hhd_ham_aan) !== null) d.push('hamstrings geopereerde been ' + w.hhd_ham_aan + ' kg, andere been ' + (w.hhd_ham_niet || '-') + ' kg' + (getal(w.hhd_ham_lsi) !== null ? ', LSI ' + Math.round(getal(w.hhd_ham_lsi)) + '%' + lsiOordeel(getal(w.hhd_ham_lsi), 'kracht', m) : ''));
+  if(getal(w.hhd_hq) !== null) d.push('verhouding hamstrings/quadriceps geopereerde been ' + Math.round(getal(w.hhd_hq)) + '%');
+  return d.length ? '- Handheld Dynamometer (krachtmeting): ' + d.join('; ') : null;
+}
+function mmTekst(m){
+  const ids = Object.keys(m.testen || {});
+  const regels = ALLE_TESTEN.filter(t => ids.includes(t.id)).map(t => t.isHHD ? hhdRegel(m) : testRegels(t, m)).filter(Boolean);
+  const crit = m.type === 'fase' ? (FASE_CRITERIA[m.refId] || []) : [], cj = crit.filter(c => m.criteria?.[c] === 'ja'), cn = crit.filter(c => m.criteria?.[c] === 'nee');
+  const wk = wkPostOp(m.datum);
+  return 'TESTMOMENT ' + nlDatum(m.datum) + ' | ' + m.naam + (wk !== null ? ' | week ' + wk + ' na de operatie' : '') +
+    (cj.length || cn.length ? '\nCriteria van deze fase: ' + cj.length + ' van de ' + crit.length + ' behaald' + (cn.length ? '; nog niet behaald: ' + cn.map(c => c.replace(/\?$/, '')).join('; ') : '') : '') +
+    '\n' + (regels.length ? regels.join('\n') : '(geen testresultaten ingevuld)');
+}
+
+/* ---------- AI-tekst opschonen en controleren ---------- */
+function cleanAi(t){ return String(t || '').replace(/\r/g, '').split('\n').map(l => l.replace(/^\s*#{1,6}\s*/, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1').replace(/^\s*[-•–]\s+/, '* ').replace(/^\s*\*\s+/, '* ').replace(/\s+$/, '')).join('\n').replace(/\n{3,}/g, '\n\n').trim(); }
+function isHeadingLine(l){ const s = l.trim(); return s && s.length < 60 && !/[.:!?]$/.test(s) && !s.startsWith('*') && !/^\d/.test(s); }
+function stripMarks(t){ return String(t || '').replace(/\[B\]\s*/g, ''); }
+const AI_BANNED = [[/\bzwabber\w*/i, 'zwabberen'], [/\bkuitmeter\w*/i, 'kuitmeter'], [/\bbenedenlichaam\w*/i, 'benedenlichaam'], [/\buithouding\b/i, 'uithouding']];
+const bannedIn = t => AI_BANNED.filter(([re]) => re.test(t)).map(x => x[1]);
+const PHYSITRACK_ZIN = '* Op basis van je testresultaten krijg je via Physitrack een oefenschema, zodat je thuis gericht aan de slag kunt.';
+function fixAi(t){
+  t = cleanAi(t).replace(/^(\*\s+)\s*\[\s*b\s*\]\s*/gim, '$1[B] ').replace(/\b([Uu])ithouding\b/g, (m, u) => u + 'ithoudingsvermogen');
+  if(!/physitrack/i.test(t)){ const L = t.split('\n'), i = L.findIndex(l => /^aan de slag$/i.test(l.trim())); if(i >= 0){ let j = i + 1; while(j < L.length && !L[j].trim()) j++; L.splice(j, 0, PHYSITRACK_ZIN); } else L.push('', 'Aan de slag', PHYSITRACK_ZIN); t = L.join('\n'); }
+  return t;
+}
+const LOAD_RE = /(opbouw|opbouwen|bouw\w* .{0,40}\bop\b|belast|wandel|hardlo|loop|fiets|sport|train\w* .{0,20}(per week|keer|minuten)|afstand|kilometer|\bkm\b|minuten|uur per|rust|pijngrens|pijn|werk|hervat|frequentie|per week|dagelijks|intensiteit|wedstrijd|springen|spring)/i;
+const normAdv = l => stripMarks(l).replace(/^\s*\*\s+/, '').replace(/\s+/g, ' ').trim();
+const advFrom = t => String(t || '').split('\n').filter(l => /\[B\]/.test(l)).map(normAdv);
+function loadItems(t, adv){
+  const set = new Set((adv || []).map(normAdv)), L = String(t || '').split('\n'); let sec = '';
+  return L.map((l, i) => { if(isHeadingLine(l)) sec = l.trim().toLowerCase(); return {i, l, sec}; })
+    .filter(x => x.l.trim() && !isHeadingLine(x.l) && (/\[B\]/.test(x.l) || set.has(normAdv(x.l)) || (x.sec === 'aan de slag' && /^\s*\*\s/.test(x.l) && LOAD_RE.test(x.l) && !/physitrack/i.test(x.l))));
+}
+function aiTextHTML(t){ return esc(stripMarks(cleanAi(t))).split('\n').map(l => isHeadingLine(l) ? '<span class="h">' + l + '</span>' : l).join('\n'); }
+
+/* ---------- prompts ---------- */
+function buildPrompt(m, context){
+  const ms = mmSorted(m.datum), eerder = ms.filter(x => x.mmId !== m.mmId);
+  const been = (S.patData?.been || S.been || '').toLowerCase(), wk = wkPostOp(m.datum);
+  return `Je bent een fysiotherapeut bij Fyzio Totaal en schrijft een persoonlijk testverslag voor een patiënt die revalideert na een voorste kruisbandreconstructie (VKB). Het verslag gaat over het testmoment van ${nlDatum(m.datum)} (${m.naam}) en laat ook de voortgang ten opzichte van eerdere testmomenten zien.
+
+HARDE REGEL - GEEN VERZONNEN RESULTATEN:
+Gebruik uitsluitend de testresultaten hieronder. Verzin NOOIT een score, percentage, afstand, aantal of observatie voor een test die daar niet in staat. Schrijf alleen over onderdelen die daadwerkelijk getest zijn. Dit is de belangrijkste regel en gaat boven alle stijlvoorkeuren.
+
+TAAL EN STIJL:
+- Informeel, jij-vorm ("je/jij"), nooit "u". Warm maar nuchter en compact.
+- SCHRIJF ZOALS DE THERAPEUT HET ZELF IN DE BEHANDELKAMER ZOU ZEGGEN: natuurlijke, lopende zinnen. Wissel de zinsbouw af; begin niet elke zin met "Je" of met de testnaam. Hooguit één of twee getallen per zin.
+- Correct Nederlands, geen Engelse woorden waar een goed Nederlands alternatief bestaat. Geen spreektaal als "qua".
+- SPELLING EN GRAMMATICA: controleer elke zin. Let speciaal op de buigings-e bij bijvoeglijke naamwoorden, ook in de vergrotende trap ("een sterkere quadriceps", "een stabielere knie"), op d/t en op enkelvoud/meervoud.
+- WOORDKEUS: alleen bestaande woorden die een fysiotherapeut hardop zou zeggen. Schrijf "uithoudingsvermogen", nooit "uithouding". Nooit "zwabberen", "wiebelen", "kuitmeter" of "benedenlichaam". Verzin geen samenstellingen of namen voor testen.
+- TESTNAMEN: gebruik de testnaam zoals die in de resultaten staat (bijv. "Single Leg Hop for Distance", "Triple Hop for Distance", "Side Hop Test", "ACL-RSI") en leg daarna in gewone taal uit wat de test meet.
+- Behoud correcte medische termen waar dat gepast is ("quadriceps", "hamstrings", "voorste kruisband"). Vertaal alleen termen die echt niets zeggen (niet "valgus" maar "je knie zakt naar binnen", niet "hydrops" maar "vocht in je knie").
+- "Niet-aangedaan" is het niet-geopereerde been; "aangedaan" is het geopereerde been (${been || 'onbekend'}). Gebruik in de tekst "je geopereerde been" of "je ${been === 'links' ? 'linker' : been === 'rechts' ? 'rechter' : ''}been", en verwissel links en rechts nooit.
+- LSI uitleggen in gewone taal: "je geopereerde been haalt 84% van de kracht van je andere been".
+- Geen gedachtestreepjes als opsommingsteken of in de lopende tekst.
+- OPMAAK: gewone platte tekst. NOOIT markdown: geen hekjes, geen dubbele sterretjes, geen liggende streepjes als opsomming. Kopjes zijn losse regels zonder leesteken aan het eind. Alleen de opsommingen bij "Belangrijkste punten" en "Aan de slag" beginnen met een asterisk en een spatie (* ).
+- Geen medische diagnoses of risico's toevoegen, geen nocebo-taal (niet "kans op een nieuwe scheur"). Leg geen oorzakelijke verbanden die niet uit de gegevens of de context blijken.
+- VERBANDEN EN VERBINDINGSWOORDEN: "maar" alleen bij een echte tegenstelling, "dus" alleen als het volgende werkelijk uit het voorgaande volgt, "en" alleen om gelijkwaardige zaken te verbinden. Trek een conclusie als de resultaten die ondersteunen. Is een verband aannemelijk maar niet aangetoond, formuleer het dan voorzichtig ("kan leiden tot", "kan erop wijzen", "past bij"). Gebruik "dus", "geeft aan dat" of "komt door" alleen als de resultaten het verband echt aantonen.
+- Gele en rode vlaggen, interne criteria-namen en vaktermen uit checklists neem je niet letterlijk over; vertaal ze naar wat het voor de patiënt betekent.
+- Bij een jongere: motiverend en eenvoudig.
+
+NORMEN EN FASES:
+- Achter LSI-waarden staat of ze voldoen aan de eis voor deze fase. Maak per test in een lopende zin duidelijk hoe de patiënt ervoor staat ten opzichte van die eis. Noem alleen normen die in de resultaten staan; verzin er geen.
+- Behaalde criteria mag je positief benoemen als stap richting de volgende fase; niet-behaalde criteria formuleer je als waar we nu aan werken. Beloof geen termijn voor terugkeer naar de sport.
+- ACL-RSI: vanaf 72 ben je mentaal klaar voor je sport; benoem een lagere score begripvol, als iets waar we samen aandacht aan geven.
+
+VOORTGANG:
+${eerder.length ? '- Er zijn ' + eerder.length + ' eerdere testmomenten. Beschrijf concreet wat er sinds de vorige keer en sinds het begin is verbeterd, wat gelijk is gebleven en wat nog aandacht vraagt. Gebruik daarbij de echte getallen (bijv. "van 68% naar 84%"). Wees eerlijk maar bemoedigend.' : '- Dit is het eerste testmoment; er is nog geen verloop te beschrijven. Leg uit dat dit de uitgangssituatie is waar we de volgende metingen mee vergelijken.'}
+- Onder het verslag staan in de PDF grafieken van de LSI en de ACL-RSI. Je mag daar kort naar verwijzen ("in de grafieken zie je...").
+
+ADVIESTOON:
+- Goed is goed: als een score aan de eis voldoet, benoem dat positief zonder vervolgadvies voor dat onderdeel.
+- Aandachtspunten formuleer je als kansen met een concrete richting, nooit als tekortkomingen.
+
+PATIËNT:
+Voornaam: ${S.voornaam || S.patData?.voornaam || ''} | Geopereerde been: ${been || 'onbekend'}${S.patData?.operatiedatum ? ' | Operatiedatum: ' + nlDatum(S.patData.operatiedatum) + (wk !== null ? ' (nu week ' + wk + ')' : '') : ''}
+${context ? 'Context van de therapeut: ' + context : ''}
+
+TESTRESULTATEN (de ENIGE gegevens die je mag gebruiken; het laatste testmoment is het moment waar dit verslag over gaat):
+${ms.map(mmTekst).join('\n\n')}
+
+STRUCTUUR - volg dit patroon:
+
+Testverslag ${S.voornaam || S.patData?.voornaam || ''} — ${nlDatum(m.datum)}
+
+Waar sta je nu
+[2 tot 3 zinnen: welke fase van de revalidatie, hoeveel weken na de operatie, en de hoofdlijn van dit testmoment.]
+
+Maak daarna per getest onderdeel een eigen kopje, alleen voor onderdelen die in de resultaten voorkomen, bijvoorbeeld: Beweeglijkheid en zwelling, Looppatroon, Kracht, Springen en landen, Vertrouwen in je knie, Conditie. Beschrijf per onderdeel de scores, de vergelijking met de eis en eventueel advies in dezelfde alinea.
+${eerder.length ? '\nJe voortgang\n[2 tot 4 zinnen over het verloop sinds de eerdere testmomenten.]\n' : ''}
+Belangrijkste punten
+Opsomming waarbij elke regel begint met een asterisk en een spatie (* ). 3 tot 5 volledige zinnen, een mix van sterke punten en aandachtspunten als kansen.
+
+Aan de slag
+Concrete actielijst, elke actie begint met een asterisk en een spatie (* ). 2 tot 4 uitvoerbare acties op basis van de testresultaten.
+- De eerste actie is altijd: op basis van je testresultaten krijg je via Physitrack een oefenschema. Bedenk geen eigen oefenprogramma; noem hooguit kort waar het schema zich op richt.
+- ADVIEZEN OVER BELASTING: elk advies over belasting of belastbaarheid (bijv. hardlopen, springen of sporten opbouwen, afstand, duur, frequentie, rust, werk, omgaan met pijn of zwelling) begin je met de markering [B] direct na de asterisk, dus "* [B] ...". De therapeut controleert deze adviezen voordat het verslag naar de patiënt gaat. Geef zo'n advies alleen als het aansluit bij de context van de therapeut en verzin geen getallen of schema's.
+
+Maximaal 600 woorden. Schrijf in het Nederlands, in platte tekst zonder markdown. Zorg dat elke sectie volledig is afgerond.`;
+}
+function buildReviewPrompt(tekst, m, context){
+  return `Je bent een zorgvuldige Nederlandse eindredacteur met kennis van fysiotherapie. Hieronder staat een concept-testverslag voor een patiënt van Fyzio Totaal die revalideert na een voorste kruisbandreconstructie, met de testgegevens waarop het gebaseerd is. Controleer het verslag en verbeter het waar nodig.
+
+Controleer zin voor zin:
+1. Spelling en grammatica. Let vooral op de buigings-e bij bijvoeglijke naamwoorden, ook in de vergrotende trap, op d/t, op enkelvoud/meervoud en op aaneengeschreven samenstellingen.
+2. Woordkeus. Alleen bestaande, gangbare Nederlandse woorden die een fysiotherapeut hardop tegen een patiënt zou zeggen. Vervang "uithouding" door "uithoudingsvermogen". Nooit "zwabberen", "kuitmeter" of "benedenlichaam". Herschrijf stijve of krom lopende zinnen tot natuurlijk Nederlands.
+3. Verbanden. Volgt elk oorzakelijk verband uit de testgegevens of de context? Is het aannemelijk maar niet aangetoond, formuleer het dan voorzichtig ("kan leiden tot", "kan erop wijzen", "past bij"). Is het niet aannemelijk, schrap het. "Maar" alleen bij een echte tegenstelling, "dus" alleen als het volgende werkelijk uit het voorgaande volgt.
+4. Feiten. Elk getal, elk percentage, elke vergelijking met een eerder testmoment, het geopereerde been en elke norm moet kloppen met de testgegevens. Herstel afwijkingen en verwijder alles wat er niet in staat.
+5. Onder "Aan de slag" staat als eerste actie dat de patiënt op basis van de testresultaten via Physitrack een oefenschema krijgt.
+6. Elk advies over belasting of belastbaarheid begint met "[B] " direct na de asterisk. Voeg die markering toe waar ze ontbreekt en laat bestaande markeringen staan.
+
+Verander niets wat niet nodig is: behoud de toon, de structuur, de kopjes en de opsommingen met "* ". Geef ALLEEN het verbeterde verslag terug, in platte tekst zonder markdown en zonder toelichting.
+
+${context ? 'CONTEXT VAN DE THERAPEUT: ' + context + '\n\n' : ''}GEOPEREERDE BEEN: ${(S.patData?.been || S.been || 'onbekend').toLowerCase()}
+
+TESTGEGEVENS:
+${mmSorted(m.datum).map(mmTekst).join('\n\n')}
+
+CONCEPT-VERSLAG:
+${tekst}`;
+}
+async function callClaude(key, prompt){
+  const r = await fetch('https://api.anthropic.com/v1/messages', {method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-5', max_tokens:2800, messages:[{role:'user', content:prompt}]})});
+  const j = await r.json(); if(!r.ok) throw new Error(j.error?.message || r.status);
+  return (j.content || []).map(c => c.text || '').join('');
+}
+
+/* ---------- verslag-UI ---------- */
+let DRAFT_ADV = [];
+const huidigeMm = () => S.rapMm;
+function samenvattingen(mmId){ return (S.patData?.samenvattingen || []).filter(s => s.mmId === mmId).sort((a,b) => (b.created || '').localeCompare(a.created || '')); }
+function renderVerslagBlok(m){
+  const lijst = samenvattingen(m.mmId);
+  return `<div class="ft-card" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><div style="font-size:15px;font-weight:600;color:${C.groen}">📝 Verslag voor de patiënt</div><div style="font-size:12px;color:${C.muted}">In begrijpelijke taal, met grafieken van de voortgang. Op te slaan als PDF en te mailen.</div></div><button class="ft-btn-p" onclick="aiModal()">✨ Verslag maken</button></div>
+    ${lijst.map(s => `<div class="vs-item"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:13px;color:${C.muted}">Gemaakt op ${nlDatum((s.created || '').slice(0,10))}${s.edited ? ' · aangepast' : ''}</span>
+      <span class="vs-acts"><button class="ft-btn-sm" onclick="vsPdf('${s.id}')">📄 PDF</button><button class="ft-btn-sm" onclick="vsPdf('${s.id}','mail')">📧 Mail naar patiënt</button><button class="ft-btn-sm" onclick="copyText(stripMarks(cleanAi(vsGet('${s.id}').tekst)))">📋</button><button class="ft-btn-sm" onclick="vsEdit('${s.id}')">✏️</button><button class="ft-btn-sm" style="color:${C.rood}" onclick="vsDel('${s.id}')">🗑️</button></span></div>
+      <div class="ai-text">${aiTextHTML(s.tekst)}</div></div>`).join('')}</div>`;
+}
+const vsGet = id => (S.patData?.samenvattingen || []).find(s => s.id === id);
+function aiModal(){
+  const m = huidigeMm(), eerder = mmSorted(m.datum).length - 1;
+  openModal(`<h2>✨ Verslag voor de patiënt</h2>
+    <p class="small">Op basis van dit testmoment (${esc(m.naam)}, ${nlDatum(m.datum)})${eerder ? ' en ' + eerder + ' eerder' + (eerder > 1 ? 'e testmomenten' : ' testmoment') + ' voor de voortgang' : ''}. De tekst wordt daarna automatisch nagekeken op spelling, woordkeus en verbanden.</p>
+    <label class="small" style="display:block;margin-top:10px;font-weight:600">Context voor het verslag (optioneel)</label>
+    <textarea class="ft-input" id="ai-ctx" placeholder="Bijv. voetballer, wil na de zomer weer trainen; afgesproken: hardlopen opbouwen volgens schema" style="margin-top:4px"></textarea>
+    <div id="ai-out"></div>
+    <div class="m-actions" id="ai-actions"><button class="ft-btn-s" onclick="closeModal()">Annuleren</button><button class="ft-btn-p" id="ai-go" onclick="runAi()">✨ Genereren</button></div>`);
+}
+async function runAi(){
+  const m = huidigeMm();
+  let key = getApiKey();
+  if(!key){ key = prompt('Voer de Anthropic API-key in (begint met sk-ant-). Deze wordt alleen in deze browser bewaard, gedeeld met de andere Fyzio-tools.'); if(!key) return; key = key.trim(); if(!key.startsWith('sk-ant-')){ toast('Ongeldige key', true); return; } try{ localStorage.setItem('ft_apikey', key); } catch(e){} }
+  const context = $('#ai-ctx').value.trim(), out = $('#ai-out');
+  $('#ai-go').disabled = true;
+  out.innerHTML = '<div class="m-info"><span class="spinner"></span> Het verslag wordt geschreven…</div>';
+  try{
+    const concept = fixAi(await callClaude(key, buildPrompt(m, context)));
+    out.innerHTML = '<div class="m-info"><span class="spinner"></span> Het verslag wordt nagekeken op spelling, woordkeus en verbanden…</div>';
+    let tekst = concept;
+    try{ const n = fixAi(await callClaude(key, buildReviewPrompt(concept, m, context))); if(n.length > concept.length * 0.6) tekst = n; } catch(e){ console.warn('Nakijken mislukt', e); }
+    DRAFT_ADV = advFrom(tekst); tekst = stripMarks(tekst);
+    const bad = bannedIn(tekst);
+    out.innerHTML = `${bad.length ? `<div class="m-err">Let op, controleer deze woorden in de tekst: ${bad.map(esc).join(', ')}</div>` : ''}<label class="small" style="display:block;margin-top:12px;font-weight:600">Resultaat (je kunt het hier nog aanpassen)</label><textarea class="ft-input" id="ai-result" style="min-height:320px;font-size:13.5px;line-height:1.6;margin-top:4px">${esc(tekst)}</textarea>
+      <p class="small" style="color:${C.muted};margin-top:6px">Adviezen over belasting moet je vóór het maken van de PDF nog bevestigen of aanpassen.</p>`;
+    $('#ai-actions').innerHTML = `<button class="ft-btn-s" onclick="closeModal()">Niet opslaan</button><button class="ft-btn-sm" onclick="copyText(stripMarks(cleanAi($('#ai-result').value)))">📋 Kopiëren</button><button class="ft-btn-sm" onclick="draftPdf()">📄 PDF</button><button class="ft-btn-sm" onclick="draftPdf('mail')">📧 Mail naar patiënt</button><button class="ft-btn-p" onclick="saveAi()">💾 Opslaan</button>`;
+  } catch(e){
+    out.innerHTML = `<div class="m-err">Genereren mislukt: ${esc(e.message)}${/auth|key|401/i.test(e.message) ? '<br><button class="ft-btn-sm" style="margin-top:6px" onclick="try{localStorage.removeItem(\'ft_apikey\')}catch(e){};toast(\'Key verwijderd, klik opnieuw op Genereren\');$(\'#ai-go\').disabled=false">API-key opnieuw invoeren</button>' : ''}</div>`;
+    $('#ai-go').disabled = false;
+  }
+}
+async function bewaarPat(fn){ const nd = {...S.patData, samenvattingen:[...(S.patData.samenvattingen || [])].map(x => ({...x}))}; fn(nd); S.patData = nd; await saveData(S.patNr, nd); }
+async function saveAi(){
+  const raw = fixAi($('#ai-result').value); if(!raw) return;
+  const m = huidigeMm(), s = {id:'s' + Date.now().toString(36), created:new Date().toISOString(), mmId:m.mmId, datum:m.datum, tekst:stripMarks(raw), belasting:[...new Set([...DRAFT_ADV, ...advFrom(raw)])]};
+  try{ await bewaarPat(nd => nd.samenvattingen.push(s)); closeModal(); render(); toast('Verslag opgeslagen'); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); }
+}
+function draftPdf(mode){ checkLoadThenPdf(cleanAi($('#ai-result').value), huidigeMm(), DRAFT_ADV, (t, adv) => { const ta = $('#ai-result'); if(ta) ta.value = t; DRAFT_ADV = adv; }, mode); }
+function vsPdf(id, mode){
+  const s = vsGet(id); if(!s) return; const m = (S.patData.meetmomenten || []).find(x => x.mmId === s.mmId) || huidigeMm();
+  checkLoadThenPdf(cleanAi(s.tekst), m, s.belasting || [], async (t, adv) => { try{ await bewaarPat(nd => { const z = nd.samenvattingen.find(x => x.id === id); if(z){ if(z.tekst !== t) z.edited = new Date().toISOString(); z.tekst = t; z.belasting = adv; z.belastingAkkoord = new Date().toISOString(); } }); render(); } catch(e){ toast('Aanpassing niet opgeslagen: ' + e.message, true); } }, mode);
+}
+function vsEdit(id){ const s = vsGet(id); if(!s) return; openModal(`<h2>Verslag bewerken</h2><textarea class="ft-input" id="ai-edit" style="min-height:380px;margin-top:10px;font-size:13.5px;line-height:1.6">${esc(s.tekst)}</textarea><div class="m-actions"><button class="ft-btn-s" onclick="closeModal()">Annuleren</button><button class="ft-btn-p" onclick="vsEditSave('${id}')">Opslaan</button></div>`); }
+async function vsEditSave(id){ const t = $('#ai-edit').value; try{ await bewaarPat(nd => { const s = nd.samenvattingen.find(x => x.id === id); if(s){ s.tekst = t; s.edited = new Date().toISOString(); } }); closeModal(); render(); toast('Opgeslagen'); } catch(e){ toast('Opslaan mislukt: ' + e.message, true); } }
+async function vsDel(id){ if(!confirm('Dit verslag verwijderen?')) return; try{ await bewaarPat(nd => { nd.samenvattingen = nd.samenvattingen.filter(x => x.id !== id); }); render(); } catch(e){ toast('Verwijderen mislukt: ' + e.message, true); } }
+
+/* ---------- belastingsadviezen bevestigen ---------- */
+let LOADCHECK = null;
+function checkLoadThenPdf(tekst, m, adv, save, mode){
+  if(!tekst){ toast('Er is nog geen tekst', true); return; }
+  const items = loadItems(tekst, adv);
+  if(!items.length){ aiPdf(stripMarks(tekst), m, mode); return; }
+  LOADCHECK = {tekst, m, save, items, mode};
+  const opt = (k, v, l) => `<label class="lc-opt"><input type="radio" name="lc${k}" value="${v}" onchange="lcUpdate()"> ${l}</label>`;
+  openModal2(`<h2>Adviezen over belasting bevestigen</h2>
+    <p class="small">Deze adviezen gaan over wat ${esc(S.voornaam || 'de patiënt')} wel of niet kan belasten. Kies per advies of je het ermee eens bent, het wilt aanpassen of het wilt weglaten. Pas als je alle adviezen hebt beoordeeld, kun je de PDF maken.</p>
+    ${items.map((x, k) => `<div class="lc-item" data-k="${k}"><div class="lc-txt">${esc(normAdv(x.l))}</div><div class="lc-opts">${opt(k, 'ok', '✅ Akkoord')}${opt(k, 'edit', '✏️ Aanpassen')}${opt(k, 'weg', '🗑️ Weglaten')}</div>
+      <textarea class="ft-input" data-li="${k}" oninput="lcUpdate()" style="display:none;min-height:64px;margin-top:8px;font-size:13.5px">${esc(normAdv(x.l))}</textarea></div>`).join('')}
+    <div class="m-actions"><span class="small" id="lc-status" style="margin-right:auto;align-self:center;color:${C.muted}"></span><button class="ft-btn-s" onclick="closeModal2()">Annuleren</button><button class="ft-btn-p" id="lc-go" disabled onclick="loadOk()">${mode === 'mail' ? '📧 Maak PDF en mail' : '📄 Maak PDF'}</button></div>`);
+  lcUpdate();
+}
+function lcUpdate(){
+  const P = LOADCHECK; if(!P) return; let open = 0;
+  P.items.forEach((x, k) => {
+    const v = (document.querySelector('input[name="lc' + k + '"]:checked') || {}).value, ta = document.querySelector('[data-li="' + k + '"]'), box = document.querySelector('.lc-item[data-k="' + k + '"]');
+    ta.style.display = v === 'edit' ? '' : 'none';
+    const klaar = !!v && !(v === 'edit' && !ta.value.trim()); box.classList.toggle('done', klaar); box.classList.toggle('weg', v === 'weg'); if(!klaar) open++;
+  });
+  $('#lc-go').disabled = open > 0; $('#lc-status').textContent = open ? 'Nog ' + open + ' van ' + P.items.length + ' te beoordelen' : 'Alles beoordeeld';
+}
+function loadOk(){
+  const P = LOADCHECK; if(!P) return;
+  const L = P.tekst.split('\n'), drop = new Set(), adv = [];
+  for(let k = 0; k < P.items.length; k++){
+    const x = P.items[k], v = (document.querySelector('input[name="lc' + k + '"]:checked') || {}).value, nieuw = document.querySelector('[data-li="' + k + '"]').value.replace(/\s+/g, ' ').trim();
+    if(!v || (v === 'edit' && !nieuw)){ toast('Beoordeel eerst alle adviezen', true); return; }
+    if(v === 'weg'){ drop.add(x.i); continue; }
+    const txt = v === 'edit' ? nieuw.replace(/^\*\s*/, '') : normAdv(x.l); L[x.i] = (/^\s*\*\s/.test(x.l) ? '* ' : '') + txt; adv.push(txt);
+  }
+  const tekst = stripMarks(L.filter((l, i) => !drop.has(i)).join('\n'));
+  closeModal2(); LOADCHECK = null; if(P.save) P.save(tekst, adv);
+  aiPdf(tekst, P.m, P.mode);
+}
+
+/* ---------- delen / mailen ---------- */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches || IS_IOS;
+let PENDING_SHARE = null;
+async function sharePdf(doc, name, extra){
+  const file = new File([doc.output('blob')], name, {type:'application/pdf'});
+  if(!(navigator.canShare && navigator.canShare({files:[file]}))) return 'unsupported';
+  const data = Object.assign({files:[file]}, extra || {});
+  try{ await navigator.share(data); return 'shared'; }
+  catch(e){
+    if(e.name === 'AbortError') return 'aborted';
+    PENDING_SHARE = data;
+    openModal2(`<h2>De PDF staat klaar</h2><p>Tik op de knop om het deelmenu te openen${extra && extra.text ? ' en kies je mail-app' : ''}.</p><div class="m-actions"><button class="ft-btn-s" onclick="closeModal2()">Annuleren</button><button class="ft-btn-p" onclick="sharePending()">${extra && extra.text ? '📧 Open mail' : '📤 Delen / bewaren'}</button></div>`);
+    return 'pending';
+  }
+}
+async function sharePending(){ const d = PENDING_SHARE; PENDING_SHARE = null; closeModal2(); if(!d) return; try{ await navigator.share(d); } catch(e){ if(e.name !== 'AbortError') toast('Delen mislukt: ' + e.message, true); } }
+function mailTekst(voornaam, datum){
+  return {subject:'Je testverslag van Fyzio Totaal',
+    body:'Hoi ' + voornaam + ',\n\nIn de bijlage vind je het verslag van je testmoment van ' + datum + '. Je leest hierin hoe je scoorde, hoe je je sinds de vorige metingen hebt ontwikkeld en waar we de komende tijd samen aan gaan werken. Je oefenschema ontvang je via Physitrack.\n\nHeb je vragen over het verslag? Stel ze gerust tijdens je volgende afspraak of neem contact met ons op.\n\nMet sportieve groet,'};
+}
+function uploadNaarDrive(doc, bestandsnaam){
+  if(!DRIVE_UPLOAD_URL) return false;
+  try{ const b64 = doc.output('datauristring').split(',')[1]; fetch(DRIVE_UPLOAD_URL, {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({bestandsnaam, pdfBase64:b64})}).catch(() => {}); return true; } catch(e){ return false; }
+}
+let LOGO = null;
+async function loadLogo(){
+  if(LOGO !== null) return LOGO;
+  try{
+    const r = await fetch('logo.png'); if(!r.ok) throw 0;
+    const data = await new Promise(async res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(await r.blob()); });
+    const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = data; });
+    const c = document.createElement('canvas'), sc = Math.min(1, 600 / img.naturalWidth); c.width = img.naturalWidth * sc; c.height = img.naturalHeight * sc;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    LOGO = {data:c.toDataURL('image/jpeg', 0.9), ar:img.naturalWidth / img.naturalHeight};
+  } catch(e){ LOGO = false; }
+  return LOGO;
+}
+
+/* ---------- PDF ---------- */
+async function aiPdf(tekst, m, mode){
+  if(!tekst){ toast('Er is nog geen tekst', true); return; }
+  const win = mode === 'mail' && !IS_TOUCH ? window.open('', '_blank') : null;
+  try{
+    if(!window.jspdf) throw new Error('PDF-bibliotheek niet geladen, controleer de internetverbinding');
+    const { jsPDF } = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
+    const ps = x => String(x).replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/→/g,'->').replace(/−/g,'-').replace(/[“”]/g,'"').replace(/[‘’]/g, "'");
+    const _text = doc.text.bind(doc); doc.text = (t, ...a) => _text(Array.isArray(t) ? t.map(ps) : ps(t), ...a);
+    const _split = doc.splitTextToSize.bind(doc); doc.splitTextToSize = (t, ...a) => _split(ps(t), ...a);
+    const W = 210, H = 297, M = 18, CW = W - 2*M, BOTTOM = H - 20;
+    const PUR = [130,23,109], CY = [0,182,232], TXT = [42,22,38], MUT = [122,100,120], LINE = [226,213,223], SOFT = [248,243,247];
+    const font = (st, sz, col) => { doc.setFont('helvetica', st); doc.setFontSize(sz); doc.setTextColor(...(col || TXT)); };
+    const logo = await loadLogo(), voornaam = S.voornaam || S.patData?.voornaam || '', datum = nlDatum(m.datum), wk = wkPostOp(m.datum);
+    if(logo){ try{ doc.addImage(logo.data, 'JPEG', M, 12, 11 * logo.ar, 11); } catch(e){} }
+    font('bold', 17, PUR); doc.text('Testverslag', W - M, 18, {align:'right'});
+    font('normal', 9, MUT); doc.text('Revalidatie voorste kruisband', W - M, 23.5, {align:'right'});
+    doc.setFillColor(...PUR); doc.rect(M, 29, CW * 0.72, 1.1, 'F'); doc.setFillColor(...CY); doc.rect(M + CW * 0.72, 29, CW * 0.28, 1.1, 'F');
+    let y = 36;
+    doc.setFillColor(...SOFT); doc.roundedRect(M, y, CW, 17, 3, 3, 'F');
+    [['Naam', voornaam || '-'], ['Testdatum', datum], ['Geopereerde been', S.patData?.been || S.been || '-'], ['Na de operatie', wk !== null ? 'week ' + wk : '-']].forEach(([l, v], i) => {
+      const x = M + 6 + i * (CW - 8) / 4; font('bold', 7, MUT); doc.text(l.toUpperCase(), x, y + 6.5); font('bold', 10.5); doc.text(doc.splitTextToSize(String(v), (CW - 8) / 4 - 4)[0], x, y + 12.5);
+    });
+    y += 27;
+    const newPage = () => { doc.addPage(); y = 24; };
+    // tekst in hoofdstukken; een hoofdstuk dat niet meer past begint op een nieuwe pagina
+    const lines = tekst.split('\n'); if(lines.length && /^testverslag/i.test(lines[0].trim())) lines.shift();
+    const secs = []; let cur = [];
+    lines.forEach(l => { if(isHeadingLine(l) && cur.some(x => x.trim())){ secs.push(cur); cur = []; } cur.push(l); }); if(cur.some(x => x.trim())) secs.push(cur);
+    const isBul = l => /^\*\s/.test(l);
+    const lineH = l => { if(!l.trim()) return 2.5; if(isHeadingLine(l)) return 9; font('normal', 10.5); const b = isBul(l); return doc.splitTextToSize(b ? l.replace(/^\*\s/, '') : l, CW - (b ? 6 : 0)).length * 5.2 + (b ? 1 : 1.5); };
+    const heading = t => { if(y + 16 > BOTTOM) newPage(); y += 2; doc.setFillColor(...PUR); doc.rect(M, y - 4.4, 1.5, 5.8, 'F'); font('bold', 12.5, PUR); doc.text(t, M + 4, y); y += 7; };
+    const drawLine = line => {
+      if(!line.trim()){ y += 2.5; return; }
+      if(isHeadingLine(line)){ heading(line.trim()); return; }
+      const b = isBul(line); font('normal', 10.5);
+      doc.splitTextToSize(b ? line.replace(/^\*\s/, '') : line, CW - (b ? 6 : 0)).forEach((w, k) => {
+        if(y > BOTTOM){ newPage(); font('normal', 10.5); }
+        if(b && k === 0){ doc.setFillColor(...PUR); doc.circle(M + 1.6, y - 1.3, 0.9, 'F'); }
+        doc.text(w, M + (b ? 6 : 0), y); y += 5.2;
+      });
+      y += b ? 1 : 1.5;
+    };
+    secs.forEach(sec => {
+      const s = sec.slice(); while(s.length && !s[s.length-1].trim()) s.pop();
+      const h = s.reduce((a, l) => a + lineH(l), 0) - 2;
+      if(y + h > BOTTOM){ if(h <= BOTTOM - 24) newPage(); else if(y + lineH(s[0]) + (s[1] ? lineH(s[1]) : 0) > BOTTOM) newPage(); }
+      sec.forEach(drawLine);
+    });
+    // grafieken (alleen metingen tot en met dit testmoment); elke grafiek blijft heel
+    const blokken = VG_GROEPEN.map(g => ({g, d:vgData(g, m.datum)})).filter(x => x.d.lijnen.length);
+    if(blokken.length){
+      const gh = 46, blokH = b => 14 + gh + 6 + Math.ceil(b.d.lijnen.length / 3) * 5 + 6;
+      if(y + 18 + blokH(blokken[0]) > BOTTOM) newPage(); else y += 4;
+      heading('Je voortgang in grafieken');
+      font('normal', 9.5, MUT); doc.splitTextToSize((S.patData?.operatiedatum ? 'Onderaan staat het aantal weken na je operatie. ' : '') + 'Het groene vlak is het doel. Bij kracht en springen geldt: hoe dichter bij 100%, hoe meer je geopereerde been gelijk is aan je andere been.', CW).forEach(w => { doc.text(w, M, y); y += 4.6; });
+      y += 3;
+      blokken.forEach(b => {
+        if(y + blokH(b) > BOTTOM) newPage();
+        font('bold', 11, TXT); doc.text(b.g.titel, M, y); font('normal', 8.5, MUT); doc.text(b.g.uitleg, M, y + 4.5); y += 8;
+        y += pdfGrafiek(doc, b.g, b.d, M, y, CW, gh, font) + 6;
+      });
+    }
+    const n = doc.getNumberOfPages();
+    for(let i = 1; i <= n; i++){
+      doc.setPage(i);
+      if(i > 1){ if(logo){ try{ doc.addImage(logo.data, 'JPEG', M, 8, 6.5 * logo.ar, 6.5); } catch(e){} } font('normal', 8, MUT); doc.text('Testverslag ' + voornaam, W - M, 13, {align:'right'}); doc.setFillColor(...LINE); doc.rect(M, 17, CW, 0.3, 'F'); }
+      doc.setFillColor(...LINE); doc.rect(M, H - 13, CW, 0.3, 'F'); font('normal', 7.5, MUT);
+      doc.text('Fyzio Totaal  ·  Nijverheidsstraat 7, Wierden', M, H - 8.5); doc.text('Pagina ' + i + ' van ' + n, W - M, H - 8.5, {align:'right'});
+    }
+    const name = 'Testverslag_VKB_' + (voornaam || 'patient').replace(/\W+/g, '_') + '_' + S.patNr + '_' + datum + '.pdf';
+    const drive = uploadNaarDrive(doc, name), dTxt = drive ? ' en naar de Drive verstuurd' : '';
+    if(mode === 'mail'){
+      const mt = mailTekst(voornaam, datum);
+      if(IS_TOUCH){ const r = await sharePdf(doc, name, {title:mt.subject, text:mt.body}); if(r === 'shared') toast('PDF gedeeld' + dTxt); if(r !== 'unsupported') return; }
+      doc.save(name);
+      const gmail = 'https://mail.google.com/mail/?view=cm&fs=1&su=' + encodeURIComponent(mt.subject) + '&body=' + encodeURIComponent(mt.body);
+      const mailto = 'mailto:?subject=' + encodeURIComponent(mt.subject) + '&body=' + encodeURIComponent(mt.body);
+      if(win) win.location.href = gmail; else window.open(gmail, '_blank');
+      openModal2(`<h2>📧 Bijna klaar</h2><p>De PDF <b>${esc(name)}</b> is gedownload${dTxt} en er staat een mail met begeleidende tekst klaar in Gmail.</p><p><b>Nog doen:</b> vul het e-mailadres van ${esc(voornaam || 'de patiënt')} in, sleep de PDF uit je downloads in de mail (of klik op de paperclip) en verstuur.</p><p class="small" style="color:${C.muted}">Gebruik je een ander mailprogramma? <a href="${esc(mailto)}">Open in je standaard mail-app</a>.</p><div class="m-actions"><button class="ft-btn-p" onclick="closeModal2()">Sluiten</button></div>`);
+      return;
+    }
+    if(IS_IOS){ const r = await sharePdf(doc, name); if(r === 'shared') toast('PDF gedeeld' + dTxt); if(r !== 'unsupported') return; }
+    doc.save(name);
+    toast('PDF gedownload' + dTxt);
+  } catch(e){ if(win) win.close(); console.error(e); toast('PDF maken mislukt: ' + e.message, true); }
 }
 
 render();
